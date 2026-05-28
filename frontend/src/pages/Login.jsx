@@ -3,17 +3,34 @@ import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, Mail, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
+
+import {
+  Lock,
+  Mail,
+  Eye,
+  EyeOff,
+  Loader2,
+  AlertCircle,
+  Sparkles,
+  FileText,
+  ShieldCheck,
+} from 'lucide-react';
 
 const Login = () => {
-  const { login, loading, error: authError, clearError, isAuthenticated } = useAuthStore();
+  const {
+    login,
+    loading,
+    error: authError,
+    clearError,
+    isAuthenticated,
+  } = useAuthStore();
+
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState(null);
-  
+
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // Calculate redirection path (default: /dashboard)
+
   const from = location.state?.from?.pathname || '/dashboard';
 
   const {
@@ -24,16 +41,14 @@ const Login = () => {
     defaultValues: {
       email: '',
       password: '',
-    }
+    },
   });
 
-  // Clear auth store errors on mount
   useEffect(() => {
     clearError();
     setServerError(null);
   }, [clearError]);
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
       navigate(from, { replace: true });
@@ -42,147 +57,271 @@ const Login = () => {
 
   const onSubmit = async (data) => {
     setServerError(null);
+
     const result = await login(data.email, data.password);
+
     if (!result.success) {
       setServerError(result.error);
     }
   };
 
   return (
-    <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6 overflow-hidden">
-      {/* Decorative Blobs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[400px] h-[400px] bg-indigo-200/40 dark:bg-indigo-900/10 rounded-full blur-[100px] animate-float pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-emerald-100/40 dark:bg-emerald-950/10 rounded-full blur-[100px] animate-float pointer-events-none" style={{ animationDelay: '4s' }} />
+    <div className="min-h-screen bg-black flex overflow-hidden">
+      {/* LEFT SIDE */}
+      <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-950 via-slate-950 to-black">
+        
+        {/* Glow Effects */}
+        <div className="absolute top-20 left-20 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-20 w-72 h-72 bg-cyan-500/20 rounded-full blur-3xl" />
 
-      <motion.div
-        className="w-full max-w-md glass-card rounded-3xl p-8 border border-slate-200/50 dark:border-slate-800/50 shadow-2xl relative z-10"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        {/* Back Link */}
-        <div className="mb-6 text-left">
-          <Link to="/" className="text-xs font-semibold text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1">
-            ← Back to Homepage
-          </Link>
-        </div>
-
-        {/* Brand/Header */}
-        <div className="text-center space-y-2 mb-8">
-          <div className="inline-flex w-12 h-12 rounded-2xl bg-indigo-600 items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-500/20 mx-auto">
-            CF
-          </div>
-          <h2 className="text-2xl font-bold font-display text-slate-800 dark:text-slate-100">Welcome Back</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Securely sign in to manage your resumes</p>
-        </div>
-
-        {/* Global Error Banner */}
-        <AnimatePresence mode="wait">
-          {(serverError || authError) && (
-            <motion.div
-              className="bg-red-50 dark:bg-red-950/30 border border-red-200/50 dark:border-red-900/50 text-red-700 dark:text-red-300 p-4 rounded-xl flex items-start gap-3 mb-6 text-sm text-left"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-            >
-              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-              <span>{serverError || authError}</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Login Form */}
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 text-left">
-          {/* Email input */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Email Address</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                <Mail className="w-4 h-4" />
-              </div>
-              <input
-                type="email"
-                placeholder="you@example.com"
-                className={`w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-900 border ${
-                  errors.email ? 'border-red-500/50 focus:border-red-500' : 'border-slate-200 dark:border-slate-800 focus:border-indigo-500'
-                } rounded-xl text-sm text-slate-800 dark:text-slate-100 input-focus-glow transition-all`}
-                {...register('email', {
-                  required: 'Email address is required',
-                  pattern: {
-                    value: /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-                    message: 'Please enter a valid email address',
-                  },
-                })}
-              />
-            </div>
-            {errors.email && (
-              <p className="text-xs font-semibold text-red-500 mt-1 flex items-center gap-1">
-                <AlertCircle className="w-3.5 h-3.5" /> {errors.email.message}
-              </p>
-            )}
-          </div>
-
-          {/* Password Input */}
-          <div className="space-y-1.5">
-            <div className="flex justify-between items-center">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Password</label>
-            </div>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                <Lock className="w-4 h-4" />
-              </div>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••"
-                className={`w-full pl-10 pr-10 py-3 bg-white dark:bg-slate-900 border ${
-                  errors.password ? 'border-red-500/50 focus:border-red-500' : 'border-slate-200 dark:border-slate-800 focus:border-indigo-500'
-                } rounded-xl text-sm text-slate-800 dark:text-slate-100 input-focus-glow transition-all`}
-                {...register('password', {
-                  required: 'Password is required',
-                })}
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-            {errors.password && (
-              <p className="text-xs font-semibold text-red-500 mt-1 flex items-center gap-1">
-                <AlertCircle className="w-3.5 h-3.5" /> {errors.password.message}
-              </p>
-            )}
-          </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-600/60 text-white py-3 px-4 rounded-xl font-semibold text-sm transition-all shadow-md shadow-indigo-500/10 flex items-center justify-center gap-2 hover:translate-y-[-1px] active:translate-y-[0px] cursor-pointer"
+        <div className="relative z-10 max-w-lg px-12">
+          
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
           >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Signing In...
-              </>
-            ) : (
-              'Sign In'
-            )}
-          </button>
-        </form>
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-2xl shadow-indigo-500/30">
+                <Sparkles className="text-white w-7 h-7" />
+              </div>
 
-        {/* Redirect Link */}
-        <div className="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">
-          Don't have an account?{' '}
-          <Link to="/signup" className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline">
-            Register Here
-          </Link>
+              <div>
+                <h1 className="text-3xl font-bold text-white">
+                  CareerForge Pro
+                </h1>
+
+                <p className="text-slate-400 text-sm">
+                  AI Resume Architect
+                </p>
+              </div>
+            </div>
+
+            <h2 className="text-5xl font-bold text-white leading-tight mb-6">
+              Build ATS-Optimized
+              <span className="text-indigo-400"> Resumes</span>
+              <br />
+              That Get Interviews.
+            </h2>
+
+            <p className="text-slate-400 text-lg leading-relaxed mb-10">
+              Generate powerful AI-enhanced resumes tailored to any job
+              description with intelligent ATS optimization.
+            </p>
+
+            {/* Features */}
+            <div className="space-y-5">
+              <Feature
+                icon={<FileText className="w-5 h-5" />}
+                title="AI Resume Rewriting"
+                text="Optimize every bullet point automatically."
+              />
+
+              <Feature
+                icon={<ShieldCheck className="w-5 h-5" />}
+                title="ATS Score Analysis"
+                text="Match recruiter keywords intelligently."
+              />
+
+              <Feature
+                icon={<Sparkles className="w-5 h-5" />}
+                title="Professional Templates"
+                text="Clean, modern and recruiter-friendly layouts."
+              />
+            </div>
+          </motion.div>
         </div>
-      </motion.div>
+      </div>
+
+      {/* RIGHT SIDE */}
+      <div className="flex-1 flex items-center justify-center p-6 bg-slate-950 relative">
+        
+        {/* Background Glow */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl" />
+
+        <motion.div
+          initial={{ opacity: 0, y: 25 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md relative z-10"
+        >
+          {/* Mobile Logo */}
+          <div className="lg:hidden text-center mb-8">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-500/30 mb-4">
+              <Sparkles className="text-white w-7 h-7" />
+            </div>
+
+            <h1 className="text-3xl font-bold text-white">
+              CareerForge Pro
+            </h1>
+          </div>
+
+          {/* Card */}
+          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl">
+            
+            {/* Header */}
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold text-white mb-2">
+                Welcome Back
+              </h2>
+
+              <p className="text-slate-400 text-sm">
+                Sign in to continue building your career.
+              </p>
+            </div>
+
+            {/* Error */}
+            <AnimatePresence>
+              {(serverError || authError) && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="mb-5 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-300 flex gap-3 text-sm"
+                >
+                  <AlertCircle className="w-5 h-5 shrink-0" />
+                  <span>{serverError || authError}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* FORM */}
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="space-y-5"
+            >
+              {/* Email */}
+              <div>
+                <label className="text-sm text-slate-300 mb-2 block">
+                  Email Address
+                </label>
+
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+
+                  <input
+                    type="email"
+                    placeholder="you@example.com"
+                    className={`w-full h-14 pl-12 pr-4 rounded-2xl bg-white/5 border ${
+                      errors.email
+                        ? 'border-red-500'
+                        : 'border-white/10 focus:border-indigo-500'
+                    } outline-none text-white placeholder:text-slate-500 transition-all`}
+                    {...register('email', {
+                      required: 'Email is required',
+                    })}
+                  />
+                </div>
+
+                {errors.email && (
+                  <p className="text-red-400 text-xs mt-2">
+                    {errors.email.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Password */}
+              <div>
+                <label className="text-sm text-slate-300 mb-2 block">
+                  Password
+                </label>
+
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    className={`w-full h-14 pl-12 pr-12 rounded-2xl bg-white/5 border ${
+                      errors.password
+                        ? 'border-red-500'
+                        : 'border-white/10 focus:border-indigo-500'
+                    } outline-none text-white placeholder:text-slate-500 transition-all`}
+                    {...register('password', {
+                      required: 'Password is required',
+                    })}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
+
+                {errors.password && (
+                  <p className="text-red-400 text-xs mt-2">
+                    {errors.password.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Forgot */}
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  className="text-sm text-indigo-400 hover:text-indigo-300"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-14 rounded-2xl bg-indigo-600 hover:bg-indigo-500 transition-all text-white font-semibold flex items-center justify-center gap-2 shadow-xl shadow-indigo-500/20"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Signing In...
+                  </>
+                ) : (
+                  'Sign In'
+                )}
+              </button>
+            </form>
+
+            {/* Footer */}
+            <div className="mt-8 text-center text-sm text-slate-400">
+              Don’t have an account?{' '}
+              <Link
+                to="/signup"
+                className="text-indigo-400 hover:text-indigo-300 font-medium"
+              >
+                Create Account
+              </Link>
+            </div>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 };
+
+const Feature = ({ icon, title, text }) => (
+  <div className="flex items-start gap-4">
+    <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-indigo-400">
+      {icon}
+    </div>
+
+    <div>
+      <h4 className="text-white font-semibold mb-1">
+        {title}
+      </h4>
+
+      <p className="text-slate-400 text-sm">
+        {text}
+      </p>
+    </div>
+  </div>
+);
 
 export default Login;
