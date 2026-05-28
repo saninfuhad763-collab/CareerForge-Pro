@@ -71,10 +71,7 @@ const Signup = () => {
 
   return (
     <div className="min-h-screen bg-black flex overflow-hidden">
-      {/* LEFT PANEL */}
       <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-950 via-slate-950 to-black">
-        
-        {/* Glow Effects */}
         <div className="absolute top-20 left-20 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl" />
         <div className="absolute bottom-10 right-10 w-80 h-80 bg-cyan-500/20 rounded-full blur-3xl" />
 
@@ -85,7 +82,6 @@ const Signup = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
           >
-            {/* Logo */}
             <div className="flex items-center gap-4 mb-8">
               <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-2xl shadow-indigo-500/30">
                 <Sparkles className="w-7 h-7 text-white" />
@@ -101,34 +97,27 @@ const Signup = () => {
                 </p>
               </div>
             </div>
-
-            {/* Hero Text */}
             <h2 className="text-5xl font-bold text-white leading-tight mb-6">
               Start Building
               <span className="text-indigo-400"> Smarter</span>
               <br />
               Resumes Today.
             </h2>
-
             <p className="text-slate-400 text-lg leading-relaxed mb-10">
               Create ATS-optimized resumes powered by AI and land
               more interviews with intelligent job matching.
             </p>
-
-            {/* Feature Cards */}
             <div className="space-y-5">
               <Feature
                 icon={<Rocket className="w-5 h-5" />}
                 title="Instant Resume Generation"
                 text="Create modern resumes in minutes."
               />
-
               <Feature
                 icon={<FileText className="w-5 h-5" />}
                 title="AI Keyword Optimization"
                 text="Improve ATS score automatically."
               />
-
               <Feature
                 icon={<ShieldCheck className="w-5 h-5" />}
                 title="Professional Templates"
@@ -138,20 +127,14 @@ const Signup = () => {
           </motion.div>
         </div>
       </div>
-
-      {/* RIGHT PANEL */}
       <div className="flex-1 flex items-center justify-center bg-slate-950 p-6 relative">
-        
-        {/* Background Glow */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl" />
-
         <motion.div
           initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="w-full max-w-md relative z-10"
         >
-          {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600 shadow-xl shadow-indigo-500/20 mb-4">
               <Sparkles className="text-white w-7 h-7" />
@@ -161,11 +144,7 @@ const Signup = () => {
               CareerForge Pro
             </h1>
           </div>
-
-          {/* Signup Card */}
           <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl">
-            
-            {/* Header */}
             <div className="mb-8">
               <h2 className="text-3xl font-bold text-white mb-2">
                 Create Account
@@ -175,8 +154,6 @@ const Signup = () => {
                 Start building AI-powered resumes today.
               </p>
             </div>
-
-            {/* Error Message */}
             <AnimatePresence>
               {(serverError || authError) && (
                 <motion.div
@@ -191,12 +168,10 @@ const Signup = () => {
               )}
             </AnimatePresence>
 
-            {/* FORM */}
             <form
               onSubmit={handleSubmit(onSubmit)}
               className="space-y-5"
             >
-              {/* Name */}
               <div>
                 <label className="text-sm text-slate-300 mb-2 block">
                   Full Name
@@ -261,7 +236,6 @@ const Signup = () => {
                 )}
               </div>
 
-              {/* Password */}
               <div>
                 <label className="text-sm text-slate-300 mb-2 block">
                   Password

@@ -67,10 +67,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-black flex overflow-hidden">
-      {/* LEFT SIDE */}
       <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-950 via-slate-950 to-black">
-        
-        {/* Glow Effects */}
         <div className="absolute top-20 left-20 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl" />
         <div className="absolute bottom-20 right-20 w-72 h-72 bg-cyan-500/20 rounded-full blur-3xl" />
 
@@ -108,8 +105,6 @@ const Login = () => {
               Generate powerful AI-enhanced resumes tailored to any job
               description with intelligent ATS optimization.
             </p>
-
-            {/* Features */}
             <div className="space-y-5">
               <Feature
                 icon={<FileText className="w-5 h-5" />}
@@ -132,11 +127,7 @@ const Login = () => {
           </motion.div>
         </div>
       </div>
-
-      {/* RIGHT SIDE */}
       <div className="flex-1 flex items-center justify-center p-6 bg-slate-950 relative">
-        
-        {/* Background Glow */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl" />
 
         <motion.div
@@ -145,7 +136,6 @@ const Login = () => {
           transition={{ duration: 0.5 }}
           className="w-full max-w-md relative z-10"
         >
-          {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-500/30 mb-4">
               <Sparkles className="text-white w-7 h-7" />
@@ -156,10 +146,7 @@ const Login = () => {
             </h1>
           </div>
 
-          {/* Card */}
           <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl">
-            
-            {/* Header */}
             <div className="mb-8">
               <h2 className="text-3xl font-bold text-white mb-2">
                 Welcome Back
@@ -169,8 +156,6 @@ const Login = () => {
                 Sign in to continue building your career.
               </p>
             </div>
-
-            {/* Error */}
             <AnimatePresence>
               {(serverError || authError) && (
                 <motion.div
@@ -185,12 +170,10 @@ const Login = () => {
               )}
             </AnimatePresence>
 
-            {/* FORM */}
             <form
               onSubmit={handleSubmit(onSubmit)}
               className="space-y-5"
             >
-              {/* Email */}
               <div>
                 <label className="text-sm text-slate-300 mb-2 block">
                   Email Address
@@ -220,7 +203,6 @@ const Login = () => {
                 )}
               </div>
 
-              {/* Password */}
               <div>
                 <label className="text-sm text-slate-300 mb-2 block">
                   Password
