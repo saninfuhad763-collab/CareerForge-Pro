@@ -98,6 +98,13 @@ const Dashboard = () => {
 
           {/* Sidebar Menu Links */}
           <nav className="space-y-1 text-left">
+            <button 
+              onClick={() => navigate('/')}
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-xl transition-colors cursor-pointer"
+            >
+              <Compass className="w-4.5 h-4.5" />
+              <span>Back to Home</span>
+            </button>
             <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 transition-colors">
               <FileText className="w-4.5 h-4.5" />
               <span>Resumes</span>
