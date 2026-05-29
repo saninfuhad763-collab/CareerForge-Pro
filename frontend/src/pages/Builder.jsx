@@ -311,8 +311,7 @@ const Builder = () => {
         <div className="w-full md:w-[48%] lg:w-[45%] border-r border-slate-200/50 dark:border-slate-800/50 overflow-y-auto p-5 space-y-6 bg-slate-50 dark:bg-slate-950/20 text-left">
           
           {/* Real-time ATS Feedback Mini Card */}
-          <div className="glass-card rounded-2xl p-4 border border-slate-200 dark:border-slate-800 flex items-start gap-4">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 font-extrabold text-sm ${
+<div className="bg-white dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-lg shadow-slate-200/40 dark:shadow-black/20 flex items-start gap-4">            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 font-extrabold text-sm ${
               atsMetadata.score >= 70 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400'
             }`}>
               {atsMetadata.score}%
