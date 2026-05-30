@@ -178,6 +178,64 @@ const activateMockMongoose = () => {
     return new MockSingleQuery(item ? new this(item) : null);
   };
 
+  mongoose.Model.countDocuments = async function(query) {
+    const modelName = this.modelName;
+    const list = memoryStore[modelName] || [];
+    return list.filter(x => matchQuery(x, query)).length;
+  };
+
+  mongoose.Model.count = async function(query) {
+    const modelName = this.modelName;
+    const list = memoryStore[modelName] || [];
+    return list.filter(x => matchQuery(x, query)).length;
+  };
+
+  mongoose.Model.findByIdAndUpdate = async function(id, update, options) {
+    const modelName = this.modelName;
+    const list = memoryStore[modelName] || [];
+    const idx = list.findIndex(x => x._id && x._id.toString() === id.toString());
+    if (idx === -1) {
+      return null;
+    }
+    const item = list[idx];
+    if (update.$inc) {
+      for (let k in update.$inc) {
+        item[k] = (item[k] || 0) + update.$inc[k];
+      }
+    }
+    if (update.$set) {
+      for (let k in update.$set) {
+        item[k] = update.$set[k];
+      }
+    }
+    list[idx] = item;
+    saveMemoryStore();
+    return new this(item);
+  };
+
+  mongoose.Model.findOneAndUpdate = async function(query, update, options) {
+    const modelName = this.modelName;
+    const list = memoryStore[modelName] || [];
+    const idx = list.findIndex(x => matchQuery(x, query));
+    if (idx === -1) {
+      return null;
+    }
+    const item = list[idx];
+    if (update.$inc) {
+      for (let k in update.$inc) {
+        item[k] = (item[k] || 0) + update.$inc[k];
+      }
+    }
+    if (update.$set) {
+      for (let k in update.$set) {
+        item[k] = update.$set[k];
+      }
+    }
+    list[idx] = item;
+    saveMemoryStore();
+    return new this(item);
+  };
+
   mongoose.Model.create = async function(data) {
     const modelName = this.modelName;
     if (!memoryStore[modelName]) {

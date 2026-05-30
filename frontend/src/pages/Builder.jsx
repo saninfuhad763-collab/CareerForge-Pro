@@ -24,7 +24,14 @@ import {
   AlertTriangle,
   Info,
   ExternalLink,
-  Laptop
+  Laptop,
+  Sparkles,
+  Brain,
+  Check,
+  RotateCcw,
+  X,
+  Target,
+  Loader2
 } from 'lucide-react';
 
 const Builder = () => {
@@ -42,6 +49,235 @@ const Builder = () => {
 
   const [activeAccordion, setActiveAccordion] = useState('personal');
   const [saveStatus, setSaveStatus] = useState('Saved to cloud');
+
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+  // State abstractions for JD ATS Check & AI Optimization
+  const [jdText, setJdText] = useState('');
+  const [isJdAnalyzing, setIsJdAnalyzing] = useState(false);
+  const [atsBreakdown, setAtsBreakdown] = useState(null);
+  const [isJdOpen, setIsJdOpen] = useState(false);
+
+  // Magic Optimizer State
+  const [isOptimizerOpen, setIsOptimizerOpen] = useState(false);
+  const [optimizerType, setOptimizerType] = useState('summary'); // 'summary' | 'bullet'
+  const [originalText, setOriginalText] = useState('');
+  const [optimizedText, setOptimizedText] = useState('');
+  const [targetKeyword, setTargetKeyword] = useState('');
+  const [magicPromptType, setMagicPromptType] = useState('summary_rewrite');
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [currentLogId, setCurrentLogId] = useState(null);
+  const [onApplyCallback, setOnApplyCallback] = useState(null);
+  const [activeAbortController, setActiveAbortController] = useState(null);
+
+  // History & Plan Stats
+  const [planStats, setPlanStats] = useState({ plan: 'FREE', aiRewriteCount: 0, resumeCount: 1, resumeLimit: 1, aiLimit: 10 });
+  const [historyLogs, setHistoryLogs] = useState([]);
+
+  // Fetch plan stats on load
+  const fetchPlanStats = async () => {
+    try {
+      const response = await fetch(`${API_URL}/ai/plan-stats`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('cf_token')}`
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setPlanStats(data);
+      }
+    } catch (e) {
+      console.error('Failed to load plan stats:', e);
+    }
+  };
+
+  const fetchHistoryLogs = async () => {
+    if (!id) return;
+    try {
+      const response = await fetch(`${API_URL}/ai/history/${id}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('cf_token')}`
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setHistoryLogs(data.logs);
+      }
+    } catch (e) {
+      console.error('Failed to load history logs:', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchPlanStats();
+    fetchHistoryLogs();
+  }, [id]);
+
+  const handleJdAnalysis = async () => {
+    if (!jdText.trim()) return;
+    setIsJdAnalyzing(true);
+    try {
+      const response = await fetch(`${API_URL}/ai/analyze-jd`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('cf_token')}`
+        },
+        body: JSON.stringify({
+          resumeId: id,
+          jdText
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setAtsBreakdown(data.breakdown);
+        // Refresh local resume payload in store to display new scores immediately
+        await loadResumeById(id);
+      }
+    } catch (e) {
+      console.error('Failed to analyze JD:', e);
+    } finally {
+      setIsJdAnalyzing(false);
+    }
+  };
+
+  const openMagicOptimizer = (type, currentVal, applyFn) => {
+    setOptimizerType(type);
+    setOriginalText(currentVal);
+    setOptimizedText('');
+    setTargetKeyword('');
+    setMagicPromptType(type === 'summary' ? 'summary_rewrite' : 'bullet_rewrite');
+    setOnApplyCallback(() => applyFn);
+    setIsOptimizerOpen(true);
+  };
+
+  const startStreamOptimization = async () => {
+    setIsOptimizing(true);
+    setOptimizedText('');
+    setCurrentLogId(null);
+
+    const controller = new AbortController();
+    setActiveAbortController(controller);
+
+    try {
+      const params = new URLSearchParams({
+        resumeId: id,
+        promptType: magicPromptType,
+        originalText,
+        contextKeyword: targetKeyword
+      });
+
+      const response = await fetch(`${API_URL}/ai/stream-rewrite?${params.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('cf_token')}`
+        },
+        signal: controller.signal
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Stream error');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.substring(6));
+              if (data.error) {
+                throw new Error(data.message);
+              }
+              if (data.complete) {
+                setCurrentLogId(data.logId);
+                setIsOptimizing(false);
+                fetchPlanStats();
+                fetchHistoryLogs();
+              } else if (data.text) {
+                setOptimizedText(prev => prev + data.text);
+              }
+            } catch (e) {
+              // Ignore partial parsing
+            }
+          }
+        }
+      }
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        console.error('AI Optimization streaming error:', e);
+        setOptimizedText(`Optimization failed: ${e.message}`);
+      }
+      setIsOptimizing(false);
+    }
+  };
+
+  const cancelOptimization = () => {
+    if (activeAbortController) {
+      activeAbortController.abort();
+      setActiveAbortController(null);
+      setIsOptimizing(false);
+    }
+  };
+
+  const applySuggestion = async () => {
+    if (onApplyCallback && optimizedText) {
+      onApplyCallback(optimizedText);
+      
+      // Auto-save changes locally
+      updateResumeLocal({});
+      
+      if (currentLogId) {
+        try {
+          await fetch(`${API_URL}/ai/accept`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('cf_token')}`
+            },
+            body: JSON.stringify({ logId: currentLogId })
+          });
+          fetchHistoryLogs();
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      setIsOptimizerOpen(false);
+    }
+  };
+
+  const rollbackSuggestion = async (logId) => {
+    try {
+      const response = await fetch(`${API_URL}/ai/rollback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('cf_token')}`
+        },
+        body: JSON.stringify({ logId })
+      });
+      const data = await response.json();
+      if (data.success) {
+        const log = data.log;
+        if (log.actionType === 'summary_rewrite') {
+          handleSummaryChange(data.originalContent);
+        } else {
+          alert(`Original content restored! Copied to clipboard:\n\n${data.originalContent}`);
+          navigator.clipboard.writeText(data.originalContent);
+        }
+        fetchHistoryLogs();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   // Load the specific resume on mount
   useEffect(() => {
@@ -310,24 +546,140 @@ const Builder = () => {
         {/* LEFT WORKSPACE: Input Accordion Editor Panel */}
         <div className="w-full md:w-[48%] lg:w-[45%] border-r border-slate-200/50 dark:border-slate-800/50 overflow-y-auto p-5 space-y-6 bg-slate-50 dark:bg-slate-950/20 text-left">
           
-          {/* Real-time ATS Feedback Mini Card */}
-<div className="bg-white dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-lg shadow-slate-200/40 dark:shadow-black/20 flex items-start gap-4">            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 font-extrabold text-sm ${
-              atsMetadata.score >= 70 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400'
-            }`}>
-              {atsMetadata.score}%
+          {/* Dedicated JD Analysis & Circular ATS Score Panel */}
+          <div className="bg-white dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xl shadow-slate-200/40 dark:shadow-black/35 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-indigo-50 dark:bg-indigo-950/60 rounded-xl text-indigo-600 dark:text-indigo-400">
+                  <Brain className="w-5 h-5 animate-pulse" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                    ATS Analyzer Intelligence
+                  </h4>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                    Plan Tier: <span className="text-indigo-500 font-extrabold">{planStats.plan}</span>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsJdOpen(!isJdOpen)}
+                className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+              >
+                {isJdOpen ? 'Hide Input' : 'Paste JD'}
+              </button>
             </div>
-            <div className="space-y-1 overflow-hidden">
-              <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                ATS Optimizer Check
-              </h4>
-              {atsMetadata.feedback && atsMetadata.feedback.length > 0 ? (
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed truncate">
-                  💡 {atsMetadata.feedback[0]}
+
+            {/* Pasting JD Accordion Section */}
+            {isJdOpen && (
+              <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Target Job Description</label>
+                  <textarea
+                    rows={4}
+                    placeholder="Paste the target job description text here to calculate your precise match score and identify critical keyword gaps..."
+                    value={jdText}
+                    onChange={(e) => setJdText(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none resize-none"
+                  />
+                </div>
+                <button
+                  type="button"
+                  disabled={isJdAnalyzing || !jdText.trim()}
+                  onClick={handleJdAnalysis}
+                  className="w-full py-2 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-indigo-500/25 transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {isJdAnalyzing ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Running ATS Matcher...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Target className="w-3.5 h-3.5" />
+                      <span>Run ATS Matcher</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {/* Score & Breakdown display */}
+            <div className="flex items-center gap-5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+              {/* Circular ATS score progress */}
+              <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle
+                    cx="32"
+                    cy="32"
+                    r="28"
+                    className="stroke-slate-100 dark:stroke-slate-800"
+                    strokeWidth="5"
+                    fill="transparent"
+                  />
+                  <circle
+                    cx="32"
+                    cy="32"
+                    r="28"
+                    className={`${
+                      atsMetadata.score >= 80
+                        ? 'stroke-emerald-500'
+                        : atsMetadata.score >= 60
+                        ? 'stroke-amber-500'
+                        : 'stroke-red-500'
+                    } transition-all duration-500`}
+                    strokeWidth="5"
+                    fill="transparent"
+                    strokeDasharray={2 * Math.PI * 28}
+                    strokeDashoffset={2 * Math.PI * 28 * (1 - atsMetadata.score / 100)}
+                  />
+                </svg>
+                <span className="absolute text-xs font-extrabold text-slate-800 dark:text-slate-100">
+                  {atsMetadata.score}%
+                </span>
+              </div>
+
+              <div className="space-y-1 text-left min-w-0">
+                <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  {atsMetadata.score >= 80 ? 'Excellent Match!' : atsMetadata.score >= 60 ? 'Good Potential' : 'Needs Optimization'}
+                </h5>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed truncate">
+                  {atsMetadata.feedback && atsMetadata.feedback.length > 0
+                    ? atsMetadata.feedback[0]
+                    : 'Analyze a JD above to generate custom advice.'}
                 </p>
-              ) : (
-                <p className="text-xs text-emerald-500">Perfect layout structural parsed!</p>
-              )}
+                <div className="text-[9px] text-slate-400 font-medium">
+                  AI rewrite credit usage: <span className="font-bold text-slate-600 dark:text-slate-300">{planStats.aiRewriteCount} / {planStats.aiLimit === Infinity ? 'Unlimited' : planStats.aiLimit} limit</span>
+                </div>
+              </div>
             </div>
+
+            {/* Keyword gaps list (Extracted from atsBreakdown) */}
+            {atsBreakdown && (
+              <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                <h6 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ATS Keyword Alignment</h6>
+                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
+                  {atsBreakdown.missingKeywords.slice(0, 8).map((kw) => (
+                    <span
+                      key={kw}
+                      onClick={() => openMagicOptimizer('bullet', '', (newVal) => {
+                        // Quick inject placeholder helper
+                        alert(`Copy optimized text and inject into your work details:\n\n${newVal}`);
+                      })}
+                      className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/45 text-amber-700 dark:text-amber-400 rounded-md text-[9px] font-bold border border-amber-200/50 dark:border-amber-900/50 cursor-pointer hover:border-amber-400 transition-colors"
+                      title="Click to open Magic Optimizer for this keyword"
+                    >
+                      + {kw}
+                    </span>
+                  ))}
+                  {atsBreakdown.missingKeywords.length === 0 && (
+                    <span className="text-[10px] text-emerald-500 flex items-center gap-1">
+                      <CheckCircle className="w-3.5 h-3.5" /> All required keywords integrated successfully!
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-4">
@@ -470,6 +822,16 @@ const Builder = () => {
                         onChange={(e) => handleSummaryChange(e.target.value)}
                         className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-lg text-sm text-slate-800 dark:text-slate-100 focus:outline-none resize-y"
                       />
+                      <div className="flex justify-end pt-1">
+                        <button
+                          type="button"
+                          onClick={() => openMagicOptimizer('summary', summary, (newVal) => handleSummaryChange(newVal))}
+                          className="inline-flex items-center gap-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-sm shadow-indigo-500/25 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 transition-all duration-150"
+                        >
+                          <Sparkles className="w-3 h-3" />
+                          <span>Magic AI Rewrite</span>
+                        </button>
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -577,7 +939,7 @@ const Builder = () => {
                             <label htmlFor={`current-${idx}`} className="text-[10px] font-bold text-slate-500">I currently work here</label>
                           </div>
 
-                          <div className="space-y-1">
+                           <div className="space-y-1">
                             <label className="text-[9px] font-bold text-slate-400">Impact & Responsibilities (Bulleted)</label>
                             <textarea
                               rows={3}
@@ -586,6 +948,16 @@ const Builder = () => {
                               onChange={(e) => handleUpdateExperience(idx, 'description', e.target.value)}
                               className="w-full px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-lg text-xs text-slate-800 dark:text-slate-100 focus:outline-none resize-y"
                             />
+                            <div className="flex justify-end pt-1">
+                              <button
+                                type="button"
+                                onClick={() => openMagicOptimizer('bullet', exp.description, (newVal) => handleUpdateExperience(idx, 'description', newVal))}
+                                className="inline-flex items-center gap-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-[9px] font-bold px-2.5 py-1.5 rounded-md shadow-sm shadow-indigo-500/25 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 transition-all duration-150"
+                              >
+                                <Sparkles className="w-2.5 h-2.5" />
+                                <span>Optimize Bullets</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -1352,6 +1724,184 @@ const Builder = () => {
         </div>
 
       </div>
+
+      {/* Dynamic Streaming AI Magic Optimizer Dialog Overlay */}
+      <AnimatePresence>
+        {isOptimizerOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 text-left"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 15 }}
+              className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xl rounded-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              {/* Header */}
+              <div className="bg-gradient-to-r from-indigo-500 via-indigo-600 to-purple-600 px-6 py-4 flex items-center justify-between text-white shrink-0">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 animate-pulse text-purple-200" />
+                  <div>
+                    <h3 className="font-extrabold text-sm tracking-wide">
+                      CareerForge AI Spark Assistant
+                    </h3>
+                    <p className="text-[10px] text-indigo-100 font-medium">
+                      Real-time professional stream optimizer
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsOptimizerOpen(false)}
+                  className="text-white/80 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 space-y-4 overflow-y-auto flex-1 text-slate-800 dark:text-slate-200">
+                {/* Configuration panel */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Optimize Action</label>
+                    <select
+                      value={magicPromptType}
+                      onChange={(e) => setMagicPromptType(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-indigo-500"
+                    >
+                      <option value="summary_rewrite">Professional Bio Rewrite</option>
+                      <option value="bullet_rewrite">Resume Bullet Rewrite</option>
+                      <option value="quantify">Quantify Achievements (+ Metrics)</option>
+                      <option value="ats_inject">ATS Keyword Injection Focus</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                      <Target className="w-3.5 h-3.5 text-indigo-500" /> Focus Keyword (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. AWS, React, Kubernetes..."
+                      value={targetKeyword}
+                      onChange={(e) => setTargetKeyword(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Original content comparison */}
+                {originalText && (
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Original Text</label>
+                    <div className="px-3 py-2 bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/80 rounded-xl text-xs text-slate-500 dark:text-slate-400 line-clamp-3 select-none">
+                      {originalText}
+                    </div>
+                  </div>
+                )}
+
+                {/* Live stream block */}
+                <div className="space-y-1 relative">
+                  <label className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 animate-spin" /> AI Generated Suggestion
+                  </label>
+                  
+                  <div className="relative">
+                    <textarea
+                      rows={6}
+                      readOnly
+                      placeholder="Click 'Generate Suggestions' to initiate the streaming optimizer. The model will draft modern, impact-driven sentences in real time."
+                      value={optimizedText}
+                      className="w-full px-4 py-3 bg-indigo-50/20 dark:bg-indigo-950/10 border border-indigo-100 dark:border-indigo-900/60 focus:outline-none rounded-2xl text-xs leading-relaxed font-medium text-slate-800 dark:text-slate-100 resize-none shadow-inner"
+                    />
+                    {isOptimizing && (
+                      <div className="absolute inset-0 bg-slate-900/5 dark:bg-slate-950/10 backdrop-blur-[0.5px] rounded-2xl flex items-center justify-center">
+                        <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border rounded-xl shadow-lg">
+                          <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Streaming tokens...</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions row */}
+                <div className="flex items-center justify-between pt-2">
+                  <div className="text-[10px] font-medium text-slate-400">
+                    Remaining credits: <span className="font-bold text-slate-600 dark:text-slate-300">{planStats.aiLimit === Infinity ? 'Unlimited' : `${planStats.aiLimit - planStats.aiRewriteCount} free credits left`}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {isOptimizing ? (
+                      <button
+                        type="button"
+                        onClick={cancelOptimization}
+                        className="px-4 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-950 text-red-600 dark:text-red-400 rounded-xl text-xs font-bold cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={startStreamOptimization}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Generate Optimizations</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      disabled={!optimizedText || isOptimizing}
+                      onClick={applySuggestion}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-500/20 flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Apply Changes</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Audit trail & Rollbacks */}
+                {historyLogs.length > 0 && (
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      History / Undo Actions
+                    </h4>
+                    <div className="space-y-2 max-h-32 overflow-y-auto pr-1">
+                      {historyLogs.slice(0, 3).map((log) => (
+                        <div
+                          key={log._id}
+                          className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/80 rounded-xl text-xs"
+                        >
+                          <div className="space-y-0.5 text-left min-w-0">
+                            <div className="font-bold capitalize text-slate-700 dark:text-slate-300">
+                              {log.actionType.replace('_', ' ')}
+                            </div>
+                            <div className="text-[10px] text-slate-400 truncate max-w-[320px]">
+                              {log.generatedContent}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => rollbackSuggestion(log._id)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-950 text-amber-700 dark:text-amber-400 rounded-lg text-[10px] font-bold border border-amber-200/40 dark:border-amber-900/40 cursor-pointer"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            <span>Undo</span>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

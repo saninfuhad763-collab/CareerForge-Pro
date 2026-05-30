@@ -24,6 +24,18 @@ const userSchema = new mongoose.Schema(
       required: [true, 'Please provide a password'],
       minlength: [6, 'Password must be at least 6 characters long'],
     },
+    plan: {
+      type: String,
+      enum: ['FREE', 'PRO'],
+      default: 'FREE',
+    },
+    aiRewriteCount: {
+      type: Number,
+      default: 0,
+    },
+    subscriptionExpiresAt: {
+      type: Date,
+    },
   },
   {
     timestamps: true,
