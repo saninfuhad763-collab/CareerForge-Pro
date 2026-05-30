@@ -344,6 +344,10 @@ const activateMockMongoose = () => {
 const connectDB = async () => {
   try {
     console.log(`[MongoDB] Attempting to connect to: ${process.env.MONGODB_URI}`);
+    // Register error handler before connect to swallow any unhandled Mongoose events
+    mongoose.connection.on('error', (err) => {
+      console.warn(`[MongoDB Connection Event Warning]: ${err.message}`);
+    });
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
       serverSelectionTimeoutMS: 3000
     });

@@ -137,5 +137,34 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  upgradePlan: async () => {
+    const { token } = get();
+    if (!token) return { success: false, error: 'Not authenticated' };
+
+    set({ loading: true, error: null });
+    try {
+      const response = await fetch(`${API_URL}/auth/upgrade`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Upgrade failed');
+      }
+
+      localStorage.setItem('cf_user', JSON.stringify(data.data));
+      set({ user: data.data, loading: false, error: null });
+      return { success: true };
+    } catch (error) {
+      set({ loading: false, error: error.message });
+      return { success: false, error: error.message };
+    }
+  },
+
   clearError: () => set({ error: null }),
 }));

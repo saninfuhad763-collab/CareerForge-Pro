@@ -3,6 +3,7 @@ import {
   registerUser,
   loginUser,
   getUserProfile,
+  upgradeUserPlan,
 } from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import {
@@ -15,5 +16,6 @@ const router = express.Router();
 router.post('/register', validateRegister, registerUser);
 router.post('/login', validateLogin, loginUser);
 router.get('/profile', protect, getUserProfile);
+router.put('/upgrade', protect, upgradeUserPlan);
 
 export default router;

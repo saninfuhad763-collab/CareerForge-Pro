@@ -85,3 +85,33 @@ export const getUserProfile = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// @desc    Upgrade user to PRO plan (Simulated payment/direct upgrade for week 2 scope)
+// @route   PUT /api/auth/upgrade
+// @access  Private
+export const upgradeUserPlan = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.plan = 'PRO';
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Successfully upgraded to PRO plan!',
+      data: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        plan: user.plan,
+        aiRewriteCount: user.aiRewriteCount,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
