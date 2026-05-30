@@ -160,40 +160,16 @@ const Dashboard = () => {
             </button>
             <button 
               onClick={() => setActiveTab('ai-scoring')}
-              className={`w-full flex items-center justify-between px-4 py-3 text-sm font-semibold rounded-xl transition-all cursor-pointer ${
+              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition-all cursor-pointer ${
                 activeTab === 'ai-scoring'
                   ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400'
                   : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/40'
               }`}
             >
-              <div className="flex items-center gap-3">
-                <Gauge className="w-4.5 h-4.5" />
-                <span>AI Scoring</span>
-              </div>
-              <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-bold transition-all ${
-                activeTab === 'ai-scoring'
-                  ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400'
-                  : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
-              }`}>Wk 2</span>
+              <Gauge className="w-4.5 h-4.5" />
+              <span>AI Scoring</span>
             </button>
-            <button 
-              onClick={() => setActiveTab('job-matcher')}
-              className={`w-full flex items-center justify-between px-4 py-3 text-sm font-semibold rounded-xl transition-all cursor-pointer ${
-                activeTab === 'job-matcher'
-                  ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400'
-                  : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/40'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <Briefcase className="w-4.5 h-4.5" />
-                <span>Job Matcher</span>
-              </div>
-              <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-bold transition-all ${
-                activeTab === 'job-matcher'
-                  ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400'
-                  : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
-              }`}>Wk 3</span>
-            </button>
+
           </nav>
         </div>
 
