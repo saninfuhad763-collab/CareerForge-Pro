@@ -71,60 +71,74 @@ const Signup = () => {
 
   return (
     <div className="min-h-screen bg-black flex overflow-hidden">
-      <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-950 via-slate-950 to-black">
-        <div className="absolute top-20 left-20 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 right-10 w-80 h-80 bg-cyan-500/20 rounded-full blur-3xl" />
+      <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-10 xl:p-14 overflow-hidden bg-gradient-to-br from-indigo-950 via-slate-950 to-black h-screen max-h-screen">
+        {/* Soft Background Blurs */}
+        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-cyan-600/10 rounded-full blur-[120px] pointer-events-none" />
 
-        <div className="relative z-10 max-w-xl px-12">
-          
+        {/* Top: Logo Header */}
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <Sparkles className="text-white w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-white tracking-tight">
+              CareerForge Pro
+            </h1>
+            <p className="text-indigo-400/80 text-[10px] font-semibold tracking-wider uppercase">
+              AI Resume Architect
+            </p>
+          </div>
+        </div>
+
+        {/* Middle: Hero Content & Feature Cards */}
+        <div className="relative z-10 my-auto max-w-md">
           <motion.div
-            initial={{ opacity: 0, y: 35 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
+            transition={{ duration: 0.6 }}
           >
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-2xl shadow-indigo-500/30">
-                <Sparkles className="w-7 h-7 text-white" />
-              </div>
-
-              <div>
-                <h1 className="text-3xl font-bold text-white">
-                  CareerForge Pro
-                </h1>
-
-                <p className="text-slate-400 text-sm">
-                  AI Resume Architect
-                </p>
-              </div>
-            </div>
-            <h2 className="text-5xl font-bold text-white leading-tight mb-6">
+            <h2 className="text-4xl font-extrabold text-white leading-tight mb-4 tracking-tight">
               Start Building
-              <span className="text-indigo-400"> Smarter</span>
+              <span className="bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent"> Smarter</span>
               <br />
               Resumes Today.
             </h2>
-            <p className="text-slate-400 text-lg leading-relaxed mb-10">
+
+            <p className="text-slate-300 text-sm leading-relaxed mb-6">
               Create ATS-optimized resumes powered by AI and land
               more interviews with intelligent job matching.
             </p>
-            <div className="space-y-5">
+
+            <div className="space-y-3">
               <Feature
-                icon={<Rocket className="w-5 h-5" />}
+                icon={<Rocket className="w-4 h-4" />}
                 title="Instant Resume Generation"
                 text="Create modern resumes in minutes."
               />
+
               <Feature
-                icon={<FileText className="w-5 h-5" />}
+                icon={<FileText className="w-4 h-4" />}
                 title="AI Keyword Optimization"
                 text="Improve ATS score automatically."
               />
+
               <Feature
-                icon={<ShieldCheck className="w-5 h-5" />}
+                icon={<ShieldCheck className="w-4 h-4" />}
                 title="Professional Templates"
                 text="Designed for recruiters and hiring systems."
               />
             </div>
           </motion.div>
+        </div>
+
+        {/* Bottom: Trust Badge / Footer */}
+        <div className="relative z-10 flex items-center gap-4 text-slate-500 text-[10px]">
+          <p>© {new Date().getFullYear()} CareerForge Pro. All rights reserved.</p>
+          <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+          <p className="flex items-center gap-1">
+            <ShieldCheck className="w-3 h-3 text-emerald-500" /> Enterprise Secured
+          </p>
         </div>
       </div>
       <div className="flex-1 flex items-center justify-center bg-slate-950 p-6 relative">
@@ -319,17 +333,17 @@ const Signup = () => {
 };
 
 const Feature = ({ icon, title, text }) => (
-  <div className="flex items-start gap-4">
-    <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-indigo-400">
+  <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/5 backdrop-blur-sm transition-all hover:bg-white/10 hover:border-white/10 hover:translate-x-1 duration-200">
+    <div className="w-8 h-8 rounded-lg bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
       {icon}
     </div>
 
     <div>
-      <h4 className="text-white font-semibold mb-1">
+      <h4 className="text-white font-semibold text-sm mb-0.5">
         {title}
       </h4>
 
-      <p className="text-slate-400 text-sm">
+      <p className="text-slate-400 text-xs leading-relaxed">
         {text}
       </p>
     </div>

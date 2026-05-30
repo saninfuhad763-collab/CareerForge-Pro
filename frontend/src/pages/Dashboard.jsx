@@ -165,37 +165,37 @@ const Dashboard = () => {
         {/* Modular Analytics Placeholder Cards */}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {/* Card 1 */}
-          <div className="bg-white dark:bg-slate-900/80 backdrop-blur-xl p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-lg shadow-slate-200/40 dark:shadow-black/20">
-            <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
+          <div className="bg-white dark:bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-4 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer shadow-sm">
+            <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
               <FileText className="w-6 h-6" />
             </div>
-            <div>
+            <div className="text-left">
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Resumes</p>
-              <h3 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 font-display">{totalResumes}</h3>
+              <h3 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 font-display mt-0.5">{totalResumes}</h3>
             </div>
           </div>
 
           {/* Card 2 */}
-          <div className="bg-white dark:bg-slate-900/80 backdrop-blur-xl p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-lg shadow-slate-200/40 dark:shadow-black/20">
-            <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+          <div className="bg-white dark:bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-4 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer shadow-sm">
+            <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
               <Gauge className="w-6 h-6" />
             </div>
-            <div>
+            <div className="text-left">
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Avg ATS Score</p>
-              <h3 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 font-display">
+              <h3 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 font-display mt-0.5">
                 {avgAtsScore}%
               </h3>
             </div>
           </div>
 
           {/* Card 3 */}
-          <div className="bg-white dark:bg-slate-900/80 backdrop-blur-xl p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-lg shadow-slate-200/40 dark:shadow-black/20">
-            <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+          <div className="bg-white dark:bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-4 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer shadow-sm">
+            <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
               <TrendingUp className="w-6 h-6" />
             </div>
-            <div>
+            <div className="text-left">
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Matched Roles</p>
-              <h3 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 font-display">Locked</h3>
+              <h3 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 font-display mt-0.5">Locked</h3>
             </div>
           </div>
         </section>
@@ -215,7 +215,7 @@ const Dashboard = () => {
             </div>
           ) : resumes.length === 0 ? (
             /* Styled Empty State */
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-12 border border-slate-200 dark:border-slate-700 shadow-xl shadow-slate-200/40 dark:shadow-black/20 flex flex-col items-center justify-center text-center max-w-xl mx-auto space-y-5">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-12 border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center max-w-xl mx-auto space-y-5 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 hover:-translate-y-0.5 transition-all duration-300 shadow-sm">
               <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400">
                 <Compass className="w-8 h-8" />
               </div>
@@ -246,7 +246,7 @@ const Dashboard = () => {
                   <div
                     key={resume._id}
                     onClick={() => navigate(`/builder/${resume._id}`)}
-                    className="group bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 hover:border-indigo-500/40 dark:hover:border-indigo-500/40 text-left flex flex-col justify-between h-48 cursor-pointer relative hover:-translate-y-1 transition-all duration-300 shadow-lg shadow-slate-200/40 dark:shadow-black/20"
+                    className="group bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 text-left flex flex-col justify-between h-48 cursor-pointer relative hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 transition-all duration-300 shadow-sm"
                   >
                     {/* Header */}
                     <div className="space-y-2">
