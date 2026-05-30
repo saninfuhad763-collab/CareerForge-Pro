@@ -11,13 +11,16 @@ import {
   Layout, 
   LogOut, 
   Gauge, 
-  Briefcase, 
   Clock,
   Sparkles,
   AlertCircle,
   ChevronRight,
   Compass
 } from 'lucide-react';
+import { staggerContainer, staggerItem, staggerItemScale } from '../animations/staggerAnimations';
+import { premiumCardHover, buttonScale } from '../animations/cardAnimations';
+import { sidebarItemVariant } from '../animations/dashboardAnimations';
+import { premiumEase } from '../animations/motionVariants';
 
 const Dashboard = () => {
   const { user, logout, upgradePlan, checkAuth } = useAuthStore();
@@ -140,36 +143,41 @@ const Dashboard = () => {
 
           {/* Sidebar Menu Links */}
           <nav className="space-y-1 text-left">
-            <button 
+            <motion.button 
               onClick={() => navigate('/')}
               className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-xl transition-colors cursor-pointer"
+              whileHover="hover"
+              variants={sidebarItemVariant}
             >
               <Compass className="w-4.5 h-4.5" />
               <span>Back to Home</span>
-            </button>
-            <button 
+            </motion.button>
+            <motion.button 
               onClick={() => setActiveTab('resumes')}
               className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition-all cursor-pointer ${
                 activeTab === 'resumes'
                   ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400'
                   : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/40'
               }`}
+              whileHover="hover"
+              variants={sidebarItemVariant}
             >
               <FileText className="w-4.5 h-4.5" />
               <span>Resumes</span>
-            </button>
-            <button 
+            </motion.button>
+            <motion.button 
               onClick={() => setActiveTab('ai-scoring')}
               className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition-all cursor-pointer ${
                 activeTab === 'ai-scoring'
                   ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400'
                   : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/40'
               }`}
+              whileHover="hover"
+              variants={sidebarItemVariant}
             >
               <Gauge className="w-4.5 h-4.5" />
               <span>AI Scoring</span>
-            </button>
-
+            </motion.button>
           </nav>
         </div>
 
@@ -213,351 +221,338 @@ const Dashboard = () => {
 
       {/* Main Panel Content Area */}
       <main className="flex-1 p-6 md:p-10 space-y-8 overflow-y-auto">
-        {activeTab === 'resumes' && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-8"
-          >
-            {/* Welcome Dashboard Banner Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="text-left space-y-1">
-                <h1 className="text-2xl md:text-3xl font-bold font-display text-slate-800 dark:text-slate-100">
-                  Welcome back, {user?.name}!
-                </h1>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Build, optimize, and scan your resumes to trigger interview call backs.
-                </p>
+        <AnimatePresence mode="wait">
+          {activeTab === 'resumes' && (
+            <motion.div
+              key="resumes"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.45, ease: premiumEase }}
+              className="space-y-8"
+            >
+              {/* Welcome Dashboard Banner Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="text-left space-y-1">
+                  <h1 className="text-2xl md:text-3xl font-bold font-display text-slate-800 dark:text-slate-100">
+                    Welcome back, {user?.name}!
+                  </h1>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    Build, optimize, and scan your resumes to trigger interview call backs.
+                  </p>
+                </div>
+                <motion.button
+                  onClick={openCreateModal}
+                  variants={buttonScale}
+                  initial="initial"
+                  whileHover="hover"
+                  whileTap="tap"
+                  className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl font-semibold text-sm transition-all shadow-md shadow-indigo-500/10 cursor-pointer self-start sm:self-center"
+                >
+                  <Plus className="w-4.5 h-4.5" />
+                  <span>Create Resume</span>
+                </motion.button>
               </div>
-              <button
-                onClick={openCreateModal}
-                className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl font-semibold text-sm transition-all shadow-md shadow-indigo-500/10 cursor-pointer self-start sm:self-center"
+
+              {/* Modular Analytics Cards */}
+              <motion.section 
+                className="grid grid-cols-1 sm:grid-cols-3 gap-6"
+                initial="hidden"
+                animate="visible"
+                variants={staggerContainer(0.08)}
               >
-                <Plus className="w-4.5 h-4.5" />
-                <span>Create Resume</span>
-              </button>
-            </div>
-
-            {/* Modular Analytics Placeholder Cards */}
-            <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              {/* Card 1 */}
-              <div className="bg-white dark:bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-4 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer shadow-sm">
-                <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
-                  <FileText className="w-6 h-6" />
-                </div>
-                <div className="text-left">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Resumes</p>
-                  <h3 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 font-display mt-0.5">{totalResumes}</h3>
-                </div>
-              </div>
-
-              {/* Card 2 */}
-              <div className="bg-white dark:bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-4 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer shadow-sm">
-                <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
-                  <Gauge className="w-6 h-6" />
-                </div>
-                <div className="text-left">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Avg ATS Score</p>
-                  <h3 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 font-display mt-0.5">
-                    {avgAtsScore}%
-                  </h3>
-                </div>
-              </div>
-
-              {/* Card 3 */}
-              <div className="bg-white dark:bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-4 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer shadow-sm">
-                <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
-                  <TrendingUp className="w-6 h-6" />
-                </div>
-                <div className="text-left">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Matched Roles</p>
-                  <h3 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 font-display mt-0.5">Locked</h3>
-                </div>
-              </div>
-            </section>
-
-            {/* Resumes Dashboard Listing */}
-            <section className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold font-display text-slate-800 dark:text-slate-100">
-                  Your Saved Resumes
-                </h2>
-              </div>
-
-              {storeLoading ? (
-                <div className="h-64 flex flex-col items-center justify-center text-slate-400">
-                  <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-2" />
-                  <p className="text-sm font-semibold">Fetching your profiles...</p>
-                </div>
-              ) : resumes.length === 0 ? (
-                /* Styled Empty State */
-                <div className="bg-white dark:bg-slate-900 rounded-3xl p-12 border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center max-w-xl mx-auto space-y-5 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 hover:-translate-y-0.5 transition-all duration-300 shadow-sm">
-                  <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400">
-                    <Compass className="w-8 h-8" />
+                {/* Card 1 */}
+                <motion.div 
+                  variants={staggerItemScale}
+                  whileHover="hover"
+                  className="bg-white dark:bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-4 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer shadow-sm"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
+                    <FileText className="w-6 h-6" />
                   </div>
-                  <div className="space-y-2">
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 font-display">No resumes crafted yet</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm">
-                      Create your first professional ATS-proof resume in seconds using our real-time split-screen builder.
-                    </p>
+                  <div className="text-left">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Resumes</p>
+                    <h3 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 font-display mt-0.5">{totalResumes}</h3>
                   </div>
-                  <button
-                    onClick={openCreateModal}
-                    className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-md shadow-indigo-500/10 cursor-pointer"
+                </motion.div>
+
+                {/* Card 2 */}
+                <motion.div 
+                  variants={staggerItemScale}
+                  whileHover="hover"
+                  className="bg-white dark:bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-4 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer shadow-sm"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                    <Gauge className="w-6 h-6" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Avg ATS Score</p>
+                    <h3 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 font-display mt-0.5 font-sans">
+                      {avgAtsScore}%
+                    </h3>
+                  </div>
+                </motion.div>
+
+                {/* Card 3 */}
+                <motion.div 
+                  variants={staggerItemScale}
+                  whileHover="hover"
+                  className="bg-white dark:bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-4 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer shadow-sm"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+                    <TrendingUp className="w-6 h-6" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Matched Roles</p>
+                    <h3 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 font-display mt-0.5">Locked</h3>
+                  </div>
+                </motion.div>
+              </motion.section>
+
+              {/* Resumes Dashboard Listing */}
+              <section className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-bold font-display text-slate-800 dark:text-slate-100">
+                    Your Saved Resumes
+                  </h2>
+                </div>
+
+                {storeLoading ? (
+                  <div className="h-64 flex flex-col items-center justify-center text-slate-400">
+                    <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-2" />
+                    <p className="text-sm font-semibold">Fetching your profiles...</p>
+                  </div>
+                ) : resumes.length === 0 ? (
+                  /* Styled Empty State */
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.96 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-white dark:bg-slate-900 rounded-3xl p-12 border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center max-w-xl mx-auto space-y-5 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 hover:-translate-y-0.5 transition-all duration-300 shadow-sm"
                   >
-                    <Plus className="w-4 h-4" />
-                    <span>Forge Resume</span>
-                  </button>
-                </div>
-              ) : (
-                /* Grid layout for resumes */
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {resumes.map((resume) => {
-                    const score = resume.atsMetadata?.score || 0;
-                    let scoreColor = 'bg-red-500 text-white';
-                    if (score >= 75) scoreColor = 'bg-emerald-500 text-white';
-                    else if (score >= 55) scoreColor = 'bg-amber-500 text-white';
+                    <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400">
+                      <Compass className="w-8 h-8" />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 font-display">No resumes crafted yet</h3>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm">
+                        Create your first professional ATS-proof resume in seconds using our real-time split-screen builder.
+                      </p>
+                    </div>
+                    <button
+                      onClick={openCreateModal}
+                      className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-md shadow-indigo-500/10 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Forge Resume</span>
+                    </button>
+                  </motion.div>
+                ) : (
+                  /* Grid layout for resumes */
+                  <motion.div 
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                    initial="hidden"
+                    animate="visible"
+                    variants={staggerContainer(0.08)}
+                  >
+                    {resumes.map((resume) => {
+                      const score = resume.atsMetadata?.score || 0;
+                      let scoreColor = 'bg-red-500 text-white';
+                      if (score >= 75) scoreColor = 'bg-emerald-500 text-white';
+                      else if (score >= 55) scoreColor = 'bg-amber-500 text-white';
 
-                    return (
-                      <div
-                        key={resume._id}
-                        onClick={() => navigate(`/builder/${resume._id}`)}
-                        className="group bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 text-left flex flex-col justify-between h-48 cursor-pointer relative hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 transition-all duration-300 shadow-sm"
-                      >
-                        {/* Header */}
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-start gap-4">
-                            <h3 className="font-bold font-display text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
-                              {resume.title}
-                            </h3>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${scoreColor}`}>
-                              ATS: {score}%
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                            <Layout className="w-3.5 h-3.5" />
-                            <span className="capitalize">{resume.templateId} Template</span>
-                          </div>
-                        </div>
-
-                        {/* Footer */}
-                        <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800/80">
-                          <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                            <Clock className="w-3.5 h-3.5" />
-                            <span>Updated {new Date(resume.updatedAt).toLocaleDateString()}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={(e) => handleDelete(resume._id, e)}
-                              className="p-2 text-slate-400 hover:text-red-500 dark:hover:text-red-400 bg-slate-50 dark:bg-slate-900 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 transition-all cursor-pointer"
-                              title="Delete Resume"
-                            >
-                              <Trash2 className="w-4.5 h-4.5" />
-                            </button>
-                            <span className="p-2 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 bg-slate-50 dark:bg-slate-900 rounded-lg group-hover:bg-indigo-50 dark:group-hover:bg-indigo-950/20 transition-all">
-                              <ChevronRight className="w-4 h-4" />
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
-          </motion.div>
-        )}
-
-        {activeTab === 'ai-scoring' && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-8 text-left"
-          >
-            {/* Header */}
-            <div className="space-y-1">
-              <h1 className="text-2xl md:text-3xl font-bold font-display text-slate-800 dark:text-slate-100 flex items-center gap-3">
-                <Gauge className="w-8 h-8 text-indigo-500 animate-pulse" />
-                <span>AI Scoring & ATS Analytics Center</span>
-              </h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                Track your active resume portfolios, review target keyword matches, and raise candidate rating metrics.
-              </p>
-            </div>
-
-            {/* Quick Metrics */}
-            <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              <div className="bg-white dark:bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
-                  <Gauge className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Average Match Rating</p>
-                  <h3 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 font-display mt-0.5">{avgAtsScore}%</h3>
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
-                  <Sparkles className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Credits</p>
-                  <h3 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 font-display mt-0.5">10 / 10 Free</h3>
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
-                  <TrendingUp className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Highly Optimized Resumes</p>
-                  <h3 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 font-display mt-0.5">
-                    {resumes.filter(r => (r.atsMetadata?.score || 0) >= 70).length} Profile(s)
-                  </h3>
-                </div>
-              </div>
-            </section>
-
-            {/* Resume Analytics List */}
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 border border-slate-200 dark:border-slate-800 space-y-6">
-              <h2 className="text-lg font-bold font-display text-slate-800 dark:text-slate-100">
-                Active Match Standings
-              </h2>
-
-              {resumes.length === 0 ? (
-                <p className="text-sm text-slate-400">Create a resume first to run automated ATS matching analysis.</p>
-              ) : (
-                <div className="space-y-4">
-                  {resumes.map((resume) => {
-                    const score = resume.atsMetadata?.score || 0;
-                    let barColor = 'bg-red-500';
-                    let textColor = 'text-red-500';
-                    if (score >= 75) {
-                      barColor = 'bg-emerald-500';
-                      textColor = 'text-emerald-500';
-                    } else if (score >= 55) {
-                      barColor = 'bg-amber-500';
-                      textColor = 'text-amber-500';
-                    }
-
-                    return (
-                      <div 
-                        key={resume._id} 
-                        onClick={() => navigate(`/builder/${resume._id}`)}
-                        className="p-4 rounded-xl border border-slate-100 dark:border-slate-800/80 hover:border-indigo-500/50 hover:bg-slate-50 dark:hover:bg-slate-950/40 transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-                            <FileText className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-sm text-slate-800 dark:text-slate-100">{resume.title}</h4>
-                            <p className="text-xs text-slate-400">Last updated {new Date(resume.updatedAt).toLocaleDateString()}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-6 self-end md:self-center">
-                          <div className="text-right space-y-1">
-                            <span className={`text-xs font-bold ${textColor}`}>ATS Match: {score}%</span>
-                            <div className="w-32 bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                              <div className={`h-full ${barColor}`} style={{ width: `${score}%` }} />
+                      return (
+                        <motion.div
+                          key={resume._id}
+                          onClick={() => navigate(`/builder/${resume._id}`)}
+                          variants={staggerItem}
+                          className="group bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 text-left flex flex-col justify-between h-48 cursor-pointer relative shadow-sm hover:border-indigo-500/50 hover:bg-slate-50 dark:hover:bg-slate-950/40 hover:shadow-lg transition-all duration-300"
+                        >
+                          {/* Header */}
+                          <div className="space-y-2 z-10">
+                            <div className="flex justify-between items-start gap-4">
+                              <h3 className="font-bold font-display text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300 truncate">
+                                {resume.title}
+                              </h3>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${scoreColor}`}>
+                                ATS: {score}%
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                              <Layout className="w-3.5 h-3.5" />
+                              <span className="capitalize">{resume.templateId} Template</span>
                             </div>
                           </div>
-                          <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 hover:underline">
-                            Optimize <ChevronRight className="w-3 h-3" />
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
 
-            {/* Instruction Widget */}
-            <div className="p-6 bg-gradient-to-r from-indigo-500/10 via-indigo-500/5 to-transparent border border-indigo-500/20 rounded-3xl flex flex-col sm:flex-row items-center gap-6">
-              <div className="w-14 h-14 rounded-full bg-indigo-600/10 flex items-center justify-center text-indigo-500 shrink-0 shadow-inner">
-                <Sparkles className="w-7 h-7" />
-              </div>
-              <div className="space-y-1 text-center sm:text-left">
-                <h3 className="font-bold text-slate-800 dark:text-slate-200">How to use AI ATS Scoring</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xl">
-                  AI ATS Scoring is seamlessly integrated directly into the **Split-Screen Resume Builder**. Select any resume above, paste your target Job Description on the left, and watch your score calculate in real-time as you add missing keywords!
+                          {/* Footer */}
+                          <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800/80 z-10">
+                            <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                              <Clock className="w-3.5 h-3.5" />
+                              <span>Updated {new Date(resume.updatedAt).toLocaleDateString()}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={(e) => handleDelete(resume._id, e)}
+                                className="p-2 text-slate-400 hover:text-red-500 dark:hover:text-red-400 bg-slate-50 dark:bg-slate-900 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 opacity-30 group-hover:opacity-100 focus:opacity-100 translate-x-1 group-hover:translate-x-0 transition-all duration-300 cursor-pointer"
+                                title="Delete Resume"
+                              >
+                                <Trash2 className="w-4.5 h-4.5" />
+                              </button>
+                              <span className="p-2 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 bg-slate-50 dark:bg-slate-900 rounded-lg group-hover:bg-indigo-50 dark:group-hover:bg-indigo-950/20 translate-x-[-2px] group-hover:translate-x-0 transition-all duration-300">
+                                <ChevronRight className="w-4 h-4" />
+                              </span>
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </motion.div>
+                )}
+              </section>
+            </motion.div>
+          )}
+
+          {activeTab === 'ai-scoring' && (
+            <motion.div
+              key="ai-scoring"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.45, ease: premiumEase }}
+              className="space-y-8 text-left"
+            >
+              {/* Header */}
+              <div className="space-y-1">
+                <h1 className="text-2xl md:text-3xl font-bold font-display text-slate-800 dark:text-slate-100 flex items-center gap-3">
+                  <Gauge className="w-8 h-8 text-indigo-500" />
+                  <span>AI Scoring & ATS Analytics Center</span>
+                </h1>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Track your active resume portfolios, review target keyword matches, and raise candidate rating metrics.
                 </p>
               </div>
-            </div>
-          </motion.div>
-        )}
 
-        {activeTab === 'job-matcher' && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-8 text-left"
-          >
-            {/* Header */}
-            <div className="space-y-1">
-              <h1 className="text-2xl md:text-3xl font-bold font-display text-slate-800 dark:text-slate-100 flex items-center gap-3">
-                <Briefcase className="w-8 h-8 text-indigo-500" />
-                <span>AI Job Matcher</span>
-              </h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                Match your generated ATS resumes against live corporate openings instantly using cosine similarity indexes.
-              </p>
-            </div>
+              {/* Quick Metrics */}
+              <motion.section 
+                className="grid grid-cols-1 sm:grid-cols-3 gap-6"
+                initial="hidden"
+                animate="visible"
+                variants={staggerContainer(0.08)}
+              >
+                <motion.div variants={staggerItemScale} className="bg-white dark:bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
+                    <Gauge className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Average Match Rating</p>
+                    <h3 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 font-display mt-0.5">{avgAtsScore}%</h3>
+                  </div>
+                </motion.div>
 
-            {/* Premium Job Matcher Locked Screen */}
-            <div className="relative rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-6 md:p-10 min-h-[400px] flex flex-col justify-between">
-              {/* Blur Overlay Banner */}
-              <div className="absolute inset-0 bg-slate-50/20 dark:bg-slate-950/20 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center z-10">
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 max-w-md shadow-2xl space-y-5 animate-fade-in">
-                  <div className="w-14 h-14 rounded-full bg-indigo-50 dark:bg-indigo-950 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mx-auto shadow-lg">
-                    <Briefcase className="w-6 h-6" />
+                <motion.div variants={staggerItemScale} className="bg-white dark:bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                    <Sparkles className="w-6 h-6" />
                   </div>
-                  <div className="space-y-2">
-                    <h3 className="text-xl font-bold font-display text-slate-800 dark:text-slate-100">Week 3 Feature Preview</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      The automated AI Job Matcher will be fully unlocked in our Week 3 feature release! Prepare to connect to real-world job openings instantly with personalized application hooks.
-                    </p>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Credits</p>
+                    <h3 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 font-display mt-0.5">10 / 10 Free</h3>
                   </div>
-                  <div className="pt-2">
-                    <span className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white font-bold text-xs rounded-xl shadow-lg shadow-indigo-500/20">
-                      Unlocks in Week 3 Plan
-                    </span>
+                </motion.div>
+
+                <motion.div variants={staggerItemScale} className="bg-white dark:bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+                    <TrendingUp className="w-6 h-6" />
                   </div>
-                </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Highly Optimized Resumes</p>
+                    <h3 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 font-display mt-0.5">
+                      {resumes.filter(r => (r.atsMetadata?.score || 0) >= 70).length} Profile(s)
+                    </h3>
+                  </div>
+                </motion.div>
+              </motion.section>
+
+              {/* Resume Analytics List */}
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 border border-slate-200 dark:border-slate-800 space-y-6">
+                <h2 className="text-lg font-bold font-display text-slate-800 dark:text-slate-100">
+                  Active Match Standings
+                </h2>
+
+                {resumes.length === 0 ? (
+                  <p className="text-sm text-slate-400">Create a resume first to run automated ATS matching analysis.</p>
+                ) : (
+                  <motion.div 
+                    className="space-y-4"
+                    initial="hidden"
+                    animate="visible"
+                    variants={staggerContainer(0.08)}
+                  >
+                    {resumes.map((resume) => {
+                      const score = resume.atsMetadata?.score || 0;
+                      let barColor = 'bg-red-500';
+                      let textColor = 'text-red-500';
+                      if (score >= 75) {
+                        barColor = 'bg-emerald-500';
+                        textColor = 'text-emerald-500';
+                      } else if (score >= 55) {
+                        barColor = 'bg-amber-500';
+                        textColor = 'text-amber-500';
+                      }
+
+                      return (
+                        <motion.div 
+                          key={resume._id} 
+                          onClick={() => navigate(`/builder/${resume._id}`)}
+                          variants={staggerItem}
+                          className="p-4 rounded-xl border border-slate-100 dark:border-slate-800/80 hover:border-indigo-500/50 hover:bg-slate-50 dark:hover:bg-slate-950/40 transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                              <FileText className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-sm text-slate-800 dark:text-slate-100">{resume.title}</h4>
+                              <p className="text-xs text-slate-400">Last updated {new Date(resume.updatedAt).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-6 self-end md:self-center">
+                            <div className="text-right space-y-1">
+                              <span className={`text-xs font-bold ${textColor}`}>ATS Match: {score}%</span>
+                              <div className="w-32 bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                <motion.div 
+                                  className={`h-full ${barColor}`} 
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${score}%` }}
+                                  transition={{ duration: 0.8, ease: premiumEase }}
+                                />
+                              </div>
+                            </div>
+                            <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 hover:underline">
+                              Optimize <ChevronRight className="w-3 h-3" />
+                            </span>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </motion.div>
+                )}
               </div>
 
-              {/* Underlying Mock Layout to look highly realistic and premium */}
-              <div className="space-y-6 opacity-30 select-none pointer-events-none">
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-4">
-                  <h3 className="font-bold text-slate-700 dark:text-slate-300">Live Recommendations</h3>
-                  <span className="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-slate-500">3 Jobs Found</span>
+              {/* Instruction Widget */}
+              <div className="p-6 bg-gradient-to-r from-indigo-500/10 via-indigo-500/5 to-transparent border border-indigo-500/20 rounded-3xl flex flex-col sm:flex-row items-center gap-6">
+                <div className="w-14 h-14 rounded-full bg-indigo-600/10 flex items-center justify-center text-indigo-500 shrink-0 shadow-inner">
+                  <Sparkles className="w-7 h-7" />
                 </div>
-
-                <div className="space-y-4">
-                  {[
-                    { role: 'Senior React Developer', comp: 'InnovateTech Solutions', match: '96%' },
-                    { role: 'Frontend Engineer', comp: 'Quantum Labs LLC', match: '89%' },
-                    { role: 'Full-Stack MERN Architect', comp: 'SaaSify Inc.', match: '83%' },
-                  ].map((job, idx) => (
-                    <div key={idx} className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-between gap-4">
-                      <div>
-                        <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">{job.role}</h4>
-                        <p className="text-xs text-slate-500">{job.comp}</p>
-                      </div>
-                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 px-2 py-1 rounded">
-                        {job.match} Match
-                      </span>
-                    </div>
-                  ))}
+                <div className="space-y-1 text-center sm:text-left">
+                  <h3 className="font-bold text-slate-800 dark:text-slate-200">How to use AI ATS Scoring</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xl">
+                    AI ATS Scoring is seamlessly integrated directly into the **Split-Screen Resume Builder**. Select any resume above, paste your target Job Description on the left, and watch your score calculate in real-time as you add missing keywords!
+                  </p>
                 </div>
               </div>
-            </div>
-          </motion.div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
       {/* Dynamic Creation Dialog Overlay (Modal) */}
@@ -579,6 +574,7 @@ const Dashboard = () => {
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.3, ease: premiumEase }}
             >
               <div className="text-left space-y-1">
                 <h3 className="text-xl font-bold font-display text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -638,12 +634,12 @@ const Dashboard = () => {
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Resume Title</label>
                   <input
-                    type="text"
-                    required
-                    placeholder="e.g. Software Engineer Resume"
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-xl text-sm text-slate-800 dark:text-slate-100 input-focus-glow transition-all"
+                     type="text"
+                     required
+                     placeholder="e.g. Software Engineer Resume"
+                     value={newTitle}
+                     onChange={(e) => setNewTitle(e.target.value)}
+                     className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-xl text-sm text-slate-800 dark:text-slate-100 input-focus-glow transition-all"
                   />
                 </div>
 

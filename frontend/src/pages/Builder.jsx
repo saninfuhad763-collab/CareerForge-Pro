@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useResumeStore } from '../store/resumeStore';
 import { motion, AnimatePresence } from 'framer-motion';
+import { pageTransitions, slideUp } from '../animations/pageTransitions';
 import { 
   ArrowLeft, 
   Save, 
@@ -486,7 +487,12 @@ const Builder = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
+    <motion.div 
+      initial="initial"
+      animate="animate"
+      variants={pageTransitions}
+      className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col"
+    >
       {/* Top action header banner */}
       <header className="sticky top-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200/50 dark:border-slate-800/50 px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-4">
@@ -544,7 +550,10 @@ const Builder = () => {
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         
         {/* LEFT WORKSPACE: Input Accordion Editor Panel */}
-        <div className="w-full md:w-[48%] lg:w-[45%] border-r border-slate-200/50 dark:border-slate-800/50 overflow-y-auto p-5 space-y-6 bg-slate-50 dark:bg-slate-950/20 text-left">
+        <motion.div 
+          variants={slideUp}
+          className="w-full md:w-[48%] lg:w-[45%] border-r border-slate-200/50 dark:border-slate-800/50 overflow-y-auto p-5 space-y-6 bg-slate-50 dark:bg-slate-950/20 text-left"
+        >
           
           {/* Dedicated JD Analysis & Circular ATS Score Panel */}
           <div className="bg-white dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xl shadow-slate-200/40 dark:shadow-black/35 space-y-4">
@@ -1493,10 +1502,13 @@ const Builder = () => {
             </div>
           </div>
 
-        </div>
+        </motion.div>
 
         {/* RIGHT WORKSPACE: Real-time Live Resume Preview Panel */}
-        <div className="flex-1 bg-slate-200/50 dark:bg-slate-900/30 overflow-y-auto p-6 md:p-8 flex justify-center">
+        <motion.div 
+          variants={slideUp}
+          className="flex-1 bg-slate-200/50 dark:bg-slate-900/30 overflow-y-auto p-6 md:p-8 flex justify-center"
+        >
           
           {/* Main Visual Render Page sheet standard */}
           <div className="w-full max-w-[800px] min-h-[1056px] bg-white dark:bg-slate-950 text-slate-950 dark:text-slate-50 shadow-xl border border-slate-300/40 dark:border-slate-800/80 rounded-lg p-8 md:p-12 flex flex-col justify-between text-left relative overflow-hidden transition-all duration-300">
@@ -1721,7 +1733,7 @@ const Builder = () => {
             </footer>
           </div>
 
-        </div>
+        </motion.div>
 
       </div>
 
@@ -1902,7 +1914,7 @@ const Builder = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 };
 
