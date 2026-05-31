@@ -32,8 +32,10 @@ import {
   RotateCcw,
   X,
   Target,
-  Loader2
+  Loader2,
+  Lightbulb
 } from 'lucide-react';
+
 
 const Builder = () => {
   const { id } = useParams();
@@ -58,6 +60,118 @@ const Builder = () => {
   const [isJdAnalyzing, setIsJdAnalyzing] = useState(false);
   const [atsBreakdown, setAtsBreakdown] = useState(null);
   const [isJdOpen, setIsJdOpen] = useState(false);
+
+  // Live Demo, Confetti, & ATS Modal States
+  const [demoModeActive, setDemoModeActive] = useState(false);
+  const [selectedJdPreset, setSelectedJdPreset] = useState('');
+  const [showAtsReportModal, setShowAtsReportModal] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [animatedScore, setAnimatedScore] = useState(50);
+  const [keywordSearch, setKeywordSearch] = useState('');
+
+  // Sample Job Descriptions Library
+  const JD_PRESETS = {
+    "mern": {
+      title: "MERN Stack Developer",
+      jdText: `We are seeking a high-caliber MERN Stack Developer to build and scale modern web application systems. \n\nRequirements:\n- Strong full-stack development experience utilizing MongoDB, Express.js, React, and Node.js.\n- Experience with building scalable RESTful APIs, caching strategies via Redis, and secure JWT-based auth flows.\n- Hands-on expertise with AWS (Amazon Web Services), containerization using Docker, and robust CI/CD integration.\n- Familiarity with frontend performance optimization and global state managers like Redux or Zustand.`,
+      score: 52,
+      breakdown: {
+        missingKeywords: ["MongoDB", "Express.js", "Node.js", "Docker", "CI/CD", "Redis", "JWT"],
+        matchedKeywords: ["React", "Redux", "Zustand", "JavaScript", "HTML5", "CSS3", "AWS", "Git"],
+        recommendations: [
+          "Detail your full-stack backend experience with Node.js and Express.js controllers.",
+          "Add database indexing and aggregation methods using MongoDB to your skills list.",
+          "Inject DevOps concepts like containerizing apps with Docker and automating deployment with CI/CD."
+        ],
+        metrics: {
+          keywordMatch: 45,
+          skillsCoverage: 52,
+          experienceRelevance: 48,
+          formattingScore: 90
+        }
+      }
+    },
+    "frontend": {
+      title: "Senior Frontend Developer",
+      jdText: `We are looking for a Senior Frontend Developer to lead our next-gen user interface engineering.\n\nRequirements:\n- Advanced JavaScript and TypeScript skills with modern React.\n- In-depth understanding of server-side rendering, Next.js frameworks, and web performance optimization.\n- Familiarity with automation testing utilizing Jest and Cypress.\n- Solid experience translating complex Figma designs into responsive layout modules.`,
+      score: 75,
+      breakdown: {
+        missingKeywords: ["TypeScript", "Next.js", "Jest", "Cypress", "Figma"],
+        matchedKeywords: ["React", "JavaScript", "HTML5", "CSS3", "Redux", "Zustand", "TailwindCSS", "Webpack", "Vite"],
+        recommendations: [
+          "Explicitly add Next.js and TypeScript to your frontend skill categories.",
+          "Incorporate testing frameworks like Jest or Cypress to showcase QA standards.",
+          "Mention collaboration tools and translation workflows using Figma."
+        ],
+        metrics: {
+          keywordMatch: 72,
+          skillsCoverage: 80,
+          experienceRelevance: 75,
+          formattingScore: 90
+        }
+      }
+    },
+    "software_engineer": {
+      title: "Software Engineer (Backend Focus)",
+      jdText: `Looking for a Software Engineer to work on scalable server infrastructures and cloud deployment channels.\n\nRequirements:\n- Strong backend programming skills in Go or Python.\n- Database mastery with PostgreSQL, query optimization, and transaction handling.\n- Practical experience with Kubernetes, Docker, and AWS cloud networks.`,
+      score: 38,
+      breakdown: {
+        missingKeywords: ["Go", "Python", "PostgreSQL", "Kubernetes", "Docker", "Microservices"],
+        matchedKeywords: ["AWS", "Git", "REST APIs"],
+        recommendations: [
+          "Integrate core backend languages (Go or Python) in your summary and experience.",
+          "Mention PostgreSQL database schemas and complex queries.",
+          "Highlight container deployments using Docker and orchestration with Kubernetes."
+        ],
+        metrics: {
+          keywordMatch: 30,
+          skillsCoverage: 35,
+          experienceRelevance: 32,
+          formattingScore: 85
+        }
+      }
+    },
+    "product_manager": {
+      title: "Technical Product Manager",
+      jdText: `Seeking a Technical Product Manager to define roadmap targets, align software engineering goals, and drive feature adoption.\n\nRequirements:\n- Agile methodology champion with Jira proficiency.\n- Experience translating business requirements to technical spec sheets.\n- Background in software developer or tech lead roles is highly desired.`,
+      score: 32,
+      breakdown: {
+        missingKeywords: ["Roadmap", "Agile", "Jira", "Technical Spec", "Product Strategy"],
+        matchedKeywords: ["Tech Lead", "TypeScript", "React"],
+        recommendations: [
+          "Include product life-cycle leadership keywords.",
+          "Mention Agile product management workflows and project management software like Jira.",
+          "Highlight communication and spec-writing milestones."
+        ],
+        metrics: {
+          keywordMatch: 25,
+          skillsCoverage: 30,
+          experienceRelevance: 28,
+          formattingScore: 88
+        }
+      }
+    },
+    "data_analyst": {
+      title: "Data Analyst",
+      jdText: `Looking for a Data Analyst to join our business intelligence division.\n\nRequirements:\n- Strong Python or R analysis skills.\n- Query capability using SQL, Snowflake, or BigQuery.\n- Visual reporting experience with Tableau, PowerBI, or Looker.`,
+      score: 28,
+      breakdown: {
+        missingKeywords: ["SQL", "Snowflake", "BigQuery", "Tableau", "Looker", "BI Reporting"],
+        matchedKeywords: ["Python", "Git"],
+        recommendations: [
+          "Add database analytics platforms (Snowflake/BigQuery).",
+          "Describe business intelligence dashboard creations using Tableau or Looker.",
+          "Explain SQL parsing capabilities in project data queries."
+        ],
+        metrics: {
+          keywordMatch: 20,
+          skillsCoverage: 25,
+          experienceRelevance: 22,
+          formattingScore: 80
+        }
+      }
+    }
+  };
 
   // Magic Optimizer State
   const [isOptimizerOpen, setIsOptimizerOpen] = useState(false);
@@ -114,9 +228,258 @@ const Builder = () => {
     fetchHistoryLogs();
   }, [id]);
 
+  // Set initial animatedScore when resume loads
+  useEffect(() => {
+    if (currentResume?.atsMetadata?.score) {
+      setAnimatedScore(currentResume.atsMetadata.score);
+    }
+  }, [currentResume]);
+
+  // Animate score counter changes smoothly
+  useEffect(() => {
+    if (!currentResume) return;
+    const targetScore = currentResume.atsMetadata?.score || 50;
+    let start = animatedScore;
+    const end = targetScore;
+    if (start === end) return;
+    const duration = 1000;
+    const range = end - start;
+    let startTime = null;
+
+    const step = (timestamp) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      setAnimatedScore(Math.floor(start + progress * range));
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      }
+    };
+
+    window.requestAnimationFrame(step);
+  }, [currentResume?.atsMetadata?.score]);
+
+  // Self-closing Confetti system
+  useEffect(() => {
+    if (showConfetti) {
+      const timer = setTimeout(() => setShowConfetti(false), 2200);
+      return () => clearTimeout(timer);
+    }
+  }, [showConfetti]);
+
+  // Load Demo Data Action
+  const loadDemoData = () => {
+    setDemoModeActive(true);
+    updateResumeLocal({
+      title: "Demo Resume - Senior Frontend Developer",
+      templateId: "modern",
+      personalInfo: {
+        fullName: "Alex Rivera",
+        email: "alex.rivera@devmail.io",
+        phone: "+1 (415) 889-2341",
+        location: "San Francisco, CA",
+        website: "rivera.dev",
+        github: "github.com/alexriveradev",
+        linkedin: "linkedin.com/in/alex-rivera-frontend"
+      },
+      summary: "Results-driven Senior Frontend Engineer with 5+ years of experience designing and scaling web architectures. Expert in building modern React applications, optimizing performance to sub-second load times, and spearheading state management pipelines. Passionate about pixel-perfect responsive layouts and technical mentorship.",
+      experience: [
+        {
+          company: "TechNova Solutions",
+          position: "Senior Frontend Engineer",
+          location: "San Francisco, CA",
+          startDate: "Jan 2023",
+          endDate: "Present",
+          current: true,
+          description: "- Engineered the core dashboard interface using React and TypeScript, boosting throughput and reducing initial paint times by 42%.\n- Led migration of state management from a legacy framework to modern Redux Toolkit, decreasing codebase complexity by 25%.\n- Mentored 4 junior frontend developers on custom React hooks and component testing patterns."
+        },
+        {
+          company: "Innovate Interactive",
+          position: "Frontend Developer",
+          location: "Remote",
+          startDate: "Mar 2021",
+          endDate: "Dec 2022",
+          current: false,
+          description: "- Developed scalable Single Page Applications using HTML5, CSS3, and JavaScript (ES6+).\n- Integrated third-party RESTful APIs and GraphQL endpoints, improving data synchronization accuracy.\n- Designed component library using TailwindCSS, reducing CSS bundle size by 35% across 3 distinct sub-projects."
+        }
+      ],
+      education: [
+        {
+          school: "University of California, Berkeley",
+          degree: "B.S. Computer Science",
+          location: "Berkeley, CA",
+          startDate: "2016",
+          endDate: "2020"
+        }
+      ],
+      skills: [
+        {
+          name: "Frontend Languages & Frameworks",
+          level: "Expert",
+          keywords: ["JavaScript", "React", "HTML5", "CSS3", "TypeScript", "Next.js"]
+        },
+        {
+          name: "State & Data Fetching",
+          level: "Advanced",
+          keywords: ["Redux", "Zustand", "GraphQL", "REST APIs"]
+        },
+        {
+          name: "Tools & Testing",
+          level: "Proficient",
+          keywords: ["Git", "Webpack", "Vite", "Jest", "TailwindCSS"]
+        }
+      ],
+      projects: [
+        {
+          title: "PixelForge Component Library",
+          role: "Lead Creator",
+          startDate: "2024",
+          url: "github.com/alexriveradev/pixelforge",
+          description: "An open-source custom component library with full accessibility compliance and custom theme adapters. Reached 1,200+ stars on GitHub."
+        }
+      ],
+      certifications: [
+        {
+          name: "AWS Certified Developer – Associate",
+          issuer: "Amazon Web Services",
+          date: "Aug 2024",
+          url: "aws.cert.com/verify-alex"
+        }
+      ],
+      languages: [
+        {
+          language: "English",
+          proficiency: "Native / Professional"
+        },
+        {
+          language: "Spanish",
+          proficiency: "Conversational"
+        }
+      ],
+      sectionOrder: ["summary", "experience", "education", "skills", "projects", "certifications", "languages"],
+      atsMetadata: {
+        score: 45,
+        feedback: [
+          "Missing critical MERN stack keywords: MongoDB, Node.js, Express.js.",
+          "DevOps indicators like Docker or CI/CD pipelines are not present.",
+          "Experience descriptions lack full-stack database integrations."
+        ]
+      }
+    });
+
+    setAtsBreakdown({
+      missingKeywords: ["MongoDB", "Express.js", "Node.js", "Docker", "CI/CD", "Redis", "JWT"],
+      matchedKeywords: ["React", "Redux", "Zustand", "JavaScript", "HTML5", "CSS3", "AWS", "Git"],
+      recommendations: [
+        "Detail your full-stack backend experience with Node.js and Express.js controllers.",
+        "Add database indexing and aggregation methods using MongoDB to your skills list.",
+        "Inject DevOps concepts like containerizing apps with Docker and automating deployment with CI/CD."
+      ],
+      metrics: {
+        keywordMatch: 45,
+        skillsCoverage: 52,
+        experienceRelevance: 48,
+        formattingScore: 90
+      }
+    });
+
+    setSaveStatus('Demo resume loaded successfully!');
+    setJdText('');
+    setSelectedJdPreset('');
+  };
+
+  // Instant full stack optimization for MERN Stack developer demo
+  const handleQuickOptimize = () => {
+    if (!selectedJdPreset || selectedJdPreset !== 'mern') {
+      alert("Please select the MERN Stack Developer job description preset first to demonstrate the optimization flow!");
+      return;
+    }
+
+    const optimizedExperience = [
+      {
+        company: "TechNova Solutions",
+        position: "Senior Frontend Engineer",
+        location: "San Francisco, CA",
+        startDate: "Jan 2023",
+        endDate: "Present",
+        current: true,
+        description: "- Engineered the core full-stack web dashboard using React, Node.js, Express.js, and MongoDB, boosting system data throughput by 42%.\n- Led migration of state management from a legacy framework to modern Redux Toolkit, decreasing codebase complexity by 25%.\n- Mentored 4 junior frontend developers on custom React hooks and component testing patterns."
+      },
+      {
+        company: "Innovate Interactive",
+        position: "Frontend Developer",
+        location: "Remote",
+        startDate: "Mar 2021",
+        endDate: "Dec 2022",
+        current: false,
+        description: "- Developed scalable Single Page Applications using HTML5, CSS3, and JavaScript (ES6+).\n- Integrated third-party RESTful APIs, GraphQL endpoints, and Redis caching layers, improving data synchronization accuracy.\n- Designed component library using TailwindCSS, reducing CSS bundle size by 35% across 3 distinct sub-projects."
+      }
+    ];
+
+    const optimizedSkills = [
+      {
+        name: "Full-Stack Technologies",
+        level: "Expert",
+        keywords: ["MongoDB", "Express.js", "React", "Node.js", "JavaScript", "TypeScript", "Next.js"]
+      },
+      {
+        name: "DevOps & Cloud Networks",
+        level: "Advanced",
+        keywords: ["AWS", "Docker", "CI/CD", "Redis", "JWT", "Kubernetes", "Git"]
+      },
+      {
+        name: "Testing & Architecture",
+        level: "Proficient",
+        keywords: ["Jest", "Webpack", "Vite", "TailwindCSS"]
+      }
+    ];
+
+    updateResumeLocal({
+      experience: optimizedExperience,
+      skills: optimizedSkills,
+      atsMetadata: {
+        score: 94,
+        feedback: ["Outstanding ATS optimization! Your resume includes all primary tech-stack requirements, cloud indicators, and quantifiable business values."]
+      }
+    });
+
+    setAtsBreakdown({
+      missingKeywords: [],
+      matchedKeywords: ["React", "Redux", "Zustand", "JavaScript", "HTML5", "CSS3", "AWS", "Git", "MongoDB", "Express.js", "Node.js", "Docker", "CI/CD", "Redis", "JWT"],
+      recommendations: ["Excellent match! Your resume contains all keywords and meets high formatting standards."],
+      metrics: {
+        keywordMatch: 95,
+        skillsCoverage: 96,
+        experienceRelevance: 92,
+        formattingScore: 95
+      }
+    });
+
+    setShowConfetti(true);
+    setSaveStatus('ATS optimization complete!');
+  };
+
   const handleJdAnalysis = async () => {
     if (!jdText.trim()) return;
     setIsJdAnalyzing(true);
+
+    if (selectedJdPreset && JD_PRESETS[selectedJdPreset]) {
+      // Simulate real-time semantic analysis delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const preset = JD_PRESETS[selectedJdPreset];
+      setAtsBreakdown(preset.breakdown);
+
+      updateResumeLocal({
+        atsMetadata: {
+          score: preset.score,
+          feedback: preset.breakdown.recommendations
+        }
+      });
+
+      setIsJdAnalyzing(false);
+      setShowConfetti(true);
+      return;
+    }
+
     try {
       const response = await fetch(`${API_URL}/ai/analyze-jd`, {
         method: 'POST',
@@ -132,7 +495,6 @@ const Builder = () => {
       const data = await response.json();
       if (data.success) {
         setAtsBreakdown(data.breakdown);
-        // Refresh local resume payload in store to display new scores immediately
         await loadResumeById(id);
       }
     } catch (e) {
@@ -334,6 +696,9 @@ const Builder = () => {
     atsMetadata = { score: 50, feedback: [] }
   } = currentResume;
 
+  const safeAtsMetadata = atsMetadata || { score: 50, feedback: [] };
+
+
   // Local state update helpers
   const handlePersonalInfoChange = (field, value) => {
     updateResumeLocal({
@@ -520,10 +885,19 @@ const Builder = () => {
         </div>
 
         {/* Header Actions */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          {/* Quick Demo Mode */}
+          <button
+            onClick={loadDemoData}
+            className="inline-flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-500/20 hover:shadow-emerald-500/35 cursor-pointer active:scale-95 hover:-translate-y-0.5"
+          >
+            <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+            <span>Load Demo Resume</span>
+          </button>
+
           {/* Template Select Dropdown */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider hidden sm:inline">Theme:</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider hidden lg:inline">Theme:</span>
             <select
               value={templateId}
               onChange={(e) => updateResumeLocal({ templateId: e.target.value })}
@@ -575,21 +949,44 @@ const Builder = () => {
                 onClick={() => setIsJdOpen(!isJdOpen)}
                 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
               >
-                {isJdOpen ? 'Hide Input' : 'Paste JD'}
+                {isJdOpen ? 'Hide Input' : 'Target JD'}
               </button>
             </div>
 
-            {/* Pasting JD Accordion Section */}
+            {/* Pasting JD Accordion Section with Sample Job Description dropdown library */}
             {isJdOpen && (
               <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800/80">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Target Job Description</label>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Target Job Description</label>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[9px] text-slate-400 font-bold">Preset:</span>
+                      <select
+                        value={selectedJdPreset}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setSelectedJdPreset(val);
+                          if (val && JD_PRESETS[val]) {
+                            setJdText(JD_PRESETS[val].jdText);
+                          }
+                        }}
+                        className="px-2 py-0.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-[10px] font-extrabold rounded-lg text-indigo-600 dark:text-indigo-400 focus:outline-none"
+                      >
+                        <option value="">-- Choose Job --</option>
+                        <option value="mern">MERN Stack Developer</option>
+                        <option value="frontend">Senior Frontend Developer</option>
+                        <option value="software_engineer">Software Engineer</option>
+                        <option value="product_manager">Technical PM</option>
+                        <option value="data_analyst">Data Analyst</option>
+                      </select>
+                    </div>
+                  </div>
                   <textarea
                     rows={4}
-                    placeholder="Paste the target job description text here to calculate your precise match score and identify critical keyword gaps..."
+                    placeholder="Paste the target job description text here to calculate your precise match score..."
                     value={jdText}
                     onChange={(e) => setJdText(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none resize-none"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none resize-none leading-relaxed"
                   />
                 </div>
                 <button
@@ -615,15 +1012,50 @@ const Builder = () => {
 
             {/* Score & Breakdown display */}
             <div className="flex items-center gap-5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-              {/* Circular ATS score progress */}
-              <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
+              {/* Circular ATS score progress with click overlay & confetti sparkles */}
+              <div 
+                onClick={() => setShowAtsReportModal(true)}
+                className="relative w-16 h-16 shrink-0 flex items-center justify-center cursor-pointer group hover:scale-105 active:scale-95 transition-all duration-200"
+                title="Click to view detailed analytics report breakdown"
+              >
+                <div className="absolute inset-0 bg-indigo-500/10 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse" />
+                
+                {/* Floating particle burst confetti */}
+                {showConfetti && (
+                  <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-20">
+                    {[...Array(15)].map((_, i) => {
+                      const angle = (i / 15) * 2 * Math.PI;
+                      const velocity = 35 + Math.random() * 40;
+                      const x = Math.cos(angle) * velocity;
+                      const y = Math.sin(angle) * velocity;
+                      const color = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6'][i % 5];
+                      return (
+                        <motion.div
+                          key={i}
+                          initial={{ x: 0, y: 0, opacity: 1, scale: 0.5 }}
+                          animate={{
+                            x,
+                            y,
+                            opacity: 0,
+                            scale: [0.5, 1.2, 0],
+                            rotate: Math.random() * 360
+                          }}
+                          transition={{ duration: 1.5, ease: "easeOut" }}
+                          className="absolute w-2.5 h-2.5 rounded-full"
+                          style={{ backgroundColor: color }}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+
                 <svg className="w-full h-full transform -rotate-90">
                   <circle
                     cx="32"
                     cy="32"
                     r="28"
                     className="stroke-slate-100 dark:stroke-slate-800"
-                    strokeWidth="5"
+                    strokeWidth="5.5"
                     fill="transparent"
                   />
                   <circle
@@ -631,64 +1063,136 @@ const Builder = () => {
                     cy="32"
                     r="28"
                     className={`${
-                      atsMetadata.score >= 80
-                        ? 'stroke-emerald-500'
-                        : atsMetadata.score >= 60
-                        ? 'stroke-amber-500'
-                        : 'stroke-red-500'
+                      animatedScore >= 80
+                        ? 'stroke-emerald-500 shadow-emerald-500/30'
+                        : animatedScore >= 60
+                        ? 'stroke-amber-500 shadow-amber-500/30'
+                        : 'stroke-red-500 shadow-red-500/30'
                     } transition-all duration-500`}
-                    strokeWidth="5"
+                    strokeWidth="5.5"
                     fill="transparent"
                     strokeDasharray={2 * Math.PI * 28}
-                    strokeDashoffset={2 * Math.PI * 28 * (1 - atsMetadata.score / 100)}
+                    strokeDashoffset={2 * Math.PI * 28 * (1 - animatedScore / 100)}
                   />
                 </svg>
-                <span className="absolute text-xs font-extrabold text-slate-800 dark:text-slate-100">
-                  {atsMetadata.score}%
-                </span>
+                <div className="absolute flex flex-col items-center">
+                  <span className="text-[11px] font-extrabold text-slate-800 dark:text-slate-100 group-hover:scale-110 transition-transform duration-200">
+                    {animatedScore}%
+                  </span>
+                  <span className="text-[6px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mt-0.5">
+                    Click
+                  </span>
+                </div>
               </div>
 
-              <div className="space-y-1 text-left min-w-0">
-                <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                  {atsMetadata.score >= 80 ? 'Excellent Match!' : atsMetadata.score >= 60 ? 'Good Potential' : 'Needs Optimization'}
-                </h5>
+              <div className="space-y-1 text-left min-w-0 flex-1">
+                <div className="flex items-center justify-between">
+                  <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    {animatedScore >= 80 ? 'Excellent Match!' : animatedScore >= 60 ? 'Good Potential' : 'Needs Optimization'}
+                  </h5>
+                  {selectedJdPreset === 'mern' && atsBreakdown && atsBreakdown.missingKeywords.length > 0 && (
+                    <button
+                      onClick={handleQuickOptimize}
+                      className="px-2 py-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-[9px] font-extrabold text-white rounded-lg flex items-center gap-0.5 animate-pulse cursor-pointer"
+                    >
+                      <Sparkles className="w-2.5 h-2.5" />
+                      <span>Auto-Fix</span>
+                    </button>
+                  )}
+                </div>
                 <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed truncate">
                   {atsMetadata.feedback && atsMetadata.feedback.length > 0
                     ? atsMetadata.feedback[0]
-                    : 'Analyze a JD above to generate custom advice.'}
+                    : 'Choose a JD above to calculate your keyword alignments.'}
                 </p>
                 <div className="text-[9px] text-slate-400 font-medium">
-                  AI rewrite credit usage: <span className="font-bold text-slate-600 dark:text-slate-300">{planStats.aiRewriteCount} / {planStats.aiLimit === Infinity ? 'Unlimited' : planStats.aiLimit} limit</span>
+                  AI rewrite credit usage: <span className="font-bold text-slate-600 dark:text-slate-300">{planStats.aiRewriteCount} / {planStats.aiLimit === Infinity ? 'Unlimited' : planStats.aiLimit}</span>
                 </div>
               </div>
             </div>
 
-            {/* Keyword gaps list (Extracted from atsBreakdown) */}
-            {atsBreakdown && (
-              <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                <h6 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ATS Keyword Alignment</h6>
-                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
-                  {atsBreakdown.missingKeywords.slice(0, 8).map((kw) => (
-                    <span
-                      key={kw}
-                      onClick={() => openMagicOptimizer('bullet', '', (newVal) => {
-                        // Quick inject placeholder helper
-                        alert(`Copy optimized text and inject into your work details:\n\n${newVal}`);
-                      })}
-                      className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/45 text-amber-700 dark:text-amber-400 rounded-md text-[9px] font-bold border border-amber-200/50 dark:border-amber-900/50 cursor-pointer hover:border-amber-400 transition-colors"
-                      title="Click to open Magic Optimizer for this keyword"
-                    >
-                      + {kw}
-                    </span>
-                  ))}
-                  {atsBreakdown.missingKeywords.length === 0 && (
-                    <span className="text-[10px] text-emerald-500 flex items-center gap-1">
-                      <CheckCircle className="w-3.5 h-3.5" /> All required keywords integrated successfully!
-                    </span>
-                  )}
+            {/* Resume Strength Dashboard with Readiness Indicator */}
+            <div className="bg-slate-50/70 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/80 rounded-xl p-3 space-y-2">
+              <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <span>ATS Readiness Index</span>
+                <span className={`${
+                  animatedScore >= 80 ? 'text-emerald-500' : animatedScore >= 60 ? 'text-amber-500' : 'text-red-500'
+                } font-extrabold`}>
+                  {animatedScore >= 80 ? 'Ready to Apply' : animatedScore >= 60 ? 'Good Match (Polish)' : 'Critical Gaps'}
+                </span>
+              </div>
+              <div className="w-full bg-slate-200/50 dark:bg-slate-800/80 h-1.5 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full transition-all duration-700 rounded-full ${
+                    animatedScore >= 80 ? 'bg-gradient-to-r from-emerald-400 to-teal-500' : animatedScore >= 60 ? 'bg-amber-400' : 'bg-red-400'
+                  }`}
+                  style={{ width: `${animatedScore}%` }}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-center text-[9px] pt-1">
+                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-1.5 rounded-lg">
+                  <div className="font-bold text-slate-400 uppercase tracking-widest text-[7.5px]">Matched</div>
+                  <div className="text-xs font-extrabold text-emerald-500 mt-0.5">
+                    {atsBreakdown ? atsBreakdown.matchedKeywords.length : 8} keywords
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-1.5 rounded-lg">
+                  <div className="font-bold text-slate-400 uppercase tracking-widest text-[7.5px]">Gaps</div>
+                  <div className="text-xs font-extrabold text-red-400 mt-0.5">
+                    {atsBreakdown ? atsBreakdown.missingKeywords.length : 7} keywords
+                  </div>
                 </div>
               </div>
-            )}
+            </div>
+
+            {/* Keyword gaps list (Searchable, fully responsive) */}
+            <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+              <div className="flex items-center justify-between">
+                <h6 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ATS Keyword Visualizer</h6>
+                <input
+                  type="text"
+                  placeholder="Filter keywords..."
+                  value={keywordSearch}
+                  onChange={(e) => setKeywordSearch(e.target.value)}
+                  className="px-2 py-0.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-[9px] focus:outline-none focus:border-indigo-500 w-24"
+                />
+              </div>
+              <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
+                {(() => {
+                  const allKw = [
+                    ...(atsBreakdown?.matchedKeywords || ["React", "Redux", "Zustand", "JavaScript", "HTML5", "CSS3", "AWS", "Git"]).map(k => ({ name: k, matched: true })),
+                    ...(atsBreakdown?.missingKeywords || ["MongoDB", "Express.js", "Node.js", "Docker", "CI/CD", "Redis", "JWT"]).map(k => ({ name: k, matched: false }))
+                  ];
+                  const filtered = allKw.filter(k => k.name.toLowerCase().includes(keywordSearch.toLowerCase()));
+                  
+                  if (filtered.length === 0) {
+                    return <span className="text-[9px] text-slate-400">No matching keywords found.</span>;
+                  }
+
+                  return filtered.map((kw) => (
+                    <span
+                      key={kw.name}
+                      onClick={() => {
+                        if (!kw.matched) {
+                          openMagicOptimizer('bullet', '', (newVal) => {
+                            alert(`Suggested optimized sentence to inject:\n\n${newVal}`);
+                          });
+                        }
+                      }}
+                      className={`px-2 py-0.5 rounded-lg text-[9px] font-bold border flex items-center gap-1 transition-colors ${
+                        kw.matched 
+                          ? 'bg-emerald-50/60 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30' 
+                          : 'bg-amber-50/60 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-900/30 cursor-pointer hover:border-indigo-500'
+                      }`}
+                      title={kw.matched ? "Successfully matched!" : "Click to optimize and inject using AI"}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${kw.matched ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
+                      {kw.name}
+                    </span>
+                  ));
+                })()}
+              </div>
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -1909,6 +2413,177 @@ const Builder = () => {
                     </div>
                   </div>
                 )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ATS Score Breakdown detailed report modal */}
+      <AnimatePresence>
+        {showAtsReportModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 text-left font-sans animate-fade-in"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 15 }}
+              className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xl rounded-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              {/* Header */}
+              <div className="bg-gradient-to-r from-slate-900 to-indigo-950 dark:from-slate-950 dark:to-indigo-950 px-6 py-4 flex items-center justify-between text-white shrink-0 border-b border-slate-200/20">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-indigo-500/20 rounded-xl text-indigo-400">
+                    <Target className="w-5 h-5 animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-sm tracking-wide">
+                      ATS Real-time Compliance Audit
+                    </h3>
+                    <p className="text-[10px] text-slate-300 font-medium">
+                      High-fidelity screening simulation report
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowAtsReportModal(false)}
+                  className="text-slate-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 space-y-6 overflow-y-auto flex-1">
+                {/* Score Summary Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* Keyword Score card */}
+                  <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800/80 p-4 rounded-2xl flex flex-col justify-between">
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Keyword Match</div>
+                      <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 mt-1">
+                        {safeAtsMetadata.score}%
+                      </div>
+                    </div>
+                    <div className="w-full bg-slate-200 dark:bg-slate-800 h-1 rounded-full overflow-hidden mt-3">
+                      <div 
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          safeAtsMetadata.score >= 80 ? 'bg-emerald-500' : safeAtsMetadata.score >= 60 ? 'bg-amber-500' : 'bg-red-500'
+                        }`}
+                        style={{ width: `${safeAtsMetadata.score}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Skills Score Card */}
+                  <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800/80 p-4 rounded-2xl flex flex-col justify-between">
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Formatting Check</div>
+                      <div className="text-2xl font-extrabold text-emerald-500 mt-1 flex items-center gap-1.5">
+                        <CheckCircle className="w-6 h-6 text-emerald-500" />
+                        <span>Pass</span>
+                      </div>
+                    </div>
+                    <p className="text-[9px] text-slate-400 font-semibold mt-3">
+                      Standard layout and parsing readable.
+                    </p>
+                  </div>
+
+                  {/* AI Recommendation Match */}
+                  <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800/80 p-4 rounded-2xl flex flex-col justify-between">
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Overall Impact</div>
+                      <div className="text-2xl font-extrabold text-indigo-500 mt-1">
+                        {safeAtsMetadata.score >= 80 ? 'Strong' : safeAtsMetadata.score >= 60 ? 'Moderate' : 'Weak'}
+                      </div>
+                    </div>
+                    <p className="text-[9px] text-slate-400 font-semibold mt-3">
+                      Quantifiable work descriptions.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Keyword Compliance */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <Target className="w-4 h-4 text-indigo-500" />
+                    <span>Keyword Compliance Breakdown</span>
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Matched Keywords */}
+                    <div className="bg-emerald-50/20 dark:bg-emerald-950/10 border border-emerald-100/50 dark:border-emerald-900/30 rounded-2xl p-4 space-y-2">
+                      <div className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1">
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        <span>Matched Keywords ({atsBreakdown ? atsBreakdown.matchedKeywords.length : 8})</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(atsBreakdown?.matchedKeywords || ["React", "Redux", "Zustand", "JavaScript", "HTML5", "CSS3", "AWS", "Git"]).map(k => (
+                          <span key={k} className="px-2 py-0.5 bg-emerald-100/40 dark:bg-emerald-900/30 border border-emerald-200/20 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-lg text-[9px] font-bold">
+                            {k}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Missing Keywords */}
+                    <div className="bg-rose-50/20 dark:bg-rose-950/10 border border-rose-100/50 dark:border-rose-900/30 rounded-2xl p-4 space-y-2">
+                      <div className="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider flex items-center gap-1">
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        <span>Missing Keywords ({atsBreakdown ? atsBreakdown.missingKeywords.length : 7})</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(atsBreakdown?.missingKeywords || ["MongoDB", "Express.js", "Node.js", "Docker", "CI/CD", "Redis", "JWT"]).map(k => (
+                          <span key={k} className="px-2 py-0.5 bg-rose-100/40 dark:bg-rose-900/30 border border-rose-200/20 dark:border-rose-800 text-rose-700 dark:text-rose-300 rounded-lg text-[9px] font-bold">
+                            {k}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Professional Optimization Recommendations */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <Lightbulb className="w-4 h-4 text-indigo-500 animate-bounce" />
+                    <span>AI Strategic Advice</span>
+                  </h4>
+                  <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800/80 rounded-2xl p-4 space-y-3">
+                    {safeAtsMetadata.feedback && safeAtsMetadata.feedback.length > 0 ? (
+                      safeAtsMetadata.feedback.map((item, idx) => (
+                        <div key={idx} className="flex gap-2.5 text-xs">
+                          <span className="text-indigo-500 font-bold">0{idx + 1}.</span>
+                          <span className="text-slate-600 dark:text-slate-300 leading-relaxed font-medium">{item}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex gap-2.5 text-xs">
+                        <span className="text-indigo-500 font-bold">01.</span>
+                        <span className="text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                          Select one of our premium job presets or paste a target job description to run a detailed multi-vector parser simulation.
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 bg-slate-50 dark:bg-slate-950/60 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs shrink-0">
+                <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                  CareerForge Pro ATS v2.1
+                </span>
+                <button
+                  onClick={() => setShowAtsReportModal(false)}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all shadow-md shadow-indigo-500/20 cursor-pointer"
+                >
+                  Close Report
+                </button>
               </div>
             </motion.div>
           </motion.div>
