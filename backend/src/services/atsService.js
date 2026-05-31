@@ -59,6 +59,23 @@ export function extractResumeText(resume) {
     });
   }
   
+  if (resume.languages && Array.isArray(resume.languages)) {
+    resume.languages.forEach(l => {
+      parts.push(l.language || '', l.proficiency || '');
+    });
+  }
+
+  if (resume.customSections && Array.isArray(resume.customSections)) {
+    resume.customSections.forEach(cs => {
+      parts.push(cs.title || '');
+      if (cs.items && Array.isArray(cs.items)) {
+        cs.items.forEach(item => {
+          parts.push(item.title || '', item.subtitle || '', item.description || '');
+        });
+      }
+    });
+  }
+  
   return parts.join(' ').replace(/\s+/g, ' ').trim();
 }
 
@@ -93,8 +110,37 @@ export function calculateAtsScore(resume, jdAnalysis) {
   const missingKeywords = [];
 
   allKeywords.forEach(kw => {
-    const regex = new RegExp(`\\b${kw.toLowerCase()}\\b`, 'i');
-    if (regex.test(normalizedResume) || normalizedResume.includes(kw.toLowerCase())) {
+    const cleanKw = kw.toLowerCase().trim();
+    if (cleanKw.length === 0) return;
+
+    const isAlphaNumeric = /^[a-z0-9\s]+$/i.test(cleanKw);
+    let isMatched = false;
+
+    if (isAlphaNumeric) {
+      // Safe word-boundary regex for standard alphanumeric words/phrases
+      const safeKw = cleanKw.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const regex = new RegExp(`\\b${safeKw}\\b`, 'i');
+      isMatched = regex.test(normalizedResume);
+    } else {
+      // Smart matching for keywords with special characters (e.g. C++, .NET, Node.js, C#, CI/CD)
+      let idx = normalizedResume.indexOf(cleanKw);
+      while (idx !== -1) {
+        const charBefore = idx > 0 ? normalizedResume[idx - 1] : ' ';
+        const charAfter = idx + cleanKw.length < normalizedResume.length ? normalizedResume[idx + cleanKw.length] : ' ';
+
+        // Ensure word boundaries: the surrounding characters must be non-alphanumeric
+        const isBeforeBoundary = !/[a-z0-9]/i.test(charBefore);
+        const isAfterBoundary = !/[a-z0-9]/i.test(charAfter);
+
+        if (isBeforeBoundary && isAfterBoundary) {
+          isMatched = true;
+          break;
+        }
+        idx = normalizedResume.indexOf(cleanKw, idx + 1);
+      }
+    }
+
+    if (isMatched) {
       foundKeywords.push(kw);
     } else {
       missingKeywords.push(kw);
