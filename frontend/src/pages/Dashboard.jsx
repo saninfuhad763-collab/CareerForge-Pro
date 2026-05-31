@@ -18,7 +18,7 @@ import {
   Compass
 } from 'lucide-react';
 import { staggerContainer, staggerItem, staggerItemScale } from '../animations/staggerAnimations';
-import { premiumCardHover, buttonScale } from '../animations/cardAnimations';
+import { premiumCardHover, buttonScale, professionalCardVariant } from '../animations/cardAnimations';
 import { sidebarItemVariant } from '../animations/dashboardAnimations';
 import { premiumEase } from '../animations/motionVariants';
 
@@ -225,14 +225,31 @@ const Dashboard = () => {
           {activeTab === 'resumes' && (
             <motion.div
               key="resumes"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              transition={{ duration: 0.45, ease: premiumEase }}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              variants={{
+                hidden: { opacity: 0 },
+                visible: {
+                  opacity: 1,
+                  transition: {
+                    staggerChildren: 0.05,
+                    delayChildren: 0.02
+                  }
+                },
+                exit: {
+                  opacity: 0,
+                  y: -15,
+                  transition: { duration: 0.3 }
+                }
+              }}
               className="space-y-8"
             >
               {/* Welcome Dashboard Banner Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <motion.div 
+                variants={staggerItem}
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              >
                 <div className="text-left space-y-1">
                   <h1 className="text-2xl md:text-3xl font-bold font-display text-slate-800 dark:text-slate-100">
                     Welcome back, {user?.name}!
@@ -252,14 +269,12 @@ const Dashboard = () => {
                   <Plus className="w-4.5 h-4.5" />
                   <span>Create Resume</span>
                 </motion.button>
-              </div>
+              </motion.div>
 
               {/* Modular Analytics Cards */}
               <motion.section 
                 className="grid grid-cols-1 sm:grid-cols-3 gap-6"
-                initial="hidden"
-                animate="visible"
-                variants={staggerContainer(0.08)}
+                variants={staggerContainer(0.04)}
               >
                 {/* Card 1 */}
                 <motion.div 
@@ -310,7 +325,7 @@ const Dashboard = () => {
               </motion.section>
 
               {/* Resumes Dashboard Listing */}
-              <section className="space-y-6">
+              <motion.section variants={staggerItem} className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-bold font-display text-slate-800 dark:text-slate-100">
                     Your Saved Resumes
@@ -318,10 +333,10 @@ const Dashboard = () => {
                 </div>
 
                 {storeLoading ? (
-                  <div className="h-64 flex flex-col items-center justify-center text-slate-400">
-                    <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-2" />
-                    <p className="text-sm font-semibold">Fetching your profiles...</p>
-                  </div>
+                   <div className="h-64 flex flex-col items-center justify-center text-slate-400">
+                     <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-2" />
+                     <p className="text-sm font-semibold">Fetching your profiles...</p>
+                   </div>
                 ) : resumes.length === 0 ? (
                   /* Styled Empty State */
                   <motion.div 
@@ -350,9 +365,7 @@ const Dashboard = () => {
                   /* Grid layout for resumes */
                   <motion.div 
                     className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                    initial="hidden"
-                    animate="visible"
-                    variants={staggerContainer(0.08)}
+                    variants={staggerContainer(0.05)}
                   >
                     {resumes.map((resume) => {
                       const score = resume.atsMetadata?.score || 0;
@@ -364,7 +377,9 @@ const Dashboard = () => {
                         <motion.div
                           key={resume._id}
                           onClick={() => navigate(`/builder/${resume._id}`)}
-                          variants={staggerItem}
+                          variants={professionalCardVariant}
+                          whileHover="hover"
+                          whileTap="tap"
                           className="group bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 text-left flex flex-col justify-between h-48 cursor-pointer relative shadow-sm hover:border-indigo-500/50 hover:bg-slate-50 dark:hover:bg-slate-950/40 hover:shadow-lg transition-all duration-300"
                         >
                           {/* Header */}
@@ -407,21 +422,35 @@ const Dashboard = () => {
                     })}
                   </motion.div>
                 )}
-              </section>
+              </motion.section>
             </motion.div>
           )}
 
           {activeTab === 'ai-scoring' && (
             <motion.div
               key="ai-scoring"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              transition={{ duration: 0.45, ease: premiumEase }}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              variants={{
+                hidden: { opacity: 0 },
+                visible: {
+                  opacity: 1,
+                  transition: {
+                    staggerChildren: 0.05,
+                    delayChildren: 0.02
+                  }
+                },
+                exit: {
+                  opacity: 0,
+                  y: -15,
+                  transition: { duration: 0.3 }
+                }
+              }}
               className="space-y-8 text-left"
             >
               {/* Header */}
-              <div className="space-y-1">
+              <motion.div variants={staggerItem} className="space-y-1">
                 <h1 className="text-2xl md:text-3xl font-bold font-display text-slate-800 dark:text-slate-100 flex items-center gap-3">
                   <Gauge className="w-8 h-8 text-indigo-500" />
                   <span>AI Scoring & ATS Analytics Center</span>
@@ -429,7 +458,7 @@ const Dashboard = () => {
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   Track your active resume portfolios, review target keyword matches, and raise candidate rating metrics.
                 </p>
-              </div>
+              </motion.div>
 
               {/* Quick Metrics */}
               <motion.section 
@@ -472,7 +501,10 @@ const Dashboard = () => {
               </motion.section>
 
               {/* Resume Analytics List */}
-              <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 border border-slate-200 dark:border-slate-800 space-y-6">
+              <motion.div 
+                variants={staggerItem}
+                className="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 border border-slate-200 dark:border-slate-800 space-y-6 hover:border-indigo-500/30 dark:hover:border-indigo-500/30 transition-all duration-500 shadow-sm"
+              >
                 <h2 className="text-lg font-bold font-display text-slate-800 dark:text-slate-100">
                   Active Match Standings
                 </h2>
@@ -482,9 +514,7 @@ const Dashboard = () => {
                 ) : (
                   <motion.div 
                     className="space-y-4"
-                    initial="hidden"
-                    animate="visible"
-                    variants={staggerContainer(0.08)}
+                    variants={staggerContainer(0.05)}
                   >
                     {resumes.map((resume) => {
                       const score = resume.atsMetadata?.score || 0;
@@ -502,8 +532,10 @@ const Dashboard = () => {
                         <motion.div 
                           key={resume._id} 
                           onClick={() => navigate(`/builder/${resume._id}`)}
-                          variants={staggerItem}
-                          className="p-4 rounded-xl border border-slate-100 dark:border-slate-800/80 hover:border-indigo-500/50 hover:bg-slate-50 dark:hover:bg-slate-950/40 transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm"
+                          variants={professionalCardVariant}
+                          whileHover="hover"
+                          whileTap="tap"
+                          className="p-4 rounded-xl border border-slate-100 dark:border-slate-800/80 hover:border-indigo-500/50 hover:bg-slate-50 dark:hover:bg-slate-950/40 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm transition-all duration-300"
                         >
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
@@ -536,7 +568,7 @@ const Dashboard = () => {
                     })}
                   </motion.div>
                 )}
-              </div>
+              </motion.div>
 
               {/* Instruction Widget */}
               <div className="p-6 bg-gradient-to-r from-indigo-500/10 via-indigo-500/5 to-transparent border border-indigo-500/20 rounded-3xl flex flex-col sm:flex-row items-center gap-6">

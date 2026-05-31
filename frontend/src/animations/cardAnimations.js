@@ -99,3 +99,39 @@ export const buttonScale = {
   },
 };
 
+// Sleek, modern, and highly professional SaaS layout hover & entry animation variant
+export const professionalCardVariant = {
+  hidden: { 
+    opacity: 0, 
+    y: isReducedMotionEnabled() ? 0 : 20,
+    scale: 0.98
+  },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.45,
+      ease: premiumEase
+    }
+  },
+  hover: {
+    y: isReducedMotionEnabled() ? 0 : -4,
+    scale: isReducedMotionEnabled() ? 1 : 1.012,
+    boxShadow: '0 12px 30px -10px rgba(99, 102, 241, 0.12), 0 4px 12px -5px rgba(99, 102, 241, 0.08), 0 0 0 1px rgba(99, 102, 241, 0.18)',
+    borderColor: 'rgba(99, 102, 241, 0.4)',
+    transition: {
+      duration: 0.3,
+      ease: premiumEase
+    }
+  },
+  tap: {
+    scale: 0.985,
+    transition: {
+      duration: 0.1,
+      ease: premiumEase
+    }
+  }
+};
+
+
