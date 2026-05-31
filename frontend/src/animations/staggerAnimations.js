@@ -29,8 +29,8 @@ export const staggerItem = {
 export const staggerItemScale = {
   hidden: { 
     opacity: 0, 
-    scale: isReducedMotionEnabled() ? 1 : 0.96, 
-    y: isReducedMotionEnabled() ? 0 : 10 
+    scale: isReducedMotionEnabled() ? 1 : 0.98, 
+    y: isReducedMotionEnabled() ? 0 : 6 
   },
   visible: {
     opacity: 1,
@@ -38,7 +38,8 @@ export const staggerItemScale = {
     y: 0,
     transition: {
       duration: 0.5,
-      ease: premiumEase,
+      ease: [0.16, 1, 0.3, 1], // premium ultra-smooth easeOutExpo
     },
   },
 };
+

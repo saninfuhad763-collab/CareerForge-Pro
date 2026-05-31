@@ -103,16 +103,16 @@ export const buttonScale = {
 export const professionalCardVariant = {
   hidden: { 
     opacity: 0, 
-    y: isReducedMotionEnabled() ? 0 : 20,
-    scale: 0.98
+    y: isReducedMotionEnabled() ? 0 : 8,
+    scale: 0.99
   },
   visible: { 
     opacity: 1, 
     y: 0,
     scale: 1,
     transition: {
-      duration: 0.45,
-      ease: premiumEase
+      duration: 0.5,
+      ease: [0.16, 1, 0.3, 1] // premium ultra-smooth easeOutExpo
     }
   },
   hover: {
@@ -133,5 +133,6 @@ export const professionalCardVariant = {
     }
   }
 };
+
 
 
