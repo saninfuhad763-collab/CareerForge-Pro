@@ -37,6 +37,115 @@ import {
 } from 'lucide-react';
 
 
+
+const JD_PRESETS = {
+  "mern": {
+    title: "MERN Stack Developer",
+    jdText: `We are seeking a high-caliber MERN Stack Developer to design, build, and deploy next-generation web platforms. \n\nRequirements:\n- Proven professional experience building full-stack web applications utilizing the MERN stack: MongoDB, Express, React, and Node.js.\n- Strong proficiency in building robust, high-performance REST APIs.\n- Deep understanding of application security, session tracking, and JWT authentication protocols.\n- Hands-on deployment familiarity with modern system architectures and backend server processes.`,
+    score: 55,
+    breakdown: {
+      missingKeywords: ["MongoDB", "Express", "Node.js", "JWT", "REST APIs"],
+      matchedKeywords: ["React", "JavaScript", "HTML5", "CSS3"],
+      recommendations: [
+        "Detail experience setting up and configuring Express middleware and server routing.",
+        "Incorporate MongoDB collections design, query structures, or index optimizations.",
+        "Describe building microservices and REST APIs using Node.js.",
+        "Highlight stateless authentication mechanisms using JWT."
+      ],
+      metrics: {
+        keywordMatch: 45,
+        skillsCoverage: 50,
+        experienceRelevance: 48,
+        formattingScore: 90
+      }
+    }
+  },
+  "frontend": {
+    title: "Frontend Developer",
+    jdText: `We are looking for a skilled Frontend Developer to join our core product team. You will lead user interface design and implement robust, component-driven client applications.\n      \nKey Requirements:\n- Deep expertise with JavaScript and TypeScript.\n- Strong development experience building responsive SPA architectures with React.\n- Practical experience integrating REST APIs and handling modern asynchronous state paradigms.\n- Solid understanding of Git version control workflows and collaborative development.\n- Exceptional eye for Responsive Design, accessibility standards, and clean semantic structures.`,
+    score: 65,
+    breakdown: {
+      missingKeywords: ["TypeScript", "Responsive Design", "REST APIs", "Git"],
+      matchedKeywords: ["React", "JavaScript", "HTML5", "CSS3"],
+      recommendations: [
+        "Incorporate TypeScript type safety features into your recent engineering bullets.",
+        "Explicitly detail your work with Responsive Design and media queries.",
+        "Describe how you consume REST APIs and handle HTTP status/error states.",
+        "Highlight collaborative git-flow processes in your project definitions."
+      ],
+      metrics: {
+        keywordMatch: 50,
+        skillsCoverage: 60,
+        experienceRelevance: 55,
+        formattingScore: 90
+      }
+    }
+  },
+  "software_engineer": {
+    title: "Software Engineer",
+    jdText: `We are looking for a Software Engineer to join our core engineering unit to build reliable, high-performance backend systems.\n\nCore Competencies:\n- Masterful command of Data Structures and core Computer Science Algorithms.\n- Strong architectural grasp of modern distributed System Design, scalability principles, and message queues.\n- Professional experience applying OOP (Object-Oriented Programming) design patterns.\n- High QA standards with thorough experience in automated unit, integration, and regression Testing.`,
+    score: 40,
+    breakdown: {
+      missingKeywords: ["Data Structures", "Algorithms", "System Design", "OOP", "Testing"],
+      matchedKeywords: ["JavaScript", "Git"],
+      recommendations: [
+        "Mention your optimization work involving complex Data Structures and Algorithms.",
+        "Incorporate system design diagrams or distributed system scaling features in your project summaries.",
+        "Highlight software engineering principles like OOP and solid SOLID design patterns.",
+        "Add details about writing automated unit and integration Testing suites."
+      ],
+      metrics: {
+        keywordMatch: 35,
+        skillsCoverage: 40,
+        experienceRelevance: 38,
+        formattingScore: 85
+      }
+    }
+  },
+  "product_manager": {
+    title: "Product Manager",
+    jdText: `We are hiring a Product Manager to guide product development cycles, define key milestones, and launch impactful user solutions.\n\nRequirements:\n- Deep expertise defining high-impact Product Strategy and market positioning.\n- Professional leadership skills mapping out product visions and cross-functional Roadmapping.\n- Excellent execution standards utilizing Agile methodologies (Scrum/Kanban).\n- Outstanding Stakeholder Management capabilities, aligning designers, engineering teams, and executive leaders.\n- Data-driven mindset using system Analytics and behavioral reporting dashboards to measure success.`,
+    score: 35,
+    breakdown: {
+      missingKeywords: ["Product Strategy", "Roadmapping", "Agile", "Stakeholder Management", "Analytics"],
+      matchedKeywords: ["React", "Git"],
+      recommendations: [
+        "Add product lifecycle accomplishments defining Product Strategy.",
+        "Detail your planning and execution workflows with product Roadmapping.",
+        "Emphasize Agile product management skills and cross-functional team alignment.",
+        "Incorporate Stakeholder Management achievements and business Analytics metrics."
+      ],
+      metrics: {
+        keywordMatch: 30,
+        skillsCoverage: 32,
+        experienceRelevance: 30,
+        formattingScore: 88
+      }
+    }
+  },
+  "data_analyst": {
+    title: "Data Analyst",
+    jdText: `We are seeking a talented Data Analyst to transform complex information sets into clear, actionable business strategies.\n\nKey Skills:\n- Advanced SQL capability to query databases, write complex joins, and optimize execution speeds.\n- Proficient analytical programming skills using Python for data cleaning, transformation, and statistical models.\n- Mastery of Excel features including pivot tables, lookup functions, and macro automations.\n- Deep experience design-building interactive business intelligence reports with Power BI.\n- Exceptional Data Visualization skills to translate technical results into comprehensive stories for executive leaders.`,
+    score: 30,
+    breakdown: {
+      missingKeywords: ["SQL", "Python", "Excel", "Power BI", "Data Visualization"],
+      matchedKeywords: ["Git"],
+      recommendations: [
+        "Inject quantitative skills using SQL querying and database schemas into your experience.",
+        "Mention your Python analytical scripts and quantitative data modeling experience.",
+        "Include Excel workflow enhancements or macro scripts.",
+        "Highlight business intelligence dash design with Power BI and general Data Visualization standards."
+      ],
+      metrics: {
+        keywordMatch: 25,
+        skillsCoverage: 28,
+        experienceRelevance: 26,
+        formattingScore: 80
+      }
+    }
+  }
+};
+
 const Builder = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -59,7 +168,7 @@ const Builder = () => {
   const [jdText, setJdText] = useState('');
   const [isJdAnalyzing, setIsJdAnalyzing] = useState(false);
   const [atsBreakdown, setAtsBreakdown] = useState(null);
-  const [isJdOpen, setIsJdOpen] = useState(false);
+  const [isJdOpen, setIsJdOpen] = useState(true);
 
   // Live Demo, Confetti, & ATS Modal States
   const [demoModeActive, setDemoModeActive] = useState(false);
@@ -69,6 +178,41 @@ const Builder = () => {
   const [animatedScore, setAnimatedScore] = useState(50);
   const [keywordSearch, setKeywordSearch] = useState('');
   const [modalKeywordSearch, setModalKeywordSearch] = useState('');
+
+  // Instant preset loading & analysis pipeline
+  const handlePresetChange = async (val) => {
+    setSelectedJdPreset(val);
+    if (val && JD_PRESETS[val]) {
+      const preset = JD_PRESETS[val];
+      setJdText(preset.jdText);
+      setIsJdAnalyzing(true);
+
+      // 300ms visual loading indicator for realistic analysis
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      setAtsBreakdown(preset.breakdown);
+      
+      // Update global Zustand store with ATS score
+      updateResumeLocal({
+        atsMetadata: {
+          score: preset.score,
+          feedback: preset.breakdown.recommendations
+        }
+      });
+
+      setIsJdAnalyzing(false);
+      setShowConfetti(true);
+    } else {
+      setJdText('');
+      setAtsBreakdown(null);
+      updateResumeLocal({
+        atsMetadata: {
+          score: 50,
+          feedback: []
+        }
+      });
+    }
+  };
 
   // Reusable keyword normalization and dynamic matching engine utilities
   const normalizeText = (str) => {
@@ -294,109 +438,7 @@ const Builder = () => {
     };
   }, [currentResume, jdText, selectedJdPreset, atsBreakdown]);
 
-  // Sample Job Descriptions Library
-  const JD_PRESETS = {
-    "mern": {
-      title: "MERN Stack Developer",
-      jdText: `We are seeking a high-caliber MERN Stack Developer to build and scale modern web application systems. \n\nRequirements:\n- Strong full-stack development experience utilizing MongoDB, Express.js, React, and Node.js.\n- Experience with building scalable RESTful APIs, caching strategies via Redis, and secure JWT-based auth flows.\n- Hands-on expertise with AWS (Amazon Web Services), containerization using Docker, and robust CI/CD integration.\n- Familiarity with frontend performance optimization and global state managers like Redux or Zustand.`,
-      score: 52,
-      breakdown: {
-        missingKeywords: ["MongoDB", "Express.js", "Node.js", "Docker", "CI/CD", "Redis", "JWT"],
-        matchedKeywords: ["React", "Redux", "Zustand", "JavaScript", "HTML5", "CSS3", "AWS", "Git"],
-        recommendations: [
-          "Detail your full-stack backend experience with Node.js and Express.js controllers.",
-          "Add database indexing and aggregation methods using MongoDB to your skills list.",
-          "Inject DevOps concepts like containerizing apps with Docker and automating deployment with CI/CD."
-        ],
-        metrics: {
-          keywordMatch: 45,
-          skillsCoverage: 52,
-          experienceRelevance: 48,
-          formattingScore: 90
-        }
-      }
-    },
-    "frontend": {
-      title: "Senior Frontend Developer",
-      jdText: `We are looking for a Senior Frontend Developer to lead our next-gen user interface engineering.\n\nRequirements:\n- Advanced JavaScript and TypeScript skills with modern React.\n- In-depth understanding of server-side rendering, Next.js frameworks, and web performance optimization.\n- Familiarity with automation testing utilizing Jest and Cypress.\n- Solid experience translating complex Figma designs into responsive layout modules.`,
-      score: 75,
-      breakdown: {
-        missingKeywords: ["TypeScript", "Next.js", "Jest", "Cypress", "Figma"],
-        matchedKeywords: ["React", "JavaScript", "HTML5", "CSS3", "Redux", "Zustand", "TailwindCSS", "Webpack", "Vite"],
-        recommendations: [
-          "Explicitly add Next.js and TypeScript to your frontend skill categories.",
-          "Incorporate testing frameworks like Jest or Cypress to showcase QA standards.",
-          "Mention collaboration tools and translation workflows using Figma."
-        ],
-        metrics: {
-          keywordMatch: 72,
-          skillsCoverage: 80,
-          experienceRelevance: 75,
-          formattingScore: 90
-        }
-      }
-    },
-    "software_engineer": {
-      title: "Software Engineer (Backend Focus)",
-      jdText: `Looking for a Software Engineer to work on scalable server infrastructures and cloud deployment channels.\n\nRequirements:\n- Strong backend programming skills in Go or Python.\n- Database mastery with PostgreSQL, query optimization, and transaction handling.\n- Practical experience with Kubernetes, Docker, and AWS cloud networks.`,
-      score: 38,
-      breakdown: {
-        missingKeywords: ["Go", "Python", "PostgreSQL", "Kubernetes", "Docker", "Microservices"],
-        matchedKeywords: ["AWS", "Git", "REST APIs"],
-        recommendations: [
-          "Integrate core backend languages (Go or Python) in your summary and experience.",
-          "Mention PostgreSQL database schemas and complex queries.",
-          "Highlight container deployments using Docker and orchestration with Kubernetes."
-        ],
-        metrics: {
-          keywordMatch: 30,
-          skillsCoverage: 35,
-          experienceRelevance: 32,
-          formattingScore: 85
-        }
-      }
-    },
-    "product_manager": {
-      title: "Technical Product Manager",
-      jdText: `Seeking a Technical Product Manager to define roadmap targets, align software engineering goals, and drive feature adoption.\n\nRequirements:\n- Agile methodology champion with Jira proficiency.\n- Experience translating business requirements to technical spec sheets.\n- Background in software developer or tech lead roles is highly desired.`,
-      score: 32,
-      breakdown: {
-        missingKeywords: ["Roadmap", "Agile", "Jira", "Technical Spec", "Product Strategy"],
-        matchedKeywords: ["Tech Lead", "TypeScript", "React"],
-        recommendations: [
-          "Include product life-cycle leadership keywords.",
-          "Mention Agile product management workflows and project management software like Jira.",
-          "Highlight communication and spec-writing milestones."
-        ],
-        metrics: {
-          keywordMatch: 25,
-          skillsCoverage: 30,
-          experienceRelevance: 28,
-          formattingScore: 88
-        }
-      }
-    },
-    "data_analyst": {
-      title: "Data Analyst",
-      jdText: `Looking for a Data Analyst to join our business intelligence division.\n\nRequirements:\n- Strong Python or R analysis skills.\n- Query capability using SQL, Snowflake, or BigQuery.\n- Visual reporting experience with Tableau, PowerBI, or Looker.`,
-      score: 28,
-      breakdown: {
-        missingKeywords: ["SQL", "Snowflake", "BigQuery", "Tableau", "Looker", "BI Reporting"],
-        matchedKeywords: ["Python", "Git"],
-        recommendations: [
-          "Add database analytics platforms (Snowflake/BigQuery).",
-          "Describe business intelligence dashboard creations using Tableau or Looker.",
-          "Explain SQL parsing capabilities in project data queries."
-        ],
-        metrics: {
-          keywordMatch: 20,
-          skillsCoverage: 25,
-          experienceRelevance: 22,
-          formattingScore: 80
-        }
-      }
-    }
-  };
+
 
   // Magic Optimizer State
   const [isOptimizerOpen, setIsOptimizerOpen] = useState(false);
@@ -1190,20 +1232,14 @@ const Builder = () => {
                       <span className="text-[9px] text-slate-400 font-bold">Preset:</span>
                       <select
                         value={selectedJdPreset}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setSelectedJdPreset(val);
-                          if (val && JD_PRESETS[val]) {
-                            setJdText(JD_PRESETS[val].jdText);
-                          }
-                        }}
-                        className="px-2 py-0.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-[10px] font-extrabold rounded-lg text-indigo-600 dark:text-indigo-400 focus:outline-none"
+                        onChange={(e) => handlePresetChange(e.target.value)}
+                        className="px-2 py-0.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-[10px] font-extrabold rounded-lg text-indigo-600 dark:text-indigo-400 focus:outline-none cursor-pointer"
                       >
                         <option value="">-- Choose Job --</option>
                         <option value="mern">MERN Stack Developer</option>
-                        <option value="frontend">Senior Frontend Developer</option>
+                        <option value="frontend">Frontend Developer</option>
                         <option value="software_engineer">Software Engineer</option>
-                        <option value="product_manager">Technical PM</option>
+                        <option value="product_manager">Product Manager</option>
                         <option value="data_analyst">Data Analyst</option>
                       </select>
                     </div>
@@ -1212,7 +1248,10 @@ const Builder = () => {
                     rows={4}
                     placeholder="Paste the target job description text here to calculate your precise match score..."
                     value={jdText}
-                    onChange={(e) => setJdText(e.target.value)}
+                    onChange={(e) => {
+                      setJdText(e.target.value);
+                      setSelectedJdPreset('');
+                    }}
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none resize-none leading-relaxed"
                   />
                 </div>
