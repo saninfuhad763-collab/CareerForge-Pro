@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useResumeStore } from '../store/resumeStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -68,6 +68,231 @@ const Builder = () => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [animatedScore, setAnimatedScore] = useState(50);
   const [keywordSearch, setKeywordSearch] = useState('');
+  const [modalKeywordSearch, setModalKeywordSearch] = useState('');
+
+  // Reusable keyword normalization and dynamic matching engine utilities
+  const normalizeText = (str) => {
+    if (!str) return '';
+    return str
+      .toLowerCase()
+      .trim()
+      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "") // remove punctuation
+      .replace(/\s+/g, " ")                        // whitespace normalization
+      .replace(/\s/g, "");                         // remove spaces to handle "nodejs" == "node.js"
+  };
+
+  const isKeywordMatched = (keyword, compiledResumeText) => {
+    const normKw = normalizeText(keyword);
+    const normResume = normalizeText(compiledResumeText);
+    
+    if (!normKw || !normResume) return false;
+
+    // Direct substring check on stripped text
+    if (normResume.includes(normKw)) return true;
+    if (normKw.includes(normResume)) return true;
+
+    // Standard word boundaries or original spacing matching as fallback
+    const cleanKw = keyword.toLowerCase().trim();
+    const cleanResume = compiledResumeText.toLowerCase();
+    if (cleanResume.includes(cleanKw)) return true;
+
+    // Semantic expansions/aliases
+    const aliases = {
+      "mongodb": ["mongo", "nosql", "document database"],
+      "express.js": ["expressjs", "express"],
+      "node.js": ["nodejs", "node"],
+      "ci/cd": ["cicd", "continuous integration", "continuous delivery", "github actions", "pipelines"],
+      "restful apis": ["rest api", "restful", "restapis"],
+      "rest apis": ["rest api", "restful", "restapis"],
+      "jwt": ["json web token"],
+      "react": ["reactjs", "react.js"],
+      "redux": ["reduxtoolkit", "rtk"],
+      "aws": ["amazon web services", "s3", "ec2"],
+      "docker": ["containerization", "kubernetes", "containers"],
+      "typescript": ["ts"],
+      "javascript": ["js", "es6"],
+      "next.js": ["nextjs"],
+      "jest": ["unit testing", "testing"],
+      "cypress": ["e2e testing", "integration testing"],
+      "tailwind-css": ["tailwindcss", "tailwind"],
+      "tableau": ["business intelligence", "bi dashboard"],
+      "looker": ["business intelligence", "bi dashboard"]
+    };
+
+    const kwLower = keyword.toLowerCase();
+    for (const [key, list] of Object.entries(aliases)) {
+      if (kwLower.includes(key) || key.includes(kwLower)) {
+        if (list.some(alias => cleanResume.includes(alias) || normResume.includes(normalizeText(alias)))) {
+          return true;
+        }
+      }
+    }
+
+    // Partial match for multi-word keywords
+    if (normKw.length > 4) {
+      const words = keyword.split(/[\s\-_.]+/).filter(w => w.length > 3);
+      if (words.length > 0 && words.every(word => normResume.includes(normalizeText(word)))) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  const compileResumeText = (res) => {
+    if (!res) return '';
+    const parts = [];
+    if (res.title) parts.push(res.title);
+    if (res.summary) parts.push(res.summary);
+    if (res.personalInfo) {
+      const p = res.personalInfo;
+      parts.push(p.fullName || '', p.location || '');
+    }
+    if (res.experience && Array.isArray(res.experience)) {
+      res.experience.forEach(exp => {
+        parts.push(exp.company || '', exp.position || '', exp.description || '');
+      });
+    }
+    if (res.education && Array.isArray(res.education)) {
+      res.education.forEach(edu => {
+        parts.push(edu.school || '', edu.degree || '', edu.fieldOfStudy || '', edu.description || '');
+      });
+    }
+    if (res.skills && Array.isArray(res.skills)) {
+      res.skills.forEach(s => {
+        parts.push(s.name || '');
+        if (s.keywords && Array.isArray(s.keywords)) {
+          parts.push(...s.keywords);
+        }
+      });
+    }
+    if (res.projects && Array.isArray(res.projects)) {
+      res.projects.forEach(p => {
+        parts.push(p.title || '', p.role || '', p.description || '');
+      });
+    }
+    if (res.certifications && Array.isArray(res.certifications)) {
+      res.certifications.forEach(c => {
+        parts.push(c.name || '', c.issuer || '');
+      });
+    }
+    if (res.languages && Array.isArray(res.languages)) {
+      res.languages.forEach(l => {
+        parts.push(l.language || '', l.proficiency || '');
+      });
+    }
+    return parts.join(' ');
+  };
+
+  const getTargetKeywords = () => {
+    if (selectedJdPreset && JD_PRESETS[selectedJdPreset]) {
+      const p = JD_PRESETS[selectedJdPreset].breakdown;
+      return [...new Set([...(p.matchedKeywords || []), ...(p.missingKeywords || [])])];
+    }
+    if (atsBreakdown && (atsBreakdown.matchedKeywords || atsBreakdown.missingKeywords)) {
+      return [...new Set([...(atsBreakdown.matchedKeywords || []), ...(atsBreakdown.missingKeywords || [])])];
+    }
+    if (jdText) {
+      // If the user pastes a comma-separated list of keywords, parse them
+      if (jdText.includes(',')) {
+        return jdText.split(/,|\n/).map(s => s.trim()).filter(s => s.length > 0 && s.length < 30);
+      }
+      // Otherwise, search for common known keywords in the jdText
+      const knownKeywords = [
+        "React", "TypeScript", "Node.js", "NodeJS", "Docker", "MongoDB", "Express.js", 
+        "ExpressJS", "Redis", "JWT", "AWS", "CI/CD", "Redux", "Zustand", "JavaScript", 
+        "HTML5", "CSS3", "Git", "Next.js", "Jest", "Cypress", "Figma", "TailwindCSS", 
+        "Webpack", "Vite", "Go", "Python", "PostgreSQL", "Kubernetes", "Microservices", 
+        "Roadmap", "Agile", "Jira", "Technical Spec", "Product Strategy", "Tech Lead", 
+        "SQL", "Snowflake", "BigQuery", "Tableau", "Looker", "BI Reporting"
+      ];
+      const found = [];
+      const normalizedJd = jdText.toLowerCase();
+      knownKeywords.forEach(kw => {
+        if (normalizedJd.includes(kw.toLowerCase())) {
+          found.push(kw);
+        }
+      });
+      if (found.length > 0) return found;
+    }
+    // Fallback default keywords
+    return ["React", "Redux", "Zustand", "JavaScript", "HTML5", "CSS3", "AWS", "Git", "MongoDB", "Express.js", "Node.js", "Docker", "CI/CD", "Redis", "JWT"];
+  };
+
+  const dynamicAtsData = useMemo(() => {
+    if (!currentResume) {
+      return {
+        matchedKeywords: [],
+        missingKeywords: [],
+        score: 50,
+        keywordMatchPercent: 0,
+        density: {},
+        feedback: []
+      };
+    }
+
+    const compiledResumeText = compileResumeText(currentResume);
+    const targetKeywords = getTargetKeywords();
+
+    const matched = [];
+    const missing = [];
+
+    targetKeywords.forEach(kw => {
+      if (isKeywordMatched(kw, compiledResumeText)) {
+        matched.push(kw);
+      } else {
+        missing.push(kw);
+      }
+    });
+
+    const uniqueMatched = [...new Set(matched)];
+    const uniqueMissing = [...new Set(missing)].filter(k => !uniqueMatched.includes(k));
+
+    const totalCount = uniqueMatched.length + uniqueMissing.length;
+    const keywordMatchPercent = totalCount > 0 ? Math.round((uniqueMatched.length / totalCount) * 100) : 0;
+
+    const density = {};
+    const normalizedResume = compiledResumeText.toLowerCase();
+    uniqueMatched.forEach(kw => {
+      const regex = new RegExp(kw.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi');
+      const matches = normalizedResume.match(regex);
+      density[kw] = matches ? matches.length : 1;
+    });
+
+    // Compute the dynamic ATS score
+    const expScore = Math.min(20, (currentResume.experience?.length || 0) * 10);
+    const skillsScore = Math.min(10, (currentResume.skills?.length || 0) * 5);
+    const projCertScore = Math.min(10, ((currentResume.projects?.length || 0) + (currentResume.certifications?.length || 0)) * 5);
+    const summaryScore = currentResume.summary && currentResume.summary.length > 50 ? 10 : 0;
+
+    const baseScore = Math.round(keywordMatchPercent * 0.5 + expScore + skillsScore + projCertScore + summaryScore);
+    const finalScore = Math.max(10, Math.min(100, baseScore));
+
+    const feedback = [];
+    if (uniqueMissing.length > 0) {
+      feedback.push(`Integrate high-importance target terms: [${uniqueMissing.slice(0, 4).join(', ')}] in your skills or experience fields.`);
+    } else {
+      feedback.push("Awesome profile completeness! Ready for job matching.");
+    }
+    if (keywordMatchPercent < 70) {
+      feedback.push("Incorporate professional metrics and active industry terminology to lift the contextual semantic density.");
+    }
+    if (!currentResume.summary || currentResume.summary.length < 50) {
+      feedback.push("Craft a strong Professional Summary containing target role keywords.");
+    }
+    if (currentResume.experience?.length === 0) {
+      feedback.push("Add comprehensive professional experiences to satisfy resume structure parsing requirements.");
+    }
+
+    return {
+      matchedKeywords: uniqueMatched,
+      missingKeywords: uniqueMissing,
+      keywordMatchPercent,
+      score: finalScore,
+      density,
+      feedback
+    };
+  }, [currentResume, jdText, selectedJdPreset, atsBreakdown]);
 
   // Sample Job Descriptions Library
   const JD_PRESETS = {
@@ -230,15 +455,14 @@ const Builder = () => {
 
   // Set initial animatedScore when resume loads
   useEffect(() => {
-    if (currentResume?.atsMetadata?.score) {
-      setAnimatedScore(currentResume.atsMetadata.score);
+    if (dynamicAtsData?.score) {
+      setAnimatedScore(dynamicAtsData.score);
     }
-  }, [currentResume]);
+  }, [dynamicAtsData?.score]);
 
   // Animate score counter changes smoothly
   useEffect(() => {
-    if (!currentResume) return;
-    const targetScore = currentResume.atsMetadata?.score || 50;
+    const targetScore = dynamicAtsData?.score || 50;
     let start = animatedScore;
     const end = targetScore;
     if (start === end) return;
@@ -256,7 +480,7 @@ const Builder = () => {
     };
 
     window.requestAnimationFrame(step);
-  }, [currentResume?.atsMetadata?.score]);
+  }, [dynamicAtsData?.score]);
 
   // Self-closing Confetti system
   useEffect(() => {
@@ -696,7 +920,10 @@ const Builder = () => {
     atsMetadata = { score: 50, feedback: [] }
   } = currentResume;
 
-  const safeAtsMetadata = atsMetadata || { score: 50, feedback: [] };
+  const safeAtsMetadata = {
+    score: dynamicAtsData.score,
+    feedback: dynamicAtsData.feedback
+  };
 
 
   // Local state update helpers
@@ -1090,7 +1317,7 @@ const Builder = () => {
                   <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200">
                     {animatedScore >= 80 ? 'Excellent Match!' : animatedScore >= 60 ? 'Good Potential' : 'Needs Optimization'}
                   </h5>
-                  {selectedJdPreset === 'mern' && atsBreakdown && atsBreakdown.missingKeywords.length > 0 && (
+                  {selectedJdPreset === 'mern' && dynamicAtsData.missingKeywords.length > 0 && (
                     <button
                       onClick={handleQuickOptimize}
                       className="px-2 py-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-[9px] font-extrabold text-white rounded-lg flex items-center gap-0.5 animate-pulse cursor-pointer"
@@ -1133,13 +1360,13 @@ const Builder = () => {
                 <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-1.5 rounded-lg">
                   <div className="font-bold text-slate-400 uppercase tracking-widest text-[7.5px]">Matched</div>
                   <div className="text-xs font-extrabold text-emerald-500 mt-0.5">
-                    {atsBreakdown ? atsBreakdown.matchedKeywords.length : 8} keywords
+                    {dynamicAtsData.matchedKeywords.length} keywords
                   </div>
                 </div>
                 <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-1.5 rounded-lg">
                   <div className="font-bold text-slate-400 uppercase tracking-widest text-[7.5px]">Gaps</div>
                   <div className="text-xs font-extrabold text-red-400 mt-0.5">
-                    {atsBreakdown ? atsBreakdown.missingKeywords.length : 7} keywords
+                    {dynamicAtsData.missingKeywords.length} keywords
                   </div>
                 </div>
               </div>
@@ -1160,8 +1387,8 @@ const Builder = () => {
               <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
                 {(() => {
                   const allKw = [
-                    ...(atsBreakdown?.matchedKeywords || ["React", "Redux", "Zustand", "JavaScript", "HTML5", "CSS3", "AWS", "Git"]).map(k => ({ name: k, matched: true })),
-                    ...(atsBreakdown?.missingKeywords || ["MongoDB", "Express.js", "Node.js", "Docker", "CI/CD", "Redis", "JWT"]).map(k => ({ name: k, matched: false }))
+                    ...dynamicAtsData.matchedKeywords.map(k => ({ name: k, matched: true })),
+                    ...dynamicAtsData.missingKeywords.map(k => ({ name: k, matched: false }))
                   ];
                   const filtered = allKw.filter(k => k.name.toLowerCase().includes(keywordSearch.toLowerCase()));
                   
@@ -2509,23 +2736,38 @@ const Builder = () => {
 
                 {/* Keyword Compliance */}
                 <div className="space-y-3">
-                  <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                    <Target className="w-4 h-4 text-indigo-500" />
-                    <span>Keyword Compliance Breakdown</span>
-                  </h4>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                      <Target className="w-4 h-4 text-indigo-500" />
+                      <span>Keyword Compliance Breakdown</span>
+                    </h4>
+                    <input
+                      type="text"
+                      placeholder="Filter keywords..."
+                      value={modalKeywordSearch}
+                      onChange={(e) => setModalKeywordSearch(e.target.value)}
+                      className="px-2.5 py-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-[10px] focus:outline-none focus:border-indigo-500 w-full sm:w-44"
+                    />
+                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Matched Keywords */}
                     <div className="bg-emerald-50/20 dark:bg-emerald-950/10 border border-emerald-100/50 dark:border-emerald-900/30 rounded-2xl p-4 space-y-2">
                       <div className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1">
                         <CheckCircle className="w-3.5 h-3.5" />
-                        <span>Matched Keywords ({atsBreakdown ? atsBreakdown.matchedKeywords.length : 8})</span>
+                        <span>Matched Keywords ({dynamicAtsData.matchedKeywords.length})</span>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
-                        {(atsBreakdown?.matchedKeywords || ["React", "Redux", "Zustand", "JavaScript", "HTML5", "CSS3", "AWS", "Git"]).map(k => (
-                          <span key={k} className="px-2 py-0.5 bg-emerald-100/40 dark:bg-emerald-900/30 border border-emerald-200/20 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-lg text-[9px] font-bold">
-                            {k}
-                          </span>
-                        ))}
+                        {dynamicAtsData.matchedKeywords
+                          .filter(k => k.toLowerCase().includes(modalKeywordSearch.toLowerCase()))
+                          .map(k => (
+                            <span key={k} className="px-2 py-0.5 bg-emerald-100/40 dark:bg-emerald-900/30 border border-emerald-200/20 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-lg text-[9px] font-bold flex items-center gap-1">
+                              <span className="w-1 h-1 rounded-full bg-emerald-500" />
+                              {k}
+                            </span>
+                          ))}
+                        {dynamicAtsData.matchedKeywords.filter(k => k.toLowerCase().includes(modalKeywordSearch.toLowerCase())).length === 0 && (
+                          <span className="text-[9px] text-slate-400">No matching keywords found.</span>
+                        )}
                       </div>
                     </div>
 
@@ -2533,14 +2775,24 @@ const Builder = () => {
                     <div className="bg-rose-50/20 dark:bg-rose-950/10 border border-rose-100/50 dark:border-rose-900/30 rounded-2xl p-4 space-y-2">
                       <div className="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider flex items-center gap-1">
                         <AlertTriangle className="w-3.5 h-3.5" />
-                        <span>Missing Keywords ({atsBreakdown ? atsBreakdown.missingKeywords.length : 7})</span>
+                        <span>Missing Keywords ({dynamicAtsData.missingKeywords.length})</span>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
-                        {(atsBreakdown?.missingKeywords || ["MongoDB", "Express.js", "Node.js", "Docker", "CI/CD", "Redis", "JWT"]).map(k => (
-                          <span key={k} className="px-2 py-0.5 bg-rose-100/40 dark:bg-rose-900/30 border border-rose-200/20 dark:border-rose-800 text-rose-700 dark:text-rose-300 rounded-lg text-[9px] font-bold">
-                            {k}
-                          </span>
-                        ))}
+                        {dynamicAtsData.missingKeywords
+                          .filter(k => k.toLowerCase().includes(modalKeywordSearch.toLowerCase()))
+                          .map(k => (
+                            <span key={k} className="px-2 py-0.5 bg-amber-100/40 dark:bg-rose-950/20 border border-amber-200/20 dark:border-rose-900/30 text-amber-700 dark:text-rose-400 rounded-lg text-[9px] font-bold flex items-center gap-1 transition-colors cursor-pointer hover:border-indigo-500" title="Click to auto-fix or optimize" onClick={() => {
+                              openMagicOptimizer('bullet', '', (newVal) => {
+                                alert(`Suggested optimized sentence to inject:\n\n${newVal}`);
+                              });
+                            }}>
+                              <span className="w-1 h-1 rounded-full bg-amber-500 animate-pulse" />
+                              {k}
+                            </span>
+                          ))}
+                        {dynamicAtsData.missingKeywords.filter(k => k.toLowerCase().includes(modalKeywordSearch.toLowerCase())).length === 0 && (
+                          <span className="text-[9px] text-slate-400">No missing keywords! All matched.</span>
+                        )}
                       </div>
                     </div>
                   </div>
