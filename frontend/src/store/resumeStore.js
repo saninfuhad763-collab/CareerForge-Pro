@@ -121,8 +121,20 @@ export const useResumeStore = create((set, get) => ({
           throw new Error(data.message || 'Failed to auto-save to backend');
         }
 
-        // On successful save, update currentResume with actual saved payload (e.g. including recalculated ATS scores)
-        set({ currentResume: data.data, saving: false, error: null });
+        const latestResume = get().currentResume;
+        if (latestResume && latestResume._id === data.data._id) {
+          set({
+            currentResume: {
+              ...data.data,
+              ...latestResume,
+              atsScore: data.data.atsScore !== undefined ? data.data.atsScore : latestResume.atsScore,
+            },
+            saving: false,
+            error: null,
+          });
+        } else {
+          set({ saving: false, error: null });
+        }
       } catch (error) {
         console.error('[Auto-save Error] Failed to persist data:', error.message);
         set({ saving: false, error: 'Auto-save failed. Check connection.' });
@@ -151,7 +163,20 @@ export const useResumeStore = create((set, get) => ({
         throw new Error(data.message || 'Failed to save immediately');
       }
 
-      set({ currentResume: data.data, saving: false, error: null });
+      const latestResume = get().currentResume;
+      if (latestResume && latestResume._id === data.data._id) {
+        set({
+          currentResume: {
+            ...data.data,
+            ...latestResume,
+            atsScore: data.data.atsScore !== undefined ? data.data.atsScore : latestResume.atsScore,
+          },
+          saving: false,
+          error: null,
+        });
+      } else {
+        set({ saving: false, error: null });
+      }
       return true;
     } catch (error) {
       set({ saving: false, error: error.message });

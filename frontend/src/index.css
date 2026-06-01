@@ -136,3 +136,82 @@ body {
   border-color: #818cf8;
   box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.12);
 }
+
+/* Print styles to ensure ultra-high quality exported resumes and PDFs */
+@media print {
+  /* Reset body styles for clean printing */
+  body, html {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide the entire web interface of the builder application (actions header, left editor, AI panel, modals) */
+  header, 
+  aside, 
+  nav, 
+  button, 
+  input, 
+  textarea,
+  .no-print,
+  #builder-left-workspace,
+  #builder-header-banner,
+  .editor-panel,
+  .action-buttons,
+  [class*="border-r"] {
+    display: none !important;
+  }
+
+  /* Make sure the main workspace background doesn't have styling */
+  main, .flex-1, .bg-slate-200\/50, .bg-slate-50, .dark {
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+  }
+
+  /* Make the resume preview sheet expand and print as a high-fidelity A4/Letter page */
+  #resume-preview-sheet {
+    position: relative !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0.75in !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    border-radius: 0 !important;
+  }
+
+  /* Hide any preview-only decorative bars (like the modern colorful gradient bar or the slate/black line) */
+  #resume-preview-sheet > div[class*="absolute"] {
+    display: none !important;
+  }
+
+  /* Hide the footer branding and custom print-hidden elements completely in printed resumes */
+  #resume-preview-sheet footer,
+  .print-hidden,
+  .builder-only-footer {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+  }
+
+  /* Force page breaks to avoid splitting a single section across pages */
+  #resume-preview-sheet section {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+}

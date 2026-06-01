@@ -33,7 +33,9 @@ import {
   X,
   Target,
   Loader2,
-  Lightbulb
+  Lightbulb,
+  Palette,
+  Download
 } from 'lucide-react';
 
 
@@ -161,6 +163,26 @@ const Builder = () => {
 
   const [activeAccordion, setActiveAccordion] = useState('personal');
   const [saveStatus, setSaveStatus] = useState('Saved to cloud');
+  const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
+  const [activeTheme, setActiveTheme] = useState('modern');
+  const [isPrinting, setIsPrinting] = useState(false);
+
+  useEffect(() => {
+    const handleBeforePrint = () => setIsPrinting(true);
+    const handleAfterPrint = () => setIsPrinting(false);
+    window.addEventListener('beforeprint', handleBeforePrint);
+    window.addEventListener('afterprint', handleAfterPrint);
+    return () => {
+      window.removeEventListener('beforeprint', handleBeforePrint);
+      window.removeEventListener('afterprint', handleAfterPrint);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (currentResume?.templateId) {
+      setActiveTheme(currentResume.templateId);
+    }
+  }, [currentResume?.templateId]);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -415,7 +437,92 @@ const Builder = () => {
     };
   }, [currentResume, analyzedJdText, analyzedJdPreset, atsBreakdown]);
 
+  // Destructure resume sections with fallbacks
+  const {
+    title = '',
+    templateId: storeTemplateId = 'modern',
+    sectionOrder = [],
+    personalInfo = {},
+    summary = '',
+    experience = [],
+    education = [],
+    skills = [],
+    certifications = [],
+    projects = [],
+    languages = [],
+    atsMetadata = { score: 50, feedback: [] }
+  } = currentResume || {};
 
+  const templateId = activeTheme;
+
+  const safeAtsMetadata = {
+    score: dynamicAtsData.score,
+    feedback: dynamicAtsData.feedback
+  };
+
+  const totalContentCount = useMemo(() => {
+    let count = 0;
+    if (summary) count += 1;
+    if (experience && experience.length > 0) count += experience.length;
+    if (education && education.length > 0) count += education.length;
+    if (skills && skills.length > 0) count += skills.length;
+    if (projects && projects.length > 0) count += projects.length;
+    if (certifications && certifications.length > 0) count += certifications.length;
+    if (languages && languages.length > 0) count += languages.length;
+    return count;
+  }, [summary, experience, education, skills, projects, certifications, languages]);
+
+  const dynamicStyles = useMemo(() => {
+    if (totalContentCount <= 2) {
+      return {
+        sectionSpace: 'space-y-7',
+        itemSpace: 'space-y-3',
+        sheetPadding: 'p-8 md:p-12',
+        skillsListSpace: 'space-y-2.5',
+        expListSpace: 'space-y-4',
+        projListSpace: 'space-y-4',
+        eduListSpace: 'space-y-4',
+        headingMargin: 'mb-2.5',
+        sectionMargin: 'mt-7'
+      };
+    } else if (totalContentCount <= 4) {
+      return {
+        sectionSpace: 'space-y-6',
+        itemSpace: 'space-y-2.5',
+        sheetPadding: 'p-8 md:p-12',
+        skillsListSpace: 'space-y-2',
+        expListSpace: 'space-y-3.5',
+        projListSpace: 'space-y-3',
+        eduListSpace: 'space-y-3',
+        headingMargin: 'mb-2',
+        sectionMargin: 'mt-6'
+      };
+    } else if (totalContentCount <= 6) {
+      return {
+        sectionSpace: 'space-y-5',
+        itemSpace: 'space-y-2',
+        sheetPadding: 'p-7 md:p-10',
+        skillsListSpace: 'space-y-1.5',
+        expListSpace: 'space-y-3',
+        projListSpace: 'space-y-2.5',
+        eduListSpace: 'space-y-2.5',
+        headingMargin: 'mb-1.5',
+        sectionMargin: 'mt-5'
+      };
+    } else {
+      return {
+        sectionSpace: 'space-y-4',
+        itemSpace: 'space-y-1.5',
+        sheetPadding: 'p-6 md:p-8',
+        skillsListSpace: 'space-y-1',
+        expListSpace: 'space-y-2',
+        projListSpace: 'space-y-1.5',
+        eduListSpace: 'space-y-1.5',
+        headingMargin: 'mb-1',
+        sectionMargin: 'mt-4'
+      };
+    }
+  }, [totalContentCount]);
 
   // Magic Optimizer State
   const [isOptimizerOpen, setIsOptimizerOpen] = useState(false);
@@ -927,28 +1034,6 @@ const Builder = () => {
 
   if (!currentResume) return null;
 
-  // Destructure resume sections with fallbacks
-  const {
-    title = '',
-    templateId = 'modern',
-    sectionOrder = [],
-    personalInfo = {},
-    summary = '',
-    experience = [],
-    education = [],
-    skills = [],
-    certifications = [],
-    projects = [],
-    languages = [],
-    atsMetadata = { score: 50, feedback: [] }
-  } = currentResume;
-
-  const safeAtsMetadata = {
-    score: dynamicAtsData.score,
-    feedback: dynamicAtsData.feedback
-  };
-
-
   // Local state update helpers
   const handlePersonalInfoChange = (field, value) => {
     updateResumeLocal({
@@ -1109,7 +1194,7 @@ const Builder = () => {
       className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col"
     >
       {/* Top action header banner */}
-      <header className="sticky top-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200/50 dark:border-slate-800/50 px-6 py-4 flex items-center justify-between shadow-sm">
+      <header id="builder-header-banner" className="sticky top-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200/50 dark:border-slate-800/50 px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-4">
           <Link
             to="/dashboard"
@@ -1145,18 +1230,57 @@ const Builder = () => {
             <span>Load Demo Resume</span>
           </button>
 
-          {/* Template Select Dropdown */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider hidden lg:inline">Theme:</span>
-            <select
-              value={templateId}
-              onChange={(e) => updateResumeLocal({ templateId: e.target.value })}
-              className="px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-300 focus:outline-none"
+          {/* Professional Custom Theme Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setThemeDropdownOpen(!themeDropdownOpen)}
+              className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm hover:shadow active:scale-95 cursor-pointer"
             >
-              <option value="modern">Modern (Accent)</option>
-              <option value="classic">Classic (Traditional)</option>
-              <option value="minimalist">Minimalist (Clean)</option>
-            </select>
+              <Palette className="w-3.5 h-3.5 text-indigo-500" />
+              <span>Theme: <strong className="text-indigo-600 dark:text-indigo-400 capitalize">{activeTheme === 'minimalist' ? 'Minimal' : activeTheme}</strong></span>
+              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${themeDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Dropdown Options list */}
+            {themeDropdownOpen && (
+              <>
+                {/* Backdrop overlay to close when clicking outside */}
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setThemeDropdownOpen(false)} 
+                />
+                
+                <div className="absolute inset-x-0 mt-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800/80 rounded-xl shadow-xl py-1 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  {[
+                    { id: 'modern',     label: 'Modern' },
+                    { id: 'minimalist', label: 'Minimalist' },
+                    { id: 'classic',    label: 'Classic' },
+                  ].map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={async () => {
+                        setActiveTheme(t.id);
+                        updateResumeLocal({ templateId: t.id });
+                        setThemeDropdownOpen(false);
+                        await saveResumeImmediately();
+                      }}
+                      className={`
+                        w-full flex items-center justify-between px-3.5 py-2 text-left transition-colors duration-150 cursor-pointer text-xs
+                        ${activeTheme === t.id
+                          ? 'bg-indigo-50/60 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 font-bold'
+                          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/60 font-medium'
+                        }
+                      `}
+                    >
+                      <span>{t.label}</span>
+                      {activeTheme === t.id && (
+                        <Check className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           <button
@@ -1167,6 +1291,14 @@ const Builder = () => {
             <Save className="w-4 h-4" />
             <span>Save Now</span>
           </button>
+
+          <button
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-500/20 hover:shadow-indigo-500/35 hover:-translate-y-0.5 cursor-pointer active:scale-95"
+          >
+            <Download className="w-4 h-4" />
+            <span>Export PDF</span>
+          </button>
         </div>
       </header>
 
@@ -1175,6 +1307,7 @@ const Builder = () => {
         
         {/* LEFT WORKSPACE: Input Accordion Editor Panel */}
         <motion.div 
+          id="builder-left-workspace"
           variants={slideUp}
           className="w-full md:w-[48%] lg:w-[45%] border-r border-slate-200/50 dark:border-slate-800/50 overflow-y-auto p-5 space-y-6 bg-slate-50 dark:bg-slate-950/20 text-left"
         >
@@ -2258,57 +2391,115 @@ const Builder = () => {
         {/* RIGHT WORKSPACE: Real-time Live Resume Preview Panel */}
         <motion.div 
           variants={slideUp}
-          className="flex-1 bg-slate-200/50 dark:bg-slate-900/30 overflow-y-auto p-6 md:p-8 flex justify-center"
+          className="flex-1 bg-slate-200/50 dark:bg-slate-900/30 overflow-y-auto p-6 md:p-8 flex justify-center items-start"
         >
           
           {/* Main Visual Render Page sheet standard */}
-          <div className="w-full max-w-[800px] min-h-[1056px] bg-white dark:bg-slate-950 text-slate-950 dark:text-slate-50 shadow-xl border border-slate-300/40 dark:border-slate-800/80 rounded-lg p-8 md:p-12 flex flex-col justify-between text-left relative overflow-hidden transition-all duration-300">
+          <div id="resume-preview-sheet" className={`w-full max-w-[800px] bg-white dark:bg-slate-950 text-slate-950 dark:text-slate-50 shadow-xl border border-slate-300/40 dark:border-slate-800/80 rounded-lg ${dynamicStyles.sheetPadding} flex flex-col justify-start text-left relative overflow-hidden transition-all duration-300`}>
             
             {/* Header branding overlay */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-indigo-600 to-emerald-500" />
+            <div className={`absolute top-0 left-0 right-0 h-1 transition-all duration-500 ${
+              templateId === 'modern' ? 'bg-gradient-to-r from-indigo-500 via-violet-500 to-emerald-400' :
+              templateId === 'minimalist' ? 'bg-gradient-to-r from-slate-300 to-slate-400' :
+              'bg-slate-900'
+            }`} />
             
-            <div>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTheme}
+                initial={{ opacity: 0, y: 6, scale: 0.995 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.995 }}
+                transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
+                className={`flex flex-col justify-start w-full ${
+                  templateId === 'classic' ? 'font-serif' : 'font-sans'
+                }`}
+              >
+                <div className="flex flex-col justify-start w-full">
               {/* Dynamic Header Section (Personal details) based on templateId */}
-              <header className={`pb-6 border-b ${
-                templateId === 'classic' ? 'text-center border-slate-300' : 'flex flex-col sm:flex-row justify-between sm:items-end border-slate-200/50 dark:border-slate-800'
-              }`}>
-                <div>
-                  <h1 className={`font-display font-extrabold tracking-tight text-slate-900 dark:text-slate-100 ${
-                    templateId === 'classic' ? 'text-3xl' : 'text-2xl sm:text-3xl'
-                  }`}>
+              {templateId === 'modern' ? (
+                <header className="pb-6 border-b border-slate-200/50 dark:border-slate-800 flex flex-col sm:flex-row justify-between sm:items-end font-sans">
+                  <div>
+                    <h1 className="font-display font-extrabold tracking-tight text-slate-900 dark:text-slate-100 text-2xl sm:text-3xl">
+                      {personalInfo.fullName || 'YOUR FULL NAME'}
+                    </h1>
+                    <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 mt-1 uppercase tracking-wide">
+                      {experience[0]?.position || 'Target Professional Role'}
+                    </p>
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 space-y-1 mt-4 sm:mt-0 sm:text-right font-sans">
+                    <p>{personalInfo.email || 'email@address.com'}</p>
+                    <p>{personalInfo.phone || '+1 (555) 000-0000'}</p>
+                    <p>{personalInfo.location || 'Location Area, State'}</p>
+                    <div className="flex gap-3 justify-start sm:justify-end">
+                      {personalInfo.website && <span className="hover:underline text-[10px]">{personalInfo.website}</span>}
+                      {personalInfo.github && <span className="hover:underline text-[10px]">{personalInfo.github}</span>}
+                      {personalInfo.linkedin && <span className="hover:underline text-[10px]">{personalInfo.linkedin}</span>}
+                    </div>
+                  </div>
+                </header>
+              ) : templateId === 'minimalist' ? (
+                <header className="pb-5 border-b border-slate-200 dark:border-slate-800 text-left font-sans">
+                  <h1 className="text-2xl font-bold tracking-wider text-slate-900 dark:text-slate-100 uppercase font-sans">
                     {personalInfo.fullName || 'YOUR FULL NAME'}
                   </h1>
-                  <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 mt-1 uppercase tracking-wide">
+                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-450 uppercase tracking-[0.2em] font-sans mt-0.5">
                     {experience[0]?.position || 'Target Professional Role'}
                   </p>
-                </div>
-                
-                <div className={`text-xs text-slate-500 dark:text-slate-400 space-y-1 ${
-                  templateId === 'classic' ? 'flex flex-wrap items-center justify-center gap-x-4 mt-3 border-t pt-2 border-slate-100 dark:border-slate-900' : 'mt-4 sm:mt-0 sm:text-right'
-                }`}>
-                  <p>{personalInfo.email || 'email@address.com'}</p>
-                  <p>{personalInfo.phone || '+1 (555) 000-0000'}</p>
-                  <p>{personalInfo.location || 'Location Area, State'}</p>
-                  <div className={`flex gap-3 justify-start sm:justify-end ${templateId === 'classic' ? 'w-full justify-center' : ''}`}>
-                    {personalInfo.website && <span className="hover:underline text-[10px]">{personalInfo.website}</span>}
-                    {personalInfo.github && <span className="hover:underline text-[10px]">{personalInfo.github}</span>}
-                    {personalInfo.linkedin && <span className="hover:underline text-[10px]">{personalInfo.linkedin}</span>}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-450 dark:text-slate-500 font-normal tracking-wide pt-2.5 font-sans">
+                    <span>{personalInfo.email || 'email@address.com'}</span>
+                    {personalInfo.phone && <span>· {personalInfo.phone}</span>}
+                    {personalInfo.location && <span>· {personalInfo.location}</span>}
+                    {personalInfo.website && <span>· {personalInfo.website}</span>}
+                    {personalInfo.github && <span>· {personalInfo.github}</span>}
+                    {personalInfo.linkedin && <span>· {personalInfo.linkedin}</span>}
                   </div>
-                </div>
-              </header>
+                </header>
+              ) : (
+                <header className="pb-5 text-center font-serif">
+                  <h1 className="font-serif font-bold text-3xl text-slate-950 dark:text-slate-50 tracking-tight leading-tight">
+                    {personalInfo.fullName || 'YOUR FULL NAME'}
+                  </h1>
+                  <p className="text-xs italic font-serif text-slate-700 dark:text-slate-400 mt-1 uppercase tracking-wider">
+                    {experience[0]?.position || 'Target Professional Role'}
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-x-2.5 mt-2.5 text-[11px] text-slate-600 dark:text-slate-400 font-serif">
+                    <span>{personalInfo.email || 'email@address.com'}</span>
+                    {personalInfo.phone && <span>| {personalInfo.phone}</span>}
+                    {personalInfo.location && <span>| {personalInfo.location}</span>}
+                    {personalInfo.website && <span>| {personalInfo.website}</span>}
+                    {personalInfo.github && <span>| {personalInfo.github}</span>}
+                    {personalInfo.linkedin && <span>| {personalInfo.linkedin}</span>}
+                  </div>
+                  <div className="border-b-2 border-slate-950 dark:border-slate-800 mt-4.5 w-full" />
+                </header>
+              )}
 
               {/* Dynamic Render Loop of active sections based on sectionOrder */}
-              <div className="pt-6 space-y-6">
+              <div className={`${dynamicStyles.sectionMargin} ${dynamicStyles.sectionSpace}`}>
                 {sectionOrder.map((sectionName) => {
-                  
-                  // Summary Section
+                               // Summary Section
                   if (sectionName === 'summary' && summary) {
                     return (
-                      <section key="summary" className="space-y-2">
-                        <h2 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-b border-indigo-100 dark:border-indigo-900/50 pb-1">
-                          Professional Summary
-                        </h2>
-                        <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-sans">
+                      <section key="summary" className={dynamicStyles.itemSpace}>
+                        {templateId === 'modern' ? (
+                          <h2 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-l-4 border-indigo-500 pl-3">
+                            Professional Summary
+                          </h2>
+                        ) : templateId === 'minimalist' ? (
+                          <h2 className="text-[11px] font-bold text-slate-900 dark:text-slate-100 uppercase tracking-[0.2em] border-b border-slate-200 dark:border-slate-800 pb-1.5 font-sans">
+                            Professional Summary
+                          </h2>
+                        ) : (
+                          <h2 className="text-xs font-bold text-slate-950 dark:text-slate-50 uppercase tracking-wider border-b-2 border-slate-950 dark:border-slate-805 pb-0.5 font-serif">
+                            Professional Summary
+                          </h2>
+                        )}
+                        <p className={`text-xs leading-relaxed ${
+                          templateId === 'modern' ? 'text-slate-600 dark:text-slate-300 font-sans' :
+                          templateId === 'minimalist' ? 'text-slate-600 dark:text-slate-400 font-normal font-sans' :
+                          'text-slate-700 dark:text-slate-300 font-serif'
+                        }`}>
                           {summary}
                         </p>
                       </section>
@@ -2318,33 +2509,95 @@ const Builder = () => {
                   // Work Experience Section
                   if (sectionName === 'experience' && experience.length > 0) {
                     return (
-                      <section key="experience" className="space-y-3">
-                        <h2 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-b border-indigo-100 dark:border-indigo-900/50 pb-1">
-                          Professional Experience
-                        </h2>
-                        <div className="space-y-4">
-                          {experience.map((exp, idx) => (
-                            <div key={idx} className="space-y-1">
-                              <div className="flex justify-between items-start text-xs">
-                                <div>
-                                  <span className="font-bold text-slate-800 dark:text-slate-200">{exp.position || 'Position Title'}</span>
-                                  <span className="mx-1.5 text-slate-300 dark:text-slate-700">|</span>
-                                  <span className="font-semibold text-slate-600 dark:text-slate-400">{exp.company || 'Company'}</span>
+                      <section key="experience" className={dynamicStyles.itemSpace}>
+                        {templateId === 'modern' ? (
+                          <h2 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-l-4 border-indigo-500 pl-3">
+                            Professional Experience
+                          </h2>
+                        ) : templateId === 'minimalist' ? (
+                          <h2 className="text-[11px] font-bold text-slate-900 dark:text-slate-100 uppercase tracking-[0.2em] border-b border-slate-200 dark:border-slate-800 pb-1.5 font-sans">
+                            Professional Experience
+                          </h2>
+                        ) : (
+                          <h2 className="text-xs font-bold text-slate-950 dark:text-slate-50 uppercase tracking-wider border-b-2 border-slate-950 dark:border-slate-805 pb-0.5 font-serif">
+                            Professional Experience
+                          </h2>
+                        )}
+                        <div className={dynamicStyles.expListSpace}>
+                          {experience.map((exp, idx) => {
+                            if (templateId === 'modern') {
+                              return (
+                                <div key={idx} className="space-y-1 font-sans">
+                                  <div className="flex justify-between items-start text-xs font-sans">
+                                    <div>
+                                      <span className="font-bold text-slate-900 dark:text-slate-100">{exp.position || 'Position Title'}</span>
+                                      <span className="mx-1.5 text-slate-350 dark:text-slate-700">|</span>
+                                      <span className="font-semibold text-slate-600 dark:text-slate-400">{exp.company || 'Company'}</span>
+                                    </div>
+                                    <span className="text-[10px] text-slate-400 whitespace-nowrap">
+                                      {exp.startDate || 'Date'} — {exp.current ? 'Present' : exp.endDate || 'Date'}
+                                    </span>
+                                  </div>
+                                  {exp.location && <p className="text-[10px] text-slate-400 font-sans">{exp.location}</p>}
+                                  {exp.description && (
+                                    <ul className="list-disc pl-4 text-xs text-slate-600 dark:text-slate-400 space-y-1 pt-1 font-sans">
+                                      {exp.description.split('\n').map((bullet, bIdx) => (
+                                        <li key={bIdx}>{bullet.replace(/^- /, '')}</li>
+                                      ))}
+                                    </ul>
+                                  )}
                                 </div>
-                                <span className="text-[10px] text-slate-400 whitespace-nowrap">
-                                  {exp.startDate || 'Date'} — {exp.current ? 'Present' : exp.endDate || 'Date'}
-                                </span>
-                              </div>
-                              {exp.location && <p className="text-[10px] text-slate-400">{exp.location}</p>}
-                              {exp.description && (
-                                <ul className="list-disc pl-4 text-xs text-slate-600 dark:text-slate-400 space-y-1 pt-1 font-sans">
-                                  {exp.description.split('\n').map((bullet, bIdx) => (
-                                    <li key={bIdx}>{bullet.replace(/^- /, '')}</li>
-                                  ))}
-                                </ul>
-                              )}
-                            </div>
-                          ))}
+                              );
+                            } else if (templateId === 'minimalist') {
+                              return (
+                                <div key={idx} className="space-y-1 font-sans text-xs">
+                                  <div className="flex justify-between items-baseline font-sans">
+                                    <div>
+                                      <span className="font-bold text-slate-900 dark:text-slate-100">{exp.position || 'Position Title'}</span>
+                                      <span className="mx-1.5 text-slate-400 dark:text-slate-700">·</span>
+                                      <span className="font-normal text-slate-600 dark:text-slate-400">{exp.company || 'Company'}</span>
+                                      {exp.location && <span className="text-[10px] text-slate-450 dark:text-slate-500 font-normal ml-2">({exp.location})</span>}
+                                    </div>
+                                    <span className="text-[10px] text-slate-450 dark:text-slate-500 font-normal whitespace-nowrap">
+                                      {exp.startDate || 'Date'} — {exp.current ? 'Present' : exp.endDate || 'Date'}
+                                    </span>
+                                  </div>
+                                  {exp.description && (
+                                    <ul className="list-disc pl-4 text-xs text-slate-600 dark:text-slate-400 space-y-0.5 pt-0.5 font-sans">
+                                      {exp.description.split('\n').map((bullet, bIdx) => (
+                                        <li key={bIdx}>{bullet.replace(/^- /, '')}</li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </div>
+                              );
+                            } else {
+                              // classic traditional Wall Street layout (school/company left, date/location right)
+                              return (
+                                <div key={idx} className="space-y-0.5 font-serif text-xs">
+                                  <div className="flex justify-between items-baseline font-serif">
+                                    <span className="font-bold text-slate-950 dark:text-slate-50">{exp.company || 'Company'}</span>
+                                    <span className="text-[11px] text-slate-650 dark:text-slate-400 italic">
+                                      {exp.location || 'Location'}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between items-baseline font-serif text-[11px]">
+                                    <span className="italic text-slate-750 dark:text-slate-350">{exp.position || 'Position Title'}</span>
+                                    <span className="text-[10px] text-slate-600 dark:text-slate-450 whitespace-nowrap">
+                                      {exp.startDate || 'Date'} — {exp.current ? 'Present' : exp.endDate || 'Date'}
+                                    </span>
+                                  </div>
+                                  {exp.description && (
+                                    <ul className="list-disc pl-4 text-[11px] text-slate-700 dark:text-slate-300 space-y-0.5 pt-0.5 font-serif">
+                                      {exp.description.split('\n').map((bullet, bIdx) => (
+                                        <li key={bIdx}>{bullet.replace(/^- /, '')}</li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </div>
+                              );
+                            }
+                          })}
                         </div>
                       </section>
                     );
@@ -2353,24 +2606,72 @@ const Builder = () => {
                   // Education Section
                   if (sectionName === 'education' && education.length > 0) {
                     return (
-                      <section key="education" className="space-y-3">
-                        <h2 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-b border-indigo-100 dark:border-indigo-900/50 pb-1">
-                          Education
-                        </h2>
-                        <div className="space-y-3">
-                          {education.map((edu, idx) => (
-                            <div key={idx} className="flex justify-between items-start text-xs">
-                              <div>
-                                <span className="font-bold text-slate-800 dark:text-slate-200">{edu.degree || 'Degree Major'}</span>
-                                <span className="mx-1.5 text-slate-300 dark:text-slate-700">|</span>
-                                <span className="font-semibold text-slate-600 dark:text-slate-400">{edu.school || 'School'}</span>
-                                {edu.location && <span className="text-[10px] text-slate-400 ml-2">({edu.location})</span>}
-                              </div>
-                              <span className="text-[10px] text-slate-400 whitespace-nowrap">
-                                {edu.startDate || 'Date'} — {edu.endDate || 'Date'}
-                              </span>
-                            </div>
-                          ))}
+                      <section key="education" className={dynamicStyles.itemSpace}>
+                        {templateId === 'modern' ? (
+                          <h2 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-l-4 border-indigo-500 pl-3">
+                            Education
+                          </h2>
+                        ) : templateId === 'minimalist' ? (
+                          <h2 className="text-[11px] font-bold text-slate-900 dark:text-slate-100 uppercase tracking-[0.2em] border-b border-slate-200 dark:border-slate-800 pb-1.5 font-sans">
+                            Education
+                          </h2>
+                        ) : (
+                          <h2 className="text-xs font-bold text-slate-950 dark:text-slate-50 uppercase tracking-wider border-b-2 border-slate-950 dark:border-slate-805 pb-0.5 font-serif">
+                            Education
+                          </h2>
+                        )}
+                        <div className={dynamicStyles.eduListSpace}>
+                          {education.map((edu, idx) => {
+                            if (templateId === 'modern') {
+                              return (
+                                <div key={idx} className="flex justify-between items-start text-xs font-sans">
+                                  <div>
+                                    <span className="font-bold text-slate-850 dark:text-slate-200">{edu.degree || 'Degree Major'}</span>
+                                    <span className="mx-1.5 text-slate-350 dark:text-slate-700">|</span>
+                                    <span className="font-semibold text-slate-600 dark:text-slate-400">{edu.school || 'School'}</span>
+                                    {edu.location && <span className="text-[10px] text-slate-400 ml-2">({edu.location})</span>}
+                                  </div>
+                                  <span className="text-[10px] text-slate-400 whitespace-nowrap">
+                                    {edu.startDate || 'Date'} — {edu.endDate || 'Date'}
+                                  </span>
+                                </div>
+                              );
+                            } else if (templateId === 'minimalist') {
+                              return (
+                                <div key={idx} className="space-y-0.5 text-xs font-sans">
+                                  <div className="flex justify-between items-baseline font-sans">
+                                    <div>
+                                      <span className="font-bold text-slate-900 dark:text-slate-100">{edu.degree || 'Degree Major'}</span>
+                                      <span className="mx-1.5 text-slate-400 dark:text-slate-750">·</span>
+                                      <span className="font-normal text-slate-600 dark:text-slate-400">{edu.school || 'School'}</span>
+                                      {edu.location && <span className="text-[10px] text-slate-450 dark:text-slate-500 font-normal ml-2">({edu.location})</span>}
+                                    </div>
+                                    <span className="text-[10px] text-slate-450 dark:text-slate-500 font-normal whitespace-nowrap">
+                                      {edu.startDate} — {edu.endDate}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            } else {
+                              // classic traditional Wall Street style
+                              return (
+                                <div key={idx} className="space-y-0.5 font-serif text-xs">
+                                  <div className="flex justify-between items-baseline font-serif">
+                                    <span className="font-bold text-slate-950 dark:text-slate-50">{edu.school || 'School'}</span>
+                                    <span className="text-[11px] text-slate-650 dark:text-slate-400 italic">
+                                      {edu.location || 'Location'}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between items-baseline font-serif text-[11px]">
+                                    <span className="italic text-slate-750 dark:text-slate-350">{edu.degree || 'Degree Major'}</span>
+                                    <span className="text-[10px] text-slate-600 dark:text-slate-450 whitespace-nowrap">
+                                      {edu.startDate || 'Date'} — {edu.endDate || 'Date'}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            }
+                          })}
                         </div>
                       </section>
                     );
@@ -2379,53 +2680,137 @@ const Builder = () => {
                   // Technical Skills Section
                   if (sectionName === 'skills' && skills.length > 0) {
                     return (
-                      <section key="skills" className="space-y-3">
-                        <h2 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-b border-indigo-100 dark:border-indigo-900/50 pb-1">
-                          Skills
-                        </h2>
-                        <div className="space-y-2 text-xs">
-                          {skills.map((skill, idx) => (
-                            <div key={idx} className="grid grid-cols-1 sm:grid-cols-12 gap-1.5">
-                              <span className="sm:col-span-3 font-bold text-slate-700 dark:text-slate-300 capitalize">{skill.name || 'Group'}:</span>
-                              <div className="sm:col-span-9 flex flex-wrap gap-x-1.5 gap-y-1">
-                                {skill.keywords && skill.keywords.map((kw, kwIdx) => (
-                                  <span key={kwIdx} className="text-slate-600 dark:text-slate-400">
-                                    {kw}{kwIdx < skill.keywords.length - 1 ? ',' : ''}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
+                      <section key="skills" className={dynamicStyles.itemSpace}>
+                        {templateId === 'modern' ? (
+                          <h2 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-l-4 border-indigo-500 pl-3">
+                            Skills
+                          </h2>
+                        ) : templateId === 'minimalist' ? (
+                          <h2 className="text-[11px] font-bold text-slate-900 dark:text-slate-100 uppercase tracking-[0.2em] border-b border-slate-200 dark:border-slate-800 pb-1.5 font-sans">
+                            Skills
+                          </h2>
+                        ) : (
+                          <h2 className="text-xs font-bold text-slate-950 dark:text-slate-50 uppercase tracking-wider border-b-2 border-slate-950 dark:border-slate-805 pb-0.5 font-serif">
+                            Skills
+                          </h2>
+                        )}
+                        <div className={`${dynamicStyles.skillsListSpace} text-xs`}>
+                          {skills.map((skill, idx) => {
+                            if (templateId === 'modern') {
+                              return (
+                                <div key={idx} className="grid grid-cols-1 sm:grid-cols-12 gap-1.5 font-sans text-xs">
+                                  <span className="sm:col-span-3 font-bold text-slate-700 dark:text-slate-300 capitalize">{skill.name || 'Group'}:</span>
+                                  <div className="sm:col-span-9">
+                                    <div className="flex flex-wrap gap-1.5 pt-0.5">
+                                      {skill.keywords && skill.keywords.map((kw, kwIdx) => (
+                                        <span key={kwIdx} className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-900/50 px-2 py-0.5 rounded-full text-[10px] font-medium">
+                                          {kw}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            } else if (templateId === 'minimalist') {
+                              return (
+                                <div key={idx} className="flex flex-col sm:flex-row sm:items-start gap-1 font-sans text-xs">
+                                  <span className="font-bold text-slate-900 dark:text-slate-100 w-28 shrink-0 capitalize">{skill.name || 'Group'}:</span>
+                                  <div className="flex flex-wrap gap-x-2 gap-y-1">
+                                    {skill.keywords && skill.keywords.map((kw, kwIdx) => (
+                                      <span key={kwIdx} className="text-slate-600 dark:text-slate-400 font-normal">
+                                        {kw}{kwIdx < skill.keywords.length - 1 ? ' ·' : ''}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            } else {
+                              // classic traditional
+                              return (
+                                <div key={idx} className="flex flex-col sm:flex-row sm:items-baseline gap-1 font-serif text-xs">
+                                  <span className="font-bold text-slate-950 dark:text-slate-100 w-32 shrink-0 capitalize">{skill.name || 'Group'}:</span>
+                                  <div className="flex flex-wrap gap-x-1.5 gap-y-1">
+                                    {skill.keywords && skill.keywords.map((kw, kwIdx) => (
+                                      <span key={kwIdx} className="text-slate-700 dark:text-slate-350">
+                                        {kw}{kwIdx < skill.keywords.length - 1 ? ',' : ''}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            }
+                          })}
                         </div>
                       </section>
                     );
                   }
 
-                  // Projects Section
+                   // Projects Section
                   if (sectionName === 'projects' && projects.length > 0) {
                     return (
-                      <section key="projects" className="space-y-3">
-                        <h2 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-b border-indigo-100 dark:border-indigo-900/50 pb-1">
-                          Projects
-                        </h2>
-                        <div className="space-y-3">
-                          {projects.map((proj, idx) => (
-                            <div key={idx} className="space-y-1 text-xs">
-                              <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="font-bold text-slate-800 dark:text-slate-200">{proj.title || 'Project Title'}</span>
-                                  {proj.role && <span className="text-[10px] text-slate-400">({proj.role})</span>}
-                                  {proj.url && (
-                                    <span className="text-[10px] text-indigo-500 flex items-center gap-0.5">
-                                      <ExternalLink className="w-2.5 h-2.5" />
-                                    </span>
-                                  )}
+                      <section key="projects" className={dynamicStyles.itemSpace}>
+                        {templateId === 'modern' ? (
+                          <h2 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-l-4 border-indigo-500 pl-3">
+                            Projects
+                          </h2>
+                        ) : templateId === 'minimalist' ? (
+                          <h2 className="text-[11px] font-bold text-slate-900 dark:text-slate-100 uppercase tracking-[0.2em] border-b border-slate-200 dark:border-slate-800 pb-1.5 font-sans">
+                            Projects
+                          </h2>
+                        ) : (
+                          <h2 className="text-xs font-bold text-slate-950 dark:text-slate-50 uppercase tracking-wider border-b-2 border-slate-950 dark:border-slate-805 pb-0.5 font-serif">
+                            Projects
+                          </h2>
+                        )}
+                        <div className={dynamicStyles.projListSpace}>
+                          {projects.map((proj, idx) => {
+                            if (templateId === 'modern') {
+                              return (
+                                <div key={idx} className="space-y-1 text-xs font-sans">
+                                  <div className="flex justify-between items-center">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="font-bold text-slate-800 dark:text-slate-200">{proj.title || 'Project Title'}</span>
+                                      {proj.role && <span className="text-[10px] text-slate-400">({proj.role})</span>}
+                                      {proj.url && (
+                                        <span className="text-[10px] text-indigo-500 flex items-center gap-0.5">
+                                          <ExternalLink className="w-2.5 h-2.5" />
+                                        </span>
+                                      )}
+                                    </div>
+                                    <span className="text-[10px] text-slate-400">{proj.startDate}</span>
+                                  </div>
+                                  {proj.description && <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-sans">{proj.description}</p>}
                                 </div>
-                                <span className="text-[10px] text-slate-400">{proj.startDate}</span>
-                              </div>
-                              {proj.description && <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-sans">{proj.description}</p>}
-                            </div>
-                          ))}
+                              );
+                            } else if (templateId === 'minimalist') {
+                              return (
+                                <div key={idx} className="space-y-1 text-xs font-sans">
+                                  <div className="flex justify-between items-baseline">
+                                    <div className="flex items-baseline gap-2">
+                                      <span className="font-bold text-slate-900 dark:text-slate-100">{proj.title || 'Project Title'}</span>
+                                      {proj.role && <span className="text-[10px] text-slate-500 dark:text-slate-400 font-normal">({proj.role})</span>}
+                                    </div>
+                                    <span className="text-[10px] text-slate-450 dark:text-slate-500 font-normal">{proj.startDate}</span>
+                                  </div>
+                                  {proj.description && <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-sans">{proj.description}</p>}
+                                </div>
+                              );
+                            } else {
+                              // classic traditional
+                              return (
+                                <div key={idx} className="space-y-0.5 text-xs font-serif">
+                                  <div className="flex justify-between items-baseline font-serif">
+                                    <div className="flex items-baseline gap-2 font-serif">
+                                      <span className="font-bold text-slate-950 dark:text-slate-50">{proj.title || 'Project Title'}</span>
+                                      {proj.role && <span className="text-[11px] text-slate-650 dark:text-slate-400 italic">({proj.role})</span>}
+                                    </div>
+                                    <span className="text-[10px] text-slate-600 dark:text-slate-450 italic">{proj.startDate}</span>
+                                  </div>
+                                  {proj.description && <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-serif">{proj.description}</p>}
+                                </div>
+                              );
+                            }
+                          })}
                         </div>
                       </section>
                     );
@@ -2434,21 +2819,56 @@ const Builder = () => {
                   // Certifications Section
                   if (sectionName === 'certifications' && certifications.length > 0) {
                     return (
-                      <section key="certifications" className="space-y-3">
-                        <h2 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-b border-indigo-100 dark:border-indigo-900/50 pb-1">
-                          Certifications
-                        </h2>
-                        <div className="space-y-2 text-xs">
-                          {certifications.map((cert, idx) => (
-                            <div key={idx} className="flex justify-between items-center">
-                              <div>
-                                <span className="font-bold text-slate-800 dark:text-slate-200">{cert.name || 'Certification Name'}</span>
-                                <span className="text-slate-400 mx-1.5">—</span>
-                                <span className="text-slate-600 dark:text-slate-400">{cert.issuer}</span>
-                              </div>
-                              <span className="text-[10px] text-slate-400">{cert.date}</span>
-                            </div>
-                          ))}
+                      <section key="certifications" className={dynamicStyles.itemSpace}>
+                        {templateId === 'modern' ? (
+                          <h2 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-l-4 border-indigo-500 pl-3">
+                            Certifications
+                          </h2>
+                        ) : templateId === 'minimalist' ? (
+                          <h2 className="text-[11px] font-bold text-slate-900 dark:text-slate-100 uppercase tracking-[0.2em] border-b border-slate-200 dark:border-slate-800 pb-1.5 font-sans">
+                            Certifications
+                          </h2>
+                        ) : (
+                          <h2 className="text-xs font-bold text-slate-950 dark:text-slate-50 uppercase tracking-wider border-b-2 border-slate-950 dark:border-slate-805 pb-0.5 font-serif">
+                            Certifications
+                          </h2>
+                        )}
+                        <div className={`${dynamicStyles.itemSpace} text-xs`}>
+                          {certifications.map((cert, idx) => {
+                            if (templateId === 'modern') {
+                              return (
+                                <div key={idx} className="flex justify-between items-center text-xs font-sans">
+                                  <div>
+                                    <span className="font-bold text-slate-800 dark:text-slate-200">{cert.name || 'Certification Name'}</span>
+                                    <span className="text-slate-400 mx-1.5">—</span>
+                                    <span className="text-slate-600 dark:text-slate-400">{cert.issuer}</span>
+                                  </div>
+                                  <span className="text-[10px] text-slate-400">{cert.date}</span>
+                                </div>
+                              );
+                            } else if (templateId === 'minimalist') {
+                              return (
+                                <div key={idx} className="flex justify-between items-baseline text-xs font-sans">
+                                  <div className="flex gap-2">
+                                    <span className="font-bold text-slate-900 dark:text-slate-100">{cert.name || 'Certification Name'}</span>
+                                    <span className="text-slate-500 font-normal">· {cert.issuer}</span>
+                                  </div>
+                                  <span className="text-[10px] text-slate-450 font-normal">{cert.date}</span>
+                                </div>
+                              );
+                            } else {
+                              return (
+                                <div key={idx} className="flex justify-between items-baseline text-xs font-serif">
+                                  <div>
+                                    <span className="font-bold text-slate-950 dark:text-slate-50">{cert.name || 'Certification Name'}</span>
+                                    <span className="text-slate-500 mx-1.5">,</span>
+                                    <span className="text-slate-700 dark:text-slate-350 italic">{cert.issuer}</span>
+                                  </div>
+                                  <span className="text-[10px] text-slate-600 dark:text-slate-450">{cert.date}</span>
+                                </div>
+                              );
+                            }
+                          })}
                         </div>
                       </section>
                     );
@@ -2457,17 +2877,45 @@ const Builder = () => {
                   // Languages Section
                   if (sectionName === 'languages' && languages.length > 0) {
                     return (
-                      <section key="languages" className="space-y-3">
-                        <h2 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-b border-indigo-100 dark:border-indigo-900/50 pb-1">
-                          Languages
-                        </h2>
+                      <section key="languages" className={dynamicStyles.itemSpace}>
+                        {templateId === 'modern' ? (
+                          <h2 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-l-4 border-indigo-500 pl-3">
+                            Languages
+                          </h2>
+                        ) : templateId === 'minimalist' ? (
+                          <h2 className="text-[11px] font-bold text-slate-900 dark:text-slate-100 uppercase tracking-[0.2em] border-b border-slate-200 dark:border-slate-800 pb-1.5 font-sans">
+                            Languages
+                          </h2>
+                        ) : (
+                          <h2 className="text-xs font-bold text-slate-950 dark:text-slate-50 uppercase tracking-wider border-b-2 border-slate-950 dark:border-slate-805 pb-0.5 font-serif">
+                            Languages
+                          </h2>
+                        )}
                         <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs">
-                          {languages.map((lang, idx) => (
-                            <div key={idx} className="flex items-center gap-1.5">
-                              <span className="font-bold text-slate-700 dark:text-slate-300">{lang.language}</span>
-                              {lang.proficiency && <span className="text-[10px] text-slate-400 bg-slate-50 dark:bg-slate-900 border px-1.5 py-0.5 rounded">({lang.proficiency})</span>}
-                            </div>
-                          ))}
+                          {languages.map((lang, idx) => {
+                            if (templateId === 'modern') {
+                              return (
+                                <div key={idx} className="flex items-center gap-1.5 text-xs font-sans">
+                                  <span className="font-bold text-slate-750 dark:text-slate-300">{lang.language}</span>
+                                  {lang.proficiency && <span className="text-[10px] text-slate-400 bg-slate-50 dark:bg-slate-900 border px-1.5 py-0.5 rounded">({lang.proficiency})</span>}
+                                </div>
+                              );
+                            } else if (templateId === 'minimalist') {
+                              return (
+                                <div key={idx} className="flex items-baseline gap-1.5 text-xs font-sans">
+                                  <span className="font-medium text-slate-850 dark:text-slate-250">{lang.language}</span>
+                                  {lang.proficiency && <span className="text-[10px] text-slate-450 font-light">({lang.proficiency})</span>}
+                                </div>
+                              );
+                            } else {
+                              return (
+                                <div key={idx} className="flex items-baseline gap-1.5 text-xs font-serif">
+                                  <span className="font-bold text-slate-950 dark:text-slate-50">{lang.language}</span>
+                                  {lang.proficiency && <span className="text-[11px] text-slate-650 dark:text-slate-400 italic">({lang.proficiency})</span>}
+                                </div>
+                              );
+                            }
+                          })}
                         </div>
                       </section>
                     );
@@ -2477,14 +2925,11 @@ const Builder = () => {
                 })}
               </div>
             </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
-            {/* Resume Page Footer info */}
-            <footer className="pt-8 border-t border-slate-100 dark:border-slate-900/80 text-[9px] text-slate-300 text-center uppercase tracking-widest font-mono">
-              Generated by CareerForge Pro ATS Builder
-            </footer>
-          </div>
-
-        </motion.div>
+    </motion.div>
 
       </div>
 
