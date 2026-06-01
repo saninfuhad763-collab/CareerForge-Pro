@@ -173,44 +173,21 @@ const Builder = () => {
   // Live Demo, Confetti, & ATS Modal States
   const [demoModeActive, setDemoModeActive] = useState(false);
   const [selectedJdPreset, setSelectedJdPreset] = useState('');
+  const [analyzedJdPreset, setAnalyzedJdPreset] = useState('');
+  const [analyzedJdText, setAnalyzedJdText] = useState('');
   const [showAtsReportModal, setShowAtsReportModal] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [animatedScore, setAnimatedScore] = useState(50);
   const [keywordSearch, setKeywordSearch] = useState('');
   const [modalKeywordSearch, setModalKeywordSearch] = useState('');
 
-  // Instant preset loading & analysis pipeline
-  const handlePresetChange = async (val) => {
+  // Preset loading pipeline: ONLY populates state, does NOT trigger ATS analysis
+  const handlePresetChange = (val) => {
     setSelectedJdPreset(val);
     if (val && JD_PRESETS[val]) {
-      const preset = JD_PRESETS[val];
-      setJdText(preset.jdText);
-      setIsJdAnalyzing(true);
-
-      // 300ms visual loading indicator for realistic analysis
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      setAtsBreakdown(preset.breakdown);
-      
-      // Update global Zustand store with ATS score
-      updateResumeLocal({
-        atsMetadata: {
-          score: preset.score,
-          feedback: preset.breakdown.recommendations
-        }
-      });
-
-      setIsJdAnalyzing(false);
-      setShowConfetti(true);
+      setJdText(JD_PRESETS[val].jdText);
     } else {
       setJdText('');
-      setAtsBreakdown(null);
-      updateResumeLocal({
-        atsMetadata: {
-          score: 50,
-          feedback: []
-        }
-      });
     }
   };
 
@@ -329,19 +306,19 @@ const Builder = () => {
   };
 
   const getTargetKeywords = () => {
-    if (selectedJdPreset && JD_PRESETS[selectedJdPreset]) {
-      const p = JD_PRESETS[selectedJdPreset].breakdown;
+    if (analyzedJdPreset && JD_PRESETS[analyzedJdPreset]) {
+      const p = JD_PRESETS[analyzedJdPreset].breakdown;
       return [...new Set([...(p.matchedKeywords || []), ...(p.missingKeywords || [])])];
     }
     if (atsBreakdown && (atsBreakdown.matchedKeywords || atsBreakdown.missingKeywords)) {
       return [...new Set([...(atsBreakdown.matchedKeywords || []), ...(atsBreakdown.missingKeywords || [])])];
     }
-    if (jdText) {
+    if (analyzedJdText) {
       // If the user pastes a comma-separated list of keywords, parse them
-      if (jdText.includes(',')) {
-        return jdText.split(/,|\n/).map(s => s.trim()).filter(s => s.length > 0 && s.length < 30);
+      if (analyzedJdText.includes(',')) {
+        return analyzedJdText.split(/,|\n/).map(s => s.trim()).filter(s => s.length > 0 && s.length < 30);
       }
-      // Otherwise, search for common known keywords in the jdText
+      // Otherwise, search for common known keywords in the analyzedJdText
       const knownKeywords = [
         "React", "TypeScript", "Node.js", "NodeJS", "Docker", "MongoDB", "Express.js", 
         "ExpressJS", "Redis", "JWT", "AWS", "CI/CD", "Redux", "Zustand", "JavaScript", 
@@ -351,7 +328,7 @@ const Builder = () => {
         "SQL", "Snowflake", "BigQuery", "Tableau", "Looker", "BI Reporting"
       ];
       const found = [];
-      const normalizedJd = jdText.toLowerCase();
+      const normalizedJd = analyzedJdText.toLowerCase();
       knownKeywords.forEach(kw => {
         if (normalizedJd.includes(kw.toLowerCase())) {
           found.push(kw);
@@ -436,7 +413,7 @@ const Builder = () => {
       density,
       feedback
     };
-  }, [currentResume, jdText, selectedJdPreset, atsBreakdown]);
+  }, [currentResume, analyzedJdText, analyzedJdPreset, atsBreakdown]);
 
 
 
@@ -655,7 +632,7 @@ const Builder = () => {
 
   // Instant full stack optimization for MERN Stack developer demo
   const handleQuickOptimize = () => {
-    if (!selectedJdPreset || selectedJdPreset !== 'mern') {
+    if ((selectedJdPreset !== 'mern') && (analyzedJdPreset !== 'mern')) {
       alert("Please select the MERN Stack Developer job description preset first to demonstrate the optimization flow!");
       return;
     }
@@ -733,6 +710,8 @@ const Builder = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       const preset = JD_PRESETS[selectedJdPreset];
       setAtsBreakdown(preset.breakdown);
+      setAnalyzedJdPreset(selectedJdPreset);
+      setAnalyzedJdText(preset.jdText);
 
       updateResumeLocal({
         atsMetadata: {
@@ -761,6 +740,8 @@ const Builder = () => {
       const data = await response.json();
       if (data.success) {
         setAtsBreakdown(data.breakdown);
+        setAnalyzedJdPreset('');
+        setAnalyzedJdText(jdText);
         await loadResumeById(id);
       }
     } catch (e) {
@@ -1356,7 +1337,7 @@ const Builder = () => {
                   <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200">
                     {animatedScore >= 80 ? 'Excellent Match!' : animatedScore >= 60 ? 'Good Potential' : 'Needs Optimization'}
                   </h5>
-                  {selectedJdPreset === 'mern' && dynamicAtsData.missingKeywords.length > 0 && (
+                  {analyzedJdPreset === 'mern' && dynamicAtsData.missingKeywords.length > 0 && (
                     <button
                       onClick={handleQuickOptimize}
                       className="px-2 py-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-[9px] font-extrabold text-white rounded-lg flex items-center gap-0.5 animate-pulse cursor-pointer"
