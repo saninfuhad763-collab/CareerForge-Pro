@@ -11,6 +11,8 @@ export const useResumeStore = create((set, get) => ({
   loading: false,
   saving: false,
   error: null,
+  autoSaveEnabled: true,
+  hasUnsavedChanges: false,
 
   // Get authorization headers helper
   getHeaders: () => {
@@ -93,7 +95,7 @@ export const useResumeStore = create((set, get) => ({
 
   // Optimistically update the UI and queue a debounced save to the backend
   updateResumeLocal: (updatedFields) => {
-    const { currentResume } = get();
+    const { currentResume, autoSaveEnabled } = get();
     if (!currentResume) return;
 
     // Create a new merged state structure optimistically
@@ -101,6 +103,11 @@ export const useResumeStore = create((set, get) => ({
       ...currentResume,
       ...updatedFields,
     };
+
+    if (!autoSaveEnabled) {
+      set({ currentResume: mergedResume, hasUnsavedChanges: true });
+      return;
+    }
 
     set({ currentResume: mergedResume, saving: true });
 
@@ -172,16 +179,25 @@ export const useResumeStore = create((set, get) => ({
             atsScore: data.data.atsScore !== undefined ? data.data.atsScore : latestResume.atsScore,
           },
           saving: false,
+          hasUnsavedChanges: false,
           error: null,
         });
       } else {
-        set({ saving: false, error: null });
+        set({ saving: false, hasUnsavedChanges: false, error: null });
       }
       return true;
     } catch (error) {
       set({ saving: false, error: error.message });
       return false;
     }
+  },
+
+  setAutoSaveEnabled: (enabled) => {
+    if (!enabled && saveTimeout) {
+      clearTimeout(saveTimeout);
+      saveTimeout = null;
+    }
+    set({ autoSaveEnabled: enabled });
   },
 
   deleteResume: async (id) => {
