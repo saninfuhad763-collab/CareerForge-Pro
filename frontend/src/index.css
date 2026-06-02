@@ -159,7 +159,6 @@ body {
   }
 
   /* Hide the entire web interface of the builder application (actions header, left editor, AI panel, modals) */
-  header, 
   aside, 
   nav, 
   button, 
