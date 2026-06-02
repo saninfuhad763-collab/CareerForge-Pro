@@ -46,7 +46,7 @@ const Dashboard = () => {
 
   const navigate = useNavigate();
 
-  // Dynamic theme mappings for the Craft New Resume dialog
+  // Dynamic theme mappings for the Craft New Resume dialog - all synchronized to the premium blue/indigo theme
   const templateThemes = {
     modern: {
       cardSelected: 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400',
@@ -54,14 +54,14 @@ const Dashboard = () => {
       buttonSelected: 'bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-600/60 shadow-indigo-500/10'
     },
     classic: {
-      cardSelected: 'border-slate-800 dark:border-slate-200 bg-slate-100 dark:bg-slate-800/50 text-slate-800 dark:text-slate-200',
-      inputSelected: 'border-slate-800 dark:border-slate-200 bg-slate-100/20 dark:bg-slate-800/10 focus:border-slate-800 dark:focus:border-slate-200 focus:bg-slate-100/40 dark:focus:bg-slate-800/40 focus:ring-2 focus:ring-slate-800/20 dark:focus:ring-slate-200/20',
-      buttonSelected: 'bg-slate-800 hover:bg-slate-900 disabled:bg-slate-800/60 shadow-slate-800/10'
+      cardSelected: 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400',
+      inputSelected: 'border-indigo-500 bg-indigo-50/10 dark:bg-indigo-950/10 focus:border-indigo-500 focus:bg-indigo-50/30 dark:focus:bg-indigo-950/20 focus:ring-2 focus:ring-indigo-500/20',
+      buttonSelected: 'bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-600/60 shadow-indigo-500/10'
     },
     minimalist: {
-      cardSelected: 'border-zinc-500 dark:border-zinc-400 bg-zinc-50 dark:bg-zinc-900/30 text-zinc-700 dark:text-zinc-300',
-      inputSelected: 'border-zinc-500 dark:border-zinc-400 bg-zinc-50/20 dark:bg-zinc-900/10 focus:border-zinc-500 dark:focus:border-zinc-400 focus:bg-zinc-50/30 dark:focus:bg-zinc-900/20 focus:ring-2 focus:ring-zinc-500/20',
-      buttonSelected: 'bg-zinc-700 hover:bg-zinc-800 disabled:bg-zinc-700/60 shadow-zinc-500/10'
+      cardSelected: 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400',
+      inputSelected: 'border-indigo-500 bg-indigo-50/10 dark:bg-indigo-950/10 focus:border-indigo-500 focus:bg-indigo-50/30 dark:focus:bg-indigo-950/20 focus:ring-2 focus:ring-indigo-500/20',
+      buttonSelected: 'bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-600/60 shadow-indigo-500/10'
     }
   };
 
@@ -694,11 +694,7 @@ const Dashboard = () => {
 
                 {/* Title */}
                 <div className="space-y-1.5">
-                  <label className={`text-xs font-bold uppercase tracking-wider transition-colors duration-300 ${
-                    selectedTemplate === 'modern' ? 'text-indigo-500' :
-                    selectedTemplate === 'classic' ? 'text-slate-500 dark:text-slate-400' :
-                    'text-zinc-500'
-                  }`}>Resume Title</label>
+                  <label className="text-xs font-bold uppercase tracking-wider transition-colors duration-300 text-indigo-500">Resume Title</label>
                   <input
                      type="text"
                      required
@@ -732,7 +728,7 @@ const Dashboard = () => {
                       >
                         <span className={`text-xs font-bold transition-colors ${
                           selectedTemplate === tpl.id 
-                            ? (tpl.id === 'modern' ? 'text-indigo-600 dark:text-indigo-400' : tpl.id === 'classic' ? 'text-slate-800 dark:text-slate-200' : 'text-zinc-700 dark:text-zinc-300')
+                            ? 'text-indigo-600 dark:text-indigo-400'
                             : 'text-slate-700 dark:text-slate-300'
                         }`}>
                           {tpl.name}
