@@ -139,12 +139,21 @@ body {
 
 /* Print styles to ensure ultra-high quality exported resumes and PDFs */
 @media print {
+  @page {
+    size: auto;
+    margin: 0; /* Hides browser-generated header metadata (timestamp, page title) and footer (localhost URL, page number) */
+  }
+
   /* Reset body styles for clean printing */
   body, html {
     background: #ffffff !important;
     color: #000000 !important;
     margin: 0 !important;
     padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
@@ -165,12 +174,17 @@ body {
     display: none !important;
   }
 
-  /* Make sure the main workspace background doesn't have styling */
-  main, .flex-1, .bg-slate-200\/50, .bg-slate-50, .dark {
+  /* Ensure grandparent and wrapper layout elements do not offset the print sheet or use flex-stretch on print */
+  body, html, #root, main, .flex-1, .bg-slate-200\/50, .bg-slate-50, .dark {
+    display: block !important;
     background: transparent !important;
     padding: 0 !important;
     margin: 0 !important;
     border: none !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
   }
 
   /* Make the resume preview sheet expand and print as a high-fidelity A4/Letter page */
