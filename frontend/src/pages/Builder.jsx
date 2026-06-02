@@ -38,7 +38,14 @@ import {
   Download
 } from 'lucide-react';
 
-
+const normalizeUrl = (url) => {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (!/^https?:\/\//i.test(trimmed)) {
+    return `https://${trimmed}`;
+  }
+  return trimmed;
+};
 
 const JD_PRESETS = {
   "mern": {
@@ -2428,13 +2435,46 @@ const Builder = () => {
                     </p>
                   </div>
                   <div className="text-xs text-slate-500 dark:text-slate-400 space-y-1 mt-4 sm:mt-0 sm:text-right font-sans">
-                    <p>{personalInfo.email || 'email@address.com'}</p>
+                    {personalInfo.email ? (
+                      <a href={`mailto:${personalInfo.email}`} className="hover:underline block text-inherit">
+                        {personalInfo.email}
+                      </a>
+                    ) : (
+                      <p>{'email@address.com'}</p>
+                    )}
                     <p>{personalInfo.phone || '+1 (555) 000-0000'}</p>
                     <p>{personalInfo.location || 'Location Area, State'}</p>
                     <div className="flex gap-3 justify-start sm:justify-end">
-                      {personalInfo.website && <span className="hover:underline text-[10px]">{personalInfo.website}</span>}
-                      {personalInfo.github && <span className="hover:underline text-[10px]">{personalInfo.github}</span>}
-                      {personalInfo.linkedin && <span className="hover:underline text-[10px]">{personalInfo.linkedin}</span>}
+                      {personalInfo.website && (
+                        <a 
+                          href={normalizeUrl(personalInfo.website)} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="hover:underline text-[10px] text-inherit"
+                        >
+                          {personalInfo.website}
+                        </a>
+                      )}
+                      {personalInfo.github && (
+                        <a 
+                          href={normalizeUrl(personalInfo.github)} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="hover:underline text-[10px] text-inherit"
+                        >
+                          {personalInfo.github}
+                        </a>
+                      )}
+                      {personalInfo.linkedin && (
+                        <a 
+                          href={normalizeUrl(personalInfo.linkedin)} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="hover:underline text-[10px] text-inherit"
+                        >
+                          {personalInfo.linkedin}
+                        </a>
+                      )}
                     </div>
                   </div>
                 </header>
@@ -2447,12 +2487,54 @@ const Builder = () => {
                     {experience[0]?.position || 'Target Professional Role'}
                   </p>
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-450 dark:text-slate-500 font-normal tracking-wide pt-2.5 font-sans">
-                    <span>{personalInfo.email || 'email@address.com'}</span>
+                    {personalInfo.email ? (
+                      <a href={`mailto:${personalInfo.email}`} className="hover:underline text-inherit">
+                        {personalInfo.email}
+                      </a>
+                    ) : (
+                      <span>{'email@address.com'}</span>
+                    )}
                     {personalInfo.phone && <span>· {personalInfo.phone}</span>}
                     {personalInfo.location && <span>· {personalInfo.location}</span>}
-                    {personalInfo.website && <span>· {personalInfo.website}</span>}
-                    {personalInfo.github && <span>· {personalInfo.github}</span>}
-                    {personalInfo.linkedin && <span>· {personalInfo.linkedin}</span>}
+                    {personalInfo.website && (
+                      <span className="text-inherit">
+                        ·{' '}
+                        <a 
+                          href={normalizeUrl(personalInfo.website)} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="hover:underline text-inherit"
+                        >
+                          {personalInfo.website}
+                        </a>
+                      </span>
+                    )}
+                    {personalInfo.github && (
+                      <span className="text-inherit">
+                        ·{' '}
+                        <a 
+                          href={normalizeUrl(personalInfo.github)} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="hover:underline text-inherit"
+                        >
+                          {personalInfo.github}
+                        </a>
+                      </span>
+                    )}
+                    {personalInfo.linkedin && (
+                      <span className="text-inherit">
+                        ·{' '}
+                        <a 
+                          href={normalizeUrl(personalInfo.linkedin)} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="hover:underline text-inherit"
+                        >
+                          {personalInfo.linkedin}
+                        </a>
+                      </span>
+                    )}
                   </div>
                 </header>
               ) : (
@@ -2464,12 +2546,54 @@ const Builder = () => {
                     {experience[0]?.position || 'Target Professional Role'}
                   </p>
                   <div className="flex flex-wrap items-center justify-center gap-x-2.5 mt-2.5 text-[11px] text-slate-600 dark:text-slate-400 font-serif">
-                    <span>{personalInfo.email || 'email@address.com'}</span>
+                    {personalInfo.email ? (
+                      <a href={`mailto:${personalInfo.email}`} className="hover:underline text-inherit">
+                        {personalInfo.email}
+                      </a>
+                    ) : (
+                      <span>{'email@address.com'}</span>
+                    )}
                     {personalInfo.phone && <span>| {personalInfo.phone}</span>}
                     {personalInfo.location && <span>| {personalInfo.location}</span>}
-                    {personalInfo.website && <span>| {personalInfo.website}</span>}
-                    {personalInfo.github && <span>| {personalInfo.github}</span>}
-                    {personalInfo.linkedin && <span>| {personalInfo.linkedin}</span>}
+                    {personalInfo.website && (
+                      <span className="text-inherit">
+                        |{' '}
+                        <a 
+                          href={normalizeUrl(personalInfo.website)} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="hover:underline text-inherit"
+                        >
+                          {personalInfo.website}
+                        </a>
+                      </span>
+                    )}
+                    {personalInfo.github && (
+                      <span className="text-inherit">
+                        |{' '}
+                        <a 
+                          href={normalizeUrl(personalInfo.github)} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="hover:underline text-inherit"
+                        >
+                          {personalInfo.github}
+                        </a>
+                      </span>
+                    )}
+                    {personalInfo.linkedin && (
+                      <span className="text-inherit">
+                        |{' '}
+                        <a 
+                          href={normalizeUrl(personalInfo.linkedin)} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="hover:underline text-inherit"
+                        >
+                          {personalInfo.linkedin}
+                        </a>
+                      </span>
+                    )}
                   </div>
                   <div className="border-b-2 border-slate-950 dark:border-slate-800 mt-4.5 w-full" />
                 </header>
