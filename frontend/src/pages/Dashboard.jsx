@@ -46,6 +46,25 @@ const Dashboard = () => {
 
   const navigate = useNavigate();
 
+  // Dynamic theme mappings for the Craft New Resume dialog
+  const templateThemes = {
+    modern: {
+      cardSelected: 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400',
+      inputSelected: 'border-indigo-500 bg-indigo-50/10 dark:bg-indigo-950/10 focus:border-indigo-500 focus:bg-indigo-50/30 dark:focus:bg-indigo-950/20 focus:ring-2 focus:ring-indigo-500/20',
+      buttonSelected: 'bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-600/60 shadow-indigo-500/10'
+    },
+    classic: {
+      cardSelected: 'border-slate-800 dark:border-slate-200 bg-slate-100 dark:bg-slate-800/50 text-slate-800 dark:text-slate-200',
+      inputSelected: 'border-slate-800 dark:border-slate-200 bg-slate-100/20 dark:bg-slate-800/10 focus:border-slate-800 dark:focus:border-slate-200 focus:bg-slate-100/40 dark:focus:bg-slate-800/40 focus:ring-2 focus:ring-slate-800/20 dark:focus:ring-slate-200/20',
+      buttonSelected: 'bg-slate-800 hover:bg-slate-900 disabled:bg-slate-800/60 shadow-slate-800/10'
+    },
+    minimalist: {
+      cardSelected: 'border-zinc-500 dark:border-zinc-400 bg-zinc-50 dark:bg-zinc-900/30 text-zinc-700 dark:text-zinc-300',
+      inputSelected: 'border-zinc-500 dark:border-zinc-400 bg-zinc-50/20 dark:bg-zinc-900/10 focus:border-zinc-500 dark:focus:border-zinc-400 focus:bg-zinc-50/30 dark:focus:bg-zinc-900/20 focus:ring-2 focus:ring-zinc-500/20',
+      buttonSelected: 'bg-zinc-700 hover:bg-zinc-800 disabled:bg-zinc-700/60 shadow-zinc-500/10'
+    }
+  };
+
   // Load user resumes on mount
   useEffect(() => {
     loadResumes();
@@ -675,14 +694,20 @@ const Dashboard = () => {
 
                 {/* Title */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Resume Title</label>
+                  <label className={`text-xs font-bold uppercase tracking-wider transition-colors duration-300 ${
+                    selectedTemplate === 'modern' ? 'text-indigo-500' :
+                    selectedTemplate === 'classic' ? 'text-slate-500 dark:text-slate-400' :
+                    'text-zinc-500'
+                  }`}>Resume Title</label>
                   <input
                      type="text"
                      required
                      placeholder="e.g. Software Engineer Resume"
                      value={newTitle}
                      onChange={(e) => setNewTitle(e.target.value)}
-                     className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-xl text-sm text-slate-800 dark:text-slate-100 input-focus-glow transition-all"
+                     className={`w-full px-4 py-3 border rounded-xl text-sm text-slate-800 dark:text-slate-100 transition-all outline-none ${
+                       templateThemes[selectedTemplate]?.inputSelected || 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-indigo-500'
+                     }`}
                   />
                 </div>
 
@@ -699,13 +724,17 @@ const Dashboard = () => {
                         key={tpl.id}
                         type="button"
                         onClick={() => setSelectedTemplate(tpl.id)}
-                        className={`p-3 text-left border rounded-xl flex flex-col justify-between transition-all ${
+                        className={`p-3 text-left border rounded-xl flex flex-col justify-between transition-all cursor-pointer ${
                           selectedTemplate === tpl.id
-                            ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20'
+                            ? templateThemes[tpl.id]?.cardSelected || 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20'
                             : 'border-slate-200 dark:border-slate-800 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-950/50'
                         }`}
                       >
-                        <span className={`text-xs font-bold ${selectedTemplate === tpl.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                        <span className={`text-xs font-bold transition-colors ${
+                          selectedTemplate === tpl.id 
+                            ? (tpl.id === 'modern' ? 'text-indigo-600 dark:text-indigo-400' : tpl.id === 'classic' ? 'text-slate-800 dark:text-slate-200' : 'text-zinc-700 dark:text-zinc-300')
+                            : 'text-slate-700 dark:text-slate-300'
+                        }`}>
                           {tpl.name}
                         </span>
                         <span className="text-[9px] text-slate-400 truncate mt-1 leading-none">{tpl.desc}</span>
@@ -719,14 +748,16 @@ const Dashboard = () => {
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-950 text-xs font-semibold text-slate-600 dark:text-slate-400 transition-colors"
+                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-950 text-xs font-semibold text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={actionLoading || !newTitle.trim()}
-                    className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-600/60 text-white px-5 py-2.5 rounded-xl font-semibold text-xs transition-all shadow-md shadow-indigo-500/10"
+                    className={`text-white px-5 py-2.5 rounded-xl font-semibold text-xs transition-all shadow-md ${
+                      templateThemes[selectedTemplate]?.buttonSelected || 'bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-600/60 shadow-indigo-500/10'
+                    }`}
                   >
                     {actionLoading ? 'Initializing...' : 'Forge Resume'}
                   </button>
