@@ -18,7 +18,7 @@ graph TD
         G[Express Rate Limiter]
         H[BCrypt & JWT Verification]
     end
-    D --> Security Layer
+    D --> F
 ```
 
 ### Key Engineering Paradigms:
