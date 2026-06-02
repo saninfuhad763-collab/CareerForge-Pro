@@ -2395,7 +2395,7 @@ const Builder = () => {
         >
           
           {/* Main Visual Render Page sheet standard */}
-          <div id="resume-preview-sheet" className={`w-full max-w-[800px] bg-white dark:bg-slate-950 text-slate-950 dark:text-slate-50 shadow-xl border border-slate-300/40 dark:border-slate-800/80 rounded-lg ${dynamicStyles.sheetPadding} flex flex-col justify-start text-left relative overflow-hidden transition-all duration-300`}>
+          <div id="resume-preview-sheet" className={`w-full max-w-[800px] min-h-[1130px] bg-white dark:bg-slate-950 text-slate-950 dark:text-slate-50 shadow-xl border border-slate-300/40 dark:border-slate-800/80 rounded-lg ${dynamicStyles.sheetPadding} flex flex-col justify-start text-left relative overflow-hidden transition-all duration-300`}>
             
             {/* Header branding overlay */}
             <div className={`absolute top-0 left-0 right-0 h-1 transition-all duration-500 ${
