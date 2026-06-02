@@ -227,4 +227,15 @@ body {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
+
+  /* Disable transforms, transitions, and hardware accelerations to prevent rasterization */
+  #resume-preview-sheet,
+  #resume-preview-sheet *,
+  .motion-div,
+  [class*="transition-"] {
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+    will-change: auto !important;
+  }
 }
