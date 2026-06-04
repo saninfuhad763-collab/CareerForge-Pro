@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useResumeStore } from '../store/resumeStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { pageTransitions, slideUp } from '../animations/pageTransitions';
@@ -158,6 +158,8 @@ const JD_PRESETS = {
 const Builder = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isOptimizeMode = searchParams.get('mode') === 'optimize';
   const { 
     currentResume, 
     loadResumeById, 
@@ -1259,12 +1261,23 @@ const Builder = () => {
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="text-left">
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => updateResumeLocal({ title: e.target.value })}
-              className="bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-700 focus:border-indigo-500 font-bold font-display text-slate-800 dark:text-slate-100 text-lg focus:outline-none px-1 py-0.5 rounded transition-all"
-            />
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => updateResumeLocal({ title: e.target.value })}
+                className="bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-700 focus:border-indigo-500 font-bold font-display text-slate-800 dark:text-slate-100 text-lg focus:outline-none px-1 py-0.5 rounded transition-all"
+              />
+              {isOptimizeMode ? (
+                <span className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 text-[10px] font-bold px-2 py-0.5 rounded-full select-none">
+                  ATS Optimization Mode
+                </span>
+              ) : (
+                <span className="bg-slate-100 dark:bg-slate-850 text-slate-555 dark:text-slate-400 text-[10px] font-bold px-2 py-0.5 rounded-full select-none">
+                  Resume Builder Mode
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
               <span>Status:</span>
               <span className={`font-semibold ${saving ? 'text-indigo-600 dark:text-indigo-400' : 'text-emerald-500'}`}>
@@ -1390,7 +1403,8 @@ const Builder = () => {
         >
           
           {/* Dedicated JD Analysis & Circular ATS Score Panel */}
-          <div className="bg-white dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xl shadow-slate-200/40 dark:shadow-black/35 space-y-4">
+          {isOptimizeMode && (
+            <div className="bg-white dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xl shadow-slate-200/40 dark:shadow-black/35 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 bg-indigo-50 dark:bg-indigo-950/60 rounded-xl text-indigo-600 dark:text-indigo-400">
@@ -1651,6 +1665,7 @@ const Builder = () => {
               </div>
             </div>
           </div>
+          )}
 
           <div className="space-y-4">
             {/* 1. PERSONAL INFORMATION */}

@@ -563,7 +563,7 @@ const Dashboard = () => {
                       return (
                         <motion.div 
                           key={resume._id} 
-                          onClick={() => navigate(`/builder/${resume._id}`)}
+                          onClick={() => navigate(`/builder/${resume._id}?mode=optimize`)}
                           variants={professionalCardVariant}
                           whileHover="hover"
                           whileTap="tap"
