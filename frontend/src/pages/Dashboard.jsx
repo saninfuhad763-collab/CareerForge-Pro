@@ -276,17 +276,19 @@ const Dashboard = () => {
                     Build, optimize, and scan your resumes to trigger interview call backs.
                   </p>
                 </div>
-                <motion.button
-                  onClick={openCreateModal}
-                  variants={buttonScale}
-                  initial="initial"
-                  whileHover="hover"
-                  whileTap="tap"
-                  className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl font-semibold text-sm transition-all shadow-md shadow-indigo-500/10 cursor-pointer self-start sm:self-center"
-                >
-                  <Plus className="w-4.5 h-4.5" />
-                  <span>Create Resume</span>
-                </motion.button>
+                {totalResumes > 0 && (
+                  <motion.button
+                    onClick={openCreateModal}
+                    variants={buttonScale}
+                    initial="initial"
+                    whileHover="hover"
+                    whileTap="tap"
+                    className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl font-semibold text-sm transition-all shadow-md shadow-indigo-500/10 cursor-pointer self-start sm:self-center"
+                  >
+                    <Plus className="w-4.5 h-4.5" />
+                    <span>Create Resume</span>
+                  </motion.button>
+                )}
               </motion.div>
 
               {/* Modular Analytics Cards */}
@@ -376,7 +378,7 @@ const Dashboard = () => {
                       className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-md shadow-indigo-500/10 cursor-pointer"
                     >
                       <Plus className="w-4 h-4" />
-                      <span>Forge Resume</span>
+                      <span>Create Resume</span>
                     </button>
                   </motion.div>
                 ) : (
