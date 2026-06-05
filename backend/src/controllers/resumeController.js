@@ -73,10 +73,10 @@ export const createResume = async (req, res) => {
       languages: [],
       customSections: [],
       atsMetadata: {
-        score: 45, // default baseline score for new resumes
+        score: 0, // Starts at 0 until a real ATS analysis is performed
         keywordsFound: [],
         keywordsMissing: [],
-        feedback: ['Fill out your details to improve your score.'],
+        feedback: [],
       },
     });
 
@@ -124,32 +124,23 @@ export const updateResume = async (req, res) => {
       'customSections',
     ];
 
+
     fieldsToUpdate.forEach((field) => {
       if (req.body[field] !== undefined) {
         resume[field] = req.body[field];
       }
     });
 
-    // Mock dynamic ATS Score updates on save for visual feedback
-    // Real ATS parsing will be integrated later, but standardizing dynamic changes now:
-    let baseScore = 40;
-    if (resume.personalInfo.fullName && resume.personalInfo.email) baseScore += 10;
-    if (resume.summary && resume.summary.length > 50) baseScore += 15;
-    if (resume.experience && resume.experience.length > 0) baseScore += 15;
-    if (resume.education && resume.education.length > 0) baseScore += 10;
-    if (resume.skills && resume.skills.length > 0) baseScore += 10;
+    // Preserve existing atsMetadata; initialize with clean baseline if not present
+    if (!resume.atsMetadata || typeof resume.atsMetadata.score !== 'number') {
+      resume.atsMetadata = {
+        score: 0,
+        keywordsFound: [],
+        keywordsMissing: [],
+        feedback: [],
+      };
+    }
 
-    const feedback = [];
-    if (baseScore < 60) feedback.push('Add experience and detailed skills to boost ATS scoring.');
-    if (!resume.summary) feedback.push('Include a target professional summary tailored to your role.');
-    if (resume.skills.length < 3) feedback.push('List core technical keywords under Skills (e.g. React, Mongoose).');
-    
-    resume.atsMetadata = {
-      score: Math.min(baseScore, 100),
-      keywordsFound: resume.skills.map(s => s.name).slice(0, 5),
-      keywordsMissing: ['Scalability', 'System Design', 'CI/CD'], // placeholders for future AI integrations
-      feedback: feedback.length > 0 ? feedback : ['Awesome profile completeness! Ready for job matching.'],
-    };
 
     const updatedResume = await resume.save();
 

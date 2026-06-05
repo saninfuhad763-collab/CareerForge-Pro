@@ -74,6 +74,10 @@ const customSectionSchema = new mongoose.Schema({
 
 const atsMetadataSchema = new mongoose.Schema({
   score: { type: Number, default: 0 },
+  initialScore: { type: Number, default: 0 },
+  optimizedScore: { type: Number, default: 0 },
+  scoreImprovement: { type: Number, default: 0 },
+  lastJdHash: { type: String, default: '' },
   keywordsFound: [{ type: String }],
   keywordsMissing: [{ type: String }],
   feedback: [{ type: String }],
@@ -118,7 +122,7 @@ const resumeSchema = new mongoose.Schema(
     customSections: [customSectionSchema],
     atsMetadata: {
       type: atsMetadataSchema,
-      default: () => ({ score: 70 }), // Initial default baseline score
+      default: () => ({ score: 0 }), // Starts at 0 until a real ATS analysis is performed
     },
   },
   {

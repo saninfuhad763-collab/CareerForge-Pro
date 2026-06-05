@@ -130,10 +130,24 @@ export const useResumeStore = create((set, get) => ({
 
         const latestResume = get().currentResume;
         if (latestResume && latestResume._id === data.data._id) {
+          // Backend atsMetadata always wins — merge explicitly to protect all ATS history fields
+          const backendAts = data.data.atsMetadata || {};
+          const localAts = latestResume.atsMetadata || {};
+          const mergedAts = {
+            ...localAts,
+            ...backendAts,
+            // Explicit field guards: protect each ATS history field individually
+            score:            backendAts.score            !== undefined ? backendAts.score            : localAts.score,
+            initialScore:     backendAts.initialScore     !== undefined ? backendAts.initialScore     : localAts.initialScore,
+            optimizedScore:   backendAts.optimizedScore   !== undefined ? backendAts.optimizedScore   : localAts.optimizedScore,
+            scoreImprovement: backendAts.scoreImprovement !== undefined ? backendAts.scoreImprovement : localAts.scoreImprovement,
+            lastJdHash:       backendAts.lastJdHash       !== undefined ? backendAts.lastJdHash       : localAts.lastJdHash,
+          };
           set({
             currentResume: {
               ...data.data,
               ...latestResume,
+              atsMetadata: mergedAts,
               atsScore: data.data.atsScore !== undefined ? data.data.atsScore : latestResume.atsScore,
             },
             saving: false,
@@ -172,10 +186,24 @@ export const useResumeStore = create((set, get) => ({
 
       const latestResume = get().currentResume;
       if (latestResume && latestResume._id === data.data._id) {
+        // Backend atsMetadata always wins — merge explicitly to protect all ATS history fields
+        const backendAts = data.data.atsMetadata || {};
+        const localAts = latestResume.atsMetadata || {};
+        const mergedAts = {
+          ...localAts,
+          ...backendAts,
+          // Explicit field guards: protect each ATS history field individually
+          score:            backendAts.score            !== undefined ? backendAts.score            : localAts.score,
+          initialScore:     backendAts.initialScore     !== undefined ? backendAts.initialScore     : localAts.initialScore,
+          optimizedScore:   backendAts.optimizedScore   !== undefined ? backendAts.optimizedScore   : localAts.optimizedScore,
+          scoreImprovement: backendAts.scoreImprovement !== undefined ? backendAts.scoreImprovement : localAts.scoreImprovement,
+          lastJdHash:       backendAts.lastJdHash       !== undefined ? backendAts.lastJdHash       : localAts.lastJdHash,
+        };
         set({
           currentResume: {
             ...data.data,
             ...latestResume,
+            atsMetadata: mergedAts,
             atsScore: data.data.atsScore !== undefined ? data.data.atsScore : latestResume.atsScore,
           },
           saving: false,

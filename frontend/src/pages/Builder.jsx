@@ -341,46 +341,22 @@ const Builder = () => {
   };
 
   const getTargetKeywords = () => {
-    if (analyzedJdPreset && JD_PRESETS[analyzedJdPreset]) {
-      const p = JD_PRESETS[analyzedJdPreset].breakdown;
-      return [...new Set([...(p.matchedKeywords || []), ...(p.missingKeywords || [])])];
+    const meta = currentResume?.atsMetadata;
+    if (meta?.lastJdHash) {
+      const found = meta.keywordsFound || [];
+      const missing = meta.keywordsMissing || [];
+      return [...new Set([...found, ...missing])];
     }
-    if (atsBreakdown && (atsBreakdown.matchedKeywords || atsBreakdown.missingKeywords)) {
-      return [...new Set([...(atsBreakdown.matchedKeywords || []), ...(atsBreakdown.missingKeywords || [])])];
-    }
-    if (analyzedJdText) {
-      // If the user pastes a comma-separated list of keywords, parse them
-      if (analyzedJdText.includes(',')) {
-        return analyzedJdText.split(/,|\n/).map(s => s.trim()).filter(s => s.length > 0 && s.length < 30);
-      }
-      // Otherwise, search for common known keywords in the analyzedJdText
-      const knownKeywords = [
-        "React", "TypeScript", "Node.js", "NodeJS", "Docker", "MongoDB", "Express.js", 
-        "ExpressJS", "Redis", "JWT", "AWS", "CI/CD", "Redux", "Zustand", "JavaScript", 
-        "HTML5", "CSS3", "Git", "Next.js", "Jest", "Cypress", "Figma", "TailwindCSS", 
-        "Webpack", "Vite", "Go", "Python", "PostgreSQL", "Kubernetes", "Microservices", 
-        "Roadmap", "Agile", "Jira", "Technical Spec", "Product Strategy", "Tech Lead", 
-        "SQL", "Snowflake", "BigQuery", "Tableau", "Looker", "BI Reporting"
-      ];
-      const found = [];
-      const normalizedJd = analyzedJdText.toLowerCase();
-      knownKeywords.forEach(kw => {
-        if (normalizedJd.includes(kw.toLowerCase())) {
-          found.push(kw);
-        }
-      });
-      if (found.length > 0) return found;
-    }
-    // Fallback default keywords
-    return ["React", "Redux", "Zustand", "JavaScript", "HTML5", "CSS3", "AWS", "Git", "MongoDB", "Express.js", "Node.js", "Docker", "CI/CD", "Redis", "JWT"];
+    return [];
   };
 
   const dynamicAtsData = useMemo(() => {
-    if (!currentResume) {
+    const meta = currentResume?.atsMetadata;
+    if (!currentResume || !meta?.lastJdHash) {
       return {
         matchedKeywords: [],
         missingKeywords: [],
-        score: 50,
+        score: 0,
         keywordMatchPercent: 0,
         density: {},
         feedback: []
@@ -415,40 +391,15 @@ const Builder = () => {
       density[kw] = matches ? matches.length : 1;
     });
 
-    // Compute the dynamic ATS score
-    const expScore = Math.min(20, (currentResume.experience?.length || 0) * 10);
-    const skillsScore = Math.min(10, (currentResume.skills?.length || 0) * 5);
-    const projCertScore = Math.min(10, ((currentResume.projects?.length || 0) + (currentResume.certifications?.length || 0)) * 5);
-    const summaryScore = currentResume.summary && currentResume.summary.length > 50 ? 10 : 0;
-
-    const baseScore = Math.round(keywordMatchPercent * 0.5 + expScore + skillsScore + projCertScore + summaryScore);
-    const finalScore = Math.max(10, Math.min(100, baseScore));
-
-    const feedback = [];
-    if (uniqueMissing.length > 0) {
-      feedback.push(`Integrate high-importance target terms: [${uniqueMissing.slice(0, 4).join(', ')}] in your skills or experience fields.`);
-    } else {
-      feedback.push("Awesome profile completeness! Ready for job matching.");
-    }
-    if (keywordMatchPercent < 70) {
-      feedback.push("Incorporate professional metrics and active industry terminology to lift the contextual semantic density.");
-    }
-    if (!currentResume.summary || currentResume.summary.length < 50) {
-      feedback.push("Craft a strong Professional Summary containing target role keywords.");
-    }
-    if (currentResume.experience?.length === 0) {
-      feedback.push("Add comprehensive professional experiences to satisfy resume structure parsing requirements.");
-    }
-
     return {
       matchedKeywords: uniqueMatched,
       missingKeywords: uniqueMissing,
       keywordMatchPercent,
-      score: finalScore,
+      score: meta.score || 0,
       density,
-      feedback
+      feedback: meta.feedback || []
     };
-  }, [currentResume, analyzedJdText, analyzedJdPreset, atsBreakdown]);
+  }, [currentResume]);
 
   // Destructure resume sections with fallbacks
   const {
@@ -463,14 +414,20 @@ const Builder = () => {
     certifications = [],
     projects = [],
     languages = [],
-    atsMetadata = { score: 50, feedback: [] }
+    atsMetadata = { score: 0, feedback: [] }
   } = currentResume || {};
 
   const templateId = activeTheme;
 
+  const activeAtsScore = currentResume?.atsMetadata?.lastJdHash ? (currentResume.atsMetadata.score || 0) : 0;
+  const initialAtsScore = currentResume?.atsMetadata?.initialScore !== undefined ? currentResume.atsMetadata.initialScore : activeAtsScore;
+  const optimizedAtsScore = currentResume?.atsMetadata?.optimizedScore || 0;
+  const scoreImprovement = currentResume?.atsMetadata?.scoreImprovement || 0;
+  const hasOptimization = currentResume?.atsMetadata?.lastJdHash && (optimizedAtsScore > 0);
+
   const safeAtsMetadata = {
-    score: dynamicAtsData.score,
-    feedback: dynamicAtsData.feedback
+    score: activeAtsScore,
+    feedback: currentResume?.atsMetadata?.feedback || []
   };
 
   const totalContentCount = useMemo(() => {
@@ -594,14 +551,16 @@ const Builder = () => {
 
   // Set initial animatedScore when resume loads
   useEffect(() => {
-    if (dynamicAtsData?.score) {
-      setAnimatedScore(dynamicAtsData.score);
+    if (activeAtsScore) {
+      setAnimatedScore(activeAtsScore);
+    } else {
+      setAnimatedScore(0);
     }
-  }, [dynamicAtsData?.score]);
+  }, [activeAtsScore]);
 
   // Animate score counter changes smoothly
   useEffect(() => {
-    const targetScore = dynamicAtsData?.score || 50;
+    const targetScore = activeAtsScore;
     let start = animatedScore;
     const end = targetScore;
     if (start === end) return;
@@ -619,7 +578,7 @@ const Builder = () => {
     };
 
     window.requestAnimationFrame(step);
-  }, [dynamicAtsData?.score]);
+  }, [activeAtsScore]);
 
   // Self-closing Confetti system
   useEffect(() => {
@@ -826,22 +785,40 @@ const Builder = () => {
     setIsJdAnalyzing(true);
 
     if (selectedJdPreset && JD_PRESETS[selectedJdPreset]) {
-      // Simulate real-time semantic analysis delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
       const preset = JD_PRESETS[selectedJdPreset];
-      setAtsBreakdown(preset.breakdown);
-      setAnalyzedJdPreset(selectedJdPreset);
-      setAnalyzedJdText(preset.jdText);
-
-      updateResumeLocal({
-        atsMetadata: {
-          score: preset.score,
-          feedback: preset.breakdown.recommendations
+      try {
+        const response = await fetch(`${API_URL}/ai/analyze-jd`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('cf_token')}`
+          },
+          body: JSON.stringify({
+            resumeId: id,
+            jdText: preset.jdText,
+            isPreset: true,
+            presetMetadata: {
+              score: preset.score,
+              keywordsFound: preset.breakdown.matchedKeywords,
+              keywordsMissing: preset.breakdown.missingKeywords,
+              feedback: preset.breakdown.recommendations,
+              breakdown: preset.breakdown
+            }
+          })
+        });
+        const data = await response.json();
+        if (data.success) {
+          setAtsBreakdown(data.breakdown);
+          setAnalyzedJdPreset(selectedJdPreset);
+          setAnalyzedJdText(preset.jdText);
+          await loadResumeById(id);
+          setShowConfetti(true);
         }
-      });
-
-      setIsJdAnalyzing(false);
-      setShowConfetti(true);
+      } catch (e) {
+        console.error('Failed to analyze preset JD:', e);
+      } finally {
+        setIsJdAnalyzing(false);
+      }
       return;
     }
 
@@ -1482,188 +1459,292 @@ const Builder = () => {
             )}
 
             {/* Score & Breakdown display */}
-            <div className="flex items-center gap-5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-              {/* Circular ATS score progress with click overlay & confetti sparkles */}
-              <div 
-                onClick={() => setShowAtsReportModal(true)}
-                className="relative w-16 h-16 shrink-0 flex items-center justify-center cursor-pointer group hover:scale-105 active:scale-95 transition-all duration-200"
-                title="Click to view detailed analytics report breakdown"
-              >
-                <div className="absolute inset-0 bg-indigo-500/10 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse" />
-                
-                {/* Floating particle burst confetti */}
-                {showConfetti && (
-                  <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-20">
-                    {[...Array(15)].map((_, i) => {
-                      const angle = (i / 15) * 2 * Math.PI;
-                      const velocity = 35 + Math.random() * 40;
-                      const x = Math.cos(angle) * velocity;
-                      const y = Math.sin(angle) * velocity;
-                      const color = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6'][i % 5];
-                      return (
-                        <motion.div
-                          key={i}
-                          initial={{ x: 0, y: 0, opacity: 1, scale: 0.5 }}
-                          animate={{
-                            x,
-                            y,
-                            opacity: 0,
-                            scale: [0.5, 1.2, 0],
-                            rotate: Math.random() * 360
-                          }}
-                          transition={{ duration: 1.5, ease: "easeOut" }}
-                          className="absolute w-2.5 h-2.5 rounded-full"
-                          style={{ backgroundColor: color }}
-                        />
-                      );
-                    })}
-                  </div>
-                )}
-
-                <svg className="w-full h-full transform -rotate-90">
-                  <circle
-                    cx="32"
-                    cy="32"
-                    r="28"
-                    className="stroke-slate-100 dark:stroke-slate-800"
-                    strokeWidth="5.5"
-                    fill="transparent"
-                  />
-                  <circle
-                    cx="32"
-                    cy="32"
-                    r="28"
-                    className={`${
-                      animatedScore >= 80
-                        ? 'stroke-emerald-500 shadow-emerald-500/30'
-                        : animatedScore >= 60
-                        ? 'stroke-amber-500 shadow-amber-500/30'
-                        : 'stroke-red-500 shadow-red-500/30'
-                    } transition-all duration-500`}
-                    strokeWidth="5.5"
-                    fill="transparent"
-                    strokeDasharray={2 * Math.PI * 28}
-                    strokeDashoffset={2 * Math.PI * 28 * (1 - animatedScore / 100)}
-                  />
-                </svg>
-                <div className="absolute flex flex-col items-center">
-                  <span className="text-[11px] font-extrabold text-slate-800 dark:text-slate-100 group-hover:scale-110 transition-transform duration-200">
-                    {animatedScore}%
-                  </span>
-                  <span className="text-[6px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mt-0.5">
-                    Click
-                  </span>
-                </div>
+            {!currentResume?.atsMetadata?.lastJdHash ? (
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 text-center py-6 px-4 bg-slate-50/55 dark:bg-slate-950/20 rounded-2xl border border-dashed border-slate-200/60 dark:border-slate-800 space-y-2">
+                <Brain className="w-8 h-8 text-slate-400/80 mx-auto animate-pulse" />
+                <h5 className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  No Job Description Analyzed
+                </h5>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 max-w-xs mx-auto leading-relaxed">
+                  Enter a target Job Description above and click "Run ATS Matcher" to perform semantic AI matching.
+                </p>
               </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                  {/* Circular ATS score progress with click overlay & confetti sparkles */}
+                  <div 
+                    onClick={() => setShowAtsReportModal(true)}
+                    className="relative w-16 h-16 shrink-0 flex items-center justify-center cursor-pointer group hover:scale-105 active:scale-95 transition-all duration-200"
+                    title="Click to view detailed analytics report breakdown"
+                  >
+                    <div className="absolute inset-0 bg-indigo-500/10 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse" />
+                    
+                    {/* Floating particle burst confetti */}
+                    {showConfetti && (
+                      <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-20">
+                        {[...Array(15)].map((_, i) => {
+                          const angle = (i / 15) * 2 * Math.PI;
+                          const velocity = 35 + Math.random() * 40;
+                          const x = Math.cos(angle) * velocity;
+                          const y = Math.sin(angle) * velocity;
+                          const color = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6'][i % 5];
+                          return (
+                            <motion.div
+                              key={i}
+                              initial={{ x: 0, y: 0, opacity: 1, scale: 0.5 }}
+                              animate={{
+                                x,
+                                y,
+                                opacity: 0,
+                                scale: [0.5, 1.2, 0],
+                                rotate: Math.random() * 360
+                              }}
+                              transition={{ duration: 1.5, ease: "easeOut" }}
+                              className="absolute w-2.5 h-2.5 rounded-full"
+                              style={{ backgroundColor: color }}
+                            />
+                          );
+                        })}
+                      </div>
+                    )}
 
-              <div className="space-y-1 text-left min-w-0 flex-1">
-                <div className="flex items-center justify-between">
-                  <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    {animatedScore >= 80 ? 'Excellent Match!' : animatedScore >= 60 ? 'Good Potential' : 'Needs Optimization'}
-                  </h5>
-                  {analyzedJdPreset === 'mern' && dynamicAtsData.missingKeywords.length > 0 && (
-                    <button
-                      onClick={handleQuickOptimize}
-                      className="px-2 py-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-[9px] font-extrabold text-white rounded-lg flex items-center gap-0.5 animate-pulse cursor-pointer"
-                    >
-                      <Sparkles className="w-2.5 h-2.5" />
-                      <span>Auto-Fix</span>
-                    </button>
+                    <svg className="w-full h-full transform -rotate-90">
+                      <circle
+                        cx="32"
+                        cy="32"
+                        r="28"
+                        className="stroke-slate-100 dark:stroke-slate-800"
+                        strokeWidth="5.5"
+                        fill="transparent"
+                      />
+                      <circle
+                        cx="32"
+                        cy="32"
+                        r="28"
+                        className={`${
+                          animatedScore >= 80
+                            ? 'stroke-emerald-500 shadow-emerald-500/30'
+                            : animatedScore >= 60
+                            ? 'stroke-amber-500 shadow-amber-500/30'
+                            : 'stroke-red-500 shadow-red-500/30'
+                        } transition-all duration-500`}
+                        strokeWidth="5.5"
+                        fill="transparent"
+                        strokeDasharray={2 * Math.PI * 28}
+                        strokeDashoffset={2 * Math.PI * 28 * (1 - animatedScore / 100)}
+                      />
+                    </svg>
+                    <div className="absolute flex flex-col items-center">
+                      <span className="text-[11px] font-extrabold text-slate-800 dark:text-slate-100 group-hover:scale-110 transition-transform duration-200">
+                        {animatedScore}%
+                      </span>
+                      <span className="text-[6px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mt-0.5">
+                        Click
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 text-left min-w-0 flex-1">
+                    <div className="flex items-center justify-between">
+                      <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        {animatedScore >= 80 ? 'Excellent Match!' : animatedScore >= 60 ? 'Good Potential' : 'Needs Optimization'}
+                      </h5>
+                      {analyzedJdPreset === 'mern' && dynamicAtsData.missingKeywords.length > 0 && (
+                        <button
+                          onClick={handleQuickOptimize}
+                          className="px-2 py-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-[9px] font-extrabold text-white rounded-lg flex items-center gap-0.5 animate-pulse cursor-pointer"
+                        >
+                          <Sparkles className="w-2.5 h-2.5" />
+                          <span>Auto-Fix</span>
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed truncate">
+                      {atsMetadata.feedback && atsMetadata.feedback.length > 0
+                        ? atsMetadata.feedback[0]
+                        : 'Choose a JD above to calculate your keyword alignments.'}
+                    </p>
+                    <div className="text-[9px] text-slate-400 font-medium">
+                      AI rewrite credit usage: <span className="font-bold text-slate-600 dark:text-slate-300">{planStats.aiRewriteCount} / {planStats.aiLimit === Infinity ? 'Unlimited' : planStats.aiLimit}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ATS Score History — Before / After / Improvement */}
+                <div className="bg-slate-50/70 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/80 rounded-xl p-3 space-y-2.5">
+                  {/* Status Badge row */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Analysis Status</span>
+                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full leading-none ${
+                      hasOptimization
+                        ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20'
+                        : 'bg-slate-100 dark:bg-slate-800/85 text-slate-500 dark:text-slate-400'
+                    }`}>
+                      {hasOptimization ? '✦ Optimized' : 'Initial Analysis'}
+                    </span>
+                  </div>
+
+                  {/* Before / After / Improvement row */}
+                  {hasOptimization ? (
+                    <div className="flex items-center justify-between gap-1 pt-1 border-t border-slate-100 dark:border-slate-800/60">
+                      <div className="text-center flex-1">
+                        <div className="text-[8.5px] font-bold text-slate-400 uppercase tracking-widest">Before</div>
+                        <div className="text-sm font-extrabold text-slate-600 dark:text-slate-300 mt-0.5">{initialAtsScore}%</div>
+                      </div>
+                      <div className="text-slate-300 dark:text-slate-700 text-xs">→</div>
+                      <div className="text-center flex-1">
+                        <div className="text-[8.5px] font-bold text-slate-400 uppercase tracking-widest">After</div>
+                        <div className="text-sm font-extrabold text-slate-800 dark:text-slate-100 mt-0.5">{optimizedAtsScore}%</div>
+                      </div>
+                      <div className="text-slate-300 dark:text-slate-700 text-xs shrink-0">|</div>
+                      <div className="text-center flex-1">
+                        <div className="text-[8.5px] font-bold text-slate-400 uppercase tracking-widest">Change</div>
+                        <div className={`text-sm font-extrabold mt-0.5 ${
+                          scoreImprovement > 0
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : scoreImprovement < 0
+                              ? 'text-red-500 dark:text-red-400'
+                              : 'text-slate-500 dark:text-slate-400'
+                        }`}>
+                          {scoreImprovement > 0 ? `+${scoreImprovement}%` : `${scoreImprovement}%`}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800/60">
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400">Current ATS Match</span>
+                      <span className={`text-sm font-extrabold ${
+                        activeAtsScore >= 80 ? 'text-emerald-500' : activeAtsScore >= 60 ? 'text-amber-500' : 'text-red-500'
+                      }`}>{activeAtsScore}%</span>
+                    </div>
                   )}
                 </div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed truncate">
-                  {atsMetadata.feedback && atsMetadata.feedback.length > 0
-                    ? atsMetadata.feedback[0]
-                    : 'Choose a JD above to calculate your keyword alignments.'}
-                </p>
-                <div className="text-[9px] text-slate-400 font-medium">
-                  AI rewrite credit usage: <span className="font-bold text-slate-600 dark:text-slate-300">{planStats.aiRewriteCount} / {planStats.aiLimit === Infinity ? 'Unlimited' : planStats.aiLimit}</span>
-                </div>
-              </div>
-            </div>
 
-            {/* Resume Strength Dashboard with Readiness Indicator */}
-            <div className="bg-slate-50/70 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/80 rounded-xl p-3 space-y-2">
-              <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                <span>ATS Readiness Index</span>
-                <span className={`${
-                  animatedScore >= 80 ? 'text-emerald-500' : animatedScore >= 60 ? 'text-amber-500' : 'text-red-500'
-                } font-extrabold`}>
-                  {animatedScore >= 80 ? 'Ready to Apply' : animatedScore >= 60 ? 'Good Match (Polish)' : 'Critical Gaps'}
-                </span>
-              </div>
-              <div className="w-full bg-slate-200/50 dark:bg-slate-800/80 h-1.5 rounded-full overflow-hidden">
-                <div 
-                  className={`h-full transition-all duration-700 rounded-full ${
-                    animatedScore >= 80 ? 'bg-gradient-to-r from-emerald-400 to-teal-500' : animatedScore >= 60 ? 'bg-amber-400' : 'bg-red-400'
-                  }`}
-                  style={{ width: `${animatedScore}%` }}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-center text-[9px] pt-1">
-                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-1.5 rounded-lg">
-                  <div className="font-bold text-slate-400 uppercase tracking-widest text-[7.5px]">Matched</div>
-                  <div className="text-xs font-extrabold text-emerald-500 mt-0.5">
-                    {dynamicAtsData.matchedKeywords.length} keywords
-                  </div>
-                </div>
-                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-1.5 rounded-lg">
-                  <div className="font-bold text-slate-400 uppercase tracking-widest text-[7.5px]">Gaps</div>
-                  <div className="text-xs font-extrabold text-red-400 mt-0.5">
-                    {dynamicAtsData.missingKeywords.length} keywords
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Keyword gaps list (Searchable, fully responsive) */}
-            <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-              <div className="flex items-center justify-between">
-                <h6 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ATS Keyword Visualizer</h6>
-                <input
-                  type="text"
-                  placeholder="Filter keywords..."
-                  value={keywordSearch}
-                  onChange={(e) => setKeywordSearch(e.target.value)}
-                  className="px-2 py-0.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-[9px] focus:outline-none focus:border-indigo-500 w-24"
-                />
-              </div>
-              <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
-                {(() => {
-                  const allKw = [
-                    ...dynamicAtsData.matchedKeywords.map(k => ({ name: k, matched: true })),
-                    ...dynamicAtsData.missingKeywords.map(k => ({ name: k, matched: false }))
-                  ];
-                  const filtered = allKw.filter(k => k.name.toLowerCase().includes(keywordSearch.toLowerCase()));
-                  
-                  if (filtered.length === 0) {
-                    return <span className="text-[9px] text-slate-400">No matching keywords found.</span>;
-                  }
-
-                  return filtered.map((kw) => (
-                    <span
-                      key={kw.name}
-                      onClick={() => {
-                        if (!kw.matched) {
-                          openMagicOptimizer('bullet', '', (newVal) => {
-                            alert(`Suggested optimized sentence to inject:\n\n${newVal}`);
-                          });
-                        }
-                      }}
-                      className={`px-2 py-0.5 rounded-lg text-[9px] font-bold border flex items-center gap-1 transition-colors ${
-                        kw.matched 
-                          ? 'bg-emerald-50/60 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30' 
-                          : 'bg-amber-50/60 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-900/30 cursor-pointer hover:border-indigo-500'
-                      }`}
-                      title={kw.matched ? "Successfully matched!" : "Click to optimize and inject using AI"}
-                    >
-                      <span className={`w-1.5 h-1.5 rounded-full ${kw.matched ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
-                      {kw.name}
+                {/* Resume Strength Dashboard with Readiness Indicator */}
+                <div className="bg-slate-50/70 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/80 rounded-xl p-3 space-y-2">
+                  <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    <span>ATS Readiness Index</span>
+                    <span className={`${
+                      animatedScore >= 80 ? 'text-emerald-500' : animatedScore >= 60 ? 'text-amber-500' : 'text-red-500'
+                    } font-extrabold`}>
+                      {animatedScore >= 80 ? 'Ready to Apply' : animatedScore >= 60 ? 'Good Match (Polish)' : 'Critical Gaps'}
                     </span>
-                  ));
-                })()}
+                  </div>
+                  <div className="w-full bg-slate-200/50 dark:bg-slate-800/80 h-1.5 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full transition-all duration-700 rounded-full ${
+                        animatedScore >= 80 ? 'bg-gradient-to-r from-emerald-400 to-teal-500' : animatedScore >= 60 ? 'bg-amber-400' : 'bg-red-400'
+                      }`}
+                      style={{ width: `${animatedScore}%` }}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-center text-[9px] pt-1">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-1.5 rounded-lg">
+                      <div className="font-bold text-slate-400 uppercase tracking-widest text-[7.5px]">Matched</div>
+                      <div className="text-xs font-extrabold text-emerald-500 mt-0.5">
+                        {dynamicAtsData.matchedKeywords.length} keywords
+                      </div>
+                    </div>
+                    <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-1.5 rounded-lg">
+                      <div className="font-bold text-slate-400 uppercase tracking-widest text-[7.5px]">Gaps</div>
+                      <div className="text-xs font-extrabold text-red-400 mt-0.5">
+                        {dynamicAtsData.missingKeywords.length} keywords
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Keyword gaps list (Searchable, fully responsive) */}
+                <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                  <div className="flex items-center justify-between">
+                    <h6 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ATS Keyword Visualizer</h6>
+                    <input
+                      type="text"
+                      placeholder="Filter keywords..."
+                      value={keywordSearch}
+                      onChange={(e) => setKeywordSearch(e.target.value)}
+                      className="px-2 py-0.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-[9px] focus:outline-none focus:border-indigo-500 w-24"
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
+                    {(() => {
+                      const allKw = [
+                        ...dynamicAtsData.matchedKeywords.map(k => ({ name: k, matched: true })),
+                        ...dynamicAtsData.missingKeywords.map(k => ({ name: k, matched: false }))
+                      ];
+                      const filtered = allKw.filter(k => k.name.toLowerCase().includes(keywordSearch.toLowerCase()));
+                      
+                      if (filtered.length === 0) {
+                        return <span className="text-[9px] text-slate-400">No matching keywords found.</span>;
+                      }
+
+                      return filtered.map((kw) => (
+                        <span
+                          key={kw.name}
+                          onClick={() => {
+                            if (!kw.matched) {
+                              openMagicOptimizer('bullet', '', (newVal) => {
+                                alert(`Suggested optimized sentence to inject:\n\n${newVal}`);
+                              });
+                            }
+                          }}
+                          className={`px-2 py-0.5 rounded-lg text-[9px] font-bold border flex items-center gap-1 transition-colors ${
+                            kw.matched 
+                              ? 'bg-emerald-50/60 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30' 
+                              : 'bg-amber-50/60 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-900/30 cursor-pointer hover:border-indigo-500'
+                          }`}
+                          title={kw.matched ? "Successfully matched!" : "Click to optimize and inject using AI"}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${kw.matched ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
+                          {kw.name}
+                        </span>
+                      ));
+                    })()}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* ATS Score History */}
+            {hasOptimization && (
+              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5">
+                <h6 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                  <RotateCcw className="w-3 h-3 text-indigo-500" />
+                  ATS Optimization History
+                </h6>
+                <div className="bg-gradient-to-br from-indigo-50/40 to-emerald-50/20 dark:from-slate-950/45 dark:to-slate-900/25 border border-slate-200/50 dark:border-slate-800/80 p-3.5 rounded-2xl space-y-3">
+                  <div className="grid grid-cols-3 gap-2.5 text-center">
+                    {/* Before Optimization */}
+                    <div className="bg-white/60 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 p-2 rounded-xl">
+                      <div className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Before</div>
+                      <div className="text-sm font-extrabold text-slate-500 dark:text-slate-400 mt-0.5">
+                        {initialAtsScore}%
+                      </div>
+                    </div>
+                    {/* After Optimization */}
+                    <div className="bg-white dark:bg-slate-950 border border-indigo-100 dark:border-indigo-900/60 p-2 rounded-xl shadow-sm relative overflow-hidden group">
+                      <div className="absolute top-0 right-0 w-8 h-8 bg-indigo-500/10 rounded-full blur-sm" />
+                      <div className="text-[8px] font-bold text-indigo-500 uppercase tracking-wider">After AI</div>
+                      <div className="text-sm font-extrabold text-indigo-600 dark:text-indigo-400 mt-0.5">
+                        {optimizedAtsScore}%
+                      </div>
+                    </div>
+                    {/* Improvement */}
+                    <div className="bg-white/60 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 p-2 rounded-xl flex flex-col justify-center items-center">
+                      <div className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Gain</div>
+                      <div className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full text-[9px] font-bold mt-1">
+                        <ArrowUp className="w-2.5 h-2.5 stroke-[3px]" />
+                        <span>+{scoreImprovement}%</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-[9px] text-slate-400 dark:text-slate-500 leading-relaxed font-medium">
+                    This resume has been optimized with AI. Recalculate anytime to verify matches.
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
           )}
 

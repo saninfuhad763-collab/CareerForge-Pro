@@ -8,9 +8,36 @@ import { calculateAtsScore } from '../services/atsService.js';
 /**
  * Parses a Job Description, matches it against a Resume, updates ATS metadata, and returns the score
  */
+import crypto from 'crypto';
+
+const normalizeJdText = (text) => {
+  if (!text) return '';
+  return text
+    // Strip invisible and non-breaking unicode characters before anything else
+    .replace(/[\u00a0\u200b\u200c\u200d\u2028\u2029\ufeff\u00ad]/g, ' ')
+    .toLowerCase()
+    .trim()
+    // Replace punctuation with spaces (handles React.js vs React js, Node.js, C++, etc.)
+    .replace(/[.,/#!$%^&*;:{}=\-_`~()'"\[\]|\\<>@?]/g, ' ')
+    // Collapse all whitespace sequences into a single space
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+const generateJdHash = (text) => {
+  return crypto.createHash('md5').update(normalizeJdText(text)).digest('hex');
+};
+
 export const analyzeJdAndScoreResume = async (req, res, next) => {
   try {
-    const { resumeId, jdText, jobTitle = 'Target Role', company = 'Target Company' } = req.body;
+    const { 
+      resumeId, 
+      jdText, 
+      jobTitle = 'Target Role', 
+      company = 'Target Company',
+      isPreset = false,
+      presetMetadata = null
+    } = req.body;
 
     if (!resumeId || !jdText || jdText.trim().length === 0) {
       return res.status(400).json({ success: false, message: 'Please provide resumeId and job description text.' });
@@ -21,35 +48,113 @@ export const analyzeJdAndScoreResume = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Resume not found or unauthorized.' });
     }
 
-    // 1. Analyze Job Description via LangChain/Groq Agent
-    const analysisResult = await analyzeJobDescription(jdText);
-    if (!analysisResult.success) {
-      return res.status(500).json({ success: false, message: 'Failed to analyze Job Description.' });
+    let calculatedScore;
+    let breakdown;
+    let jobDescriptionId = null;
+    let analysis;
+
+    const currentJdHash = generateJdHash(jdText);
+
+    if (isPreset && presetMetadata) {
+      calculatedScore = presetMetadata.score;
+      breakdown = presetMetadata.breakdown;
+      analysis = {
+        requiredKeywords: [...(presetMetadata.keywordsFound || []), ...(presetMetadata.keywordsMissing || [])],
+        preferredKeywords: [],
+        softSkills: [],
+        technologies: [],
+        certifications: [],
+        keywordImportance: new Map()
+      };
+
+      const jdVector = getEmbeddingVector(jdText);
+      const newJd = await JobDescription.create({
+        userId: req.user._id,
+        jobTitle,
+        company,
+        rawText: jdText,
+        analysis,
+        embedding: jdVector,
+      });
+      jobDescriptionId = newJd._id;
+    } else {
+      // 1. Analyze Job Description via LangChain/Groq Agent
+      const analysisResult = await analyzeJobDescription(jdText);
+      if (!analysisResult.success) {
+        return res.status(500).json({ success: false, message: 'Failed to analyze Job Description.' });
+      }
+
+      analysis = analysisResult.analysis;
+
+      // 2. Persist the JD analysis & Vector Embeddings
+      const jdVector = getEmbeddingVector(jdText);
+      const newJd = await JobDescription.create({
+        userId: req.user._id,
+        jobTitle: analysis.jobTitle || jobTitle,
+        company: analysis.company || company,
+        rawText: jdText,
+        analysis,
+        embedding: jdVector,
+      });
+      jobDescriptionId = newJd._id;
+
+      // 3. Compute ATS Score and recommendations
+      const scoreResult = calculateAtsScore(resume, analysis);
+      calculatedScore = scoreResult.atsScore;
+      breakdown = scoreResult.breakdown;
     }
 
-    const analysis = analysisResult.analysis;
+    // 4. Update Resume ATS Metadata and Embeddings with ATS History Lifecycle
+    const lastHash = resume.atsMetadata?.lastJdHash || '';
 
-    // 2. Persist the JD analysis & Vector Embeddings
-    const jdVector = getEmbeddingVector(jdText);
-    const newJd = await JobDescription.create({
-      userId: req.user._id,
-      jobTitle: analysis.jobTitle || jobTitle,
-      company: analysis.company || company,
-      rawText: jdText,
-      analysis,
-      embedding: jdVector,
-    });
+    let initialScore = resume.atsMetadata?.initialScore || 0;
+    let optimizedScore = resume.atsMetadata?.optimizedScore || 0;
+    let scoreImprovement = resume.atsMetadata?.scoreImprovement || 0;
 
-    // 3. Compute ATS Score and recommendations
-    const scoreResult = calculateAtsScore(resume, analysis);
+    if (!lastHash || currentJdHash !== lastHash) {
+      // State 1 / State 4: First analysis OR JD changed — reset baseline
+      initialScore = calculatedScore;
+      optimizedScore = 0;
+      scoreImprovement = 0;
+    } else {
+      // State 3: Same JD, re-analysis — only record improvement if score actually changed
+      if (initialScore === 0) initialScore = calculatedScore;
 
-    // 4. Update Resume ATS Metadata and Embeddings
-    resume.atsMetadata = {
-      score: scoreResult.atsScore,
-      keywordsFound: analysis.requiredKeywords.filter(kw => !scoreResult.breakdown.missingKeywords.includes(kw)),
-      keywordsMissing: scoreResult.breakdown.missingKeywords,
-      feedback: scoreResult.breakdown.recommendations,
-    };
+      const currentPersistedScore = resume.atsMetadata?.score || 0;
+      if (calculatedScore !== currentPersistedScore) {
+        // Meaningful change detected — update optimization record
+        optimizedScore = calculatedScore;
+        scoreImprovement = optimizedScore - initialScore;
+      } else {
+        // Score unchanged — preserve existing optimization state, avoid phantom records
+        optimizedScore = resume.atsMetadata?.optimizedScore || 0;
+        scoreImprovement = resume.atsMetadata?.scoreImprovement || 0;
+      }
+    }
+
+    if (isPreset && presetMetadata) {
+      resume.atsMetadata = {
+        score: calculatedScore,
+        initialScore,
+        optimizedScore,
+        scoreImprovement,
+        lastJdHash: currentJdHash,
+        keywordsFound: presetMetadata.keywordsFound || [],
+        keywordsMissing: presetMetadata.keywordsMissing || [],
+        feedback: presetMetadata.feedback || []
+      };
+    } else {
+      resume.atsMetadata = {
+        score: calculatedScore,
+        initialScore,
+        optimizedScore,
+        scoreImprovement,
+        lastJdHash: currentJdHash,
+        keywordsFound: analysis.requiredKeywords.filter(kw => !breakdown.missingKeywords.includes(kw)),
+        keywordsMissing: breakdown.missingKeywords,
+        feedback: breakdown.recommendations,
+      };
+    }
 
     // Store resume embeddings vector for semantic matching
     const resumeTextCompiled = `${resume.title || ''} ${resume.summary || ''}`;
@@ -59,9 +164,10 @@ export const analyzeJdAndScoreResume = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: 'ATS analysis and matching successfully calculated.',
-      atsScore: scoreResult.atsScore,
-      breakdown: scoreResult.breakdown,
-      jobDescriptionId: newJd._id,
+      atsScore: calculatedScore,
+      breakdown: breakdown,
+      atsMetadata: resume.atsMetadata,
+      jobDescriptionId: jobDescriptionId,
     });
   } catch (error) {
     next(error);
