@@ -10,6 +10,35 @@ import { calculateAtsScore } from '../services/atsService.js';
  */
 import crypto from 'crypto';
 
+/**
+ * Sanitizes a keywordImportance plain-object so that all keys are safe for
+ * MongoDB / Mongoose Map storage. MongoDB rejects Map keys that contain "."
+ * (e.g. "Node.js", "React.js", "ASP.NET", ".NET") with a ValidationError.
+ *
+ * Strategy (Option B — persistence-layer transform only):
+ *   • Replace every "." in a key with the token "___dot___"
+ *   • The original analysis object (with un-sanitized keys) is NOT mutated
+ *     and continues to flow through calculateAtsScore() unchanged.
+ *   • No downstream consumer reads keywordImportance back from the database,
+ *     so the transformed keys have zero impact on ATS scoring, recommendations,
+ *     dashboard, or history views.
+ *
+ * @param {Object|undefined} importance - Raw keywordImportance from AI analysis
+ * @returns {Object} - A new object with safe keys, safe to persist as a Mongoose Map
+ */
+const sanitizeKeywordImportanceKeys = (importance) => {
+  if (!importance || typeof importance !== 'object' || Array.isArray(importance)) {
+    return {};
+  }
+  const safe = {};
+  for (const [key, value] of Object.entries(importance)) {
+    // Replace ALL "." occurrences in the key with a safe token
+    const safeKey = String(key).replace(/\./g, '___dot___');
+    safe[safeKey] = value;
+  }
+  return safe;
+};
+
 const normalizeJdText = (text) => {
   if (!text) return '';
   return text
@@ -64,13 +93,20 @@ export const analyzeJdAndScoreResume = async (req, res, next) => {
     analysis = analysisResult.analysis;
 
     // 2. Persist the JD analysis & Vector Embeddings
+    // Build a DB-safe copy of analysis: sanitize keywordImportance keys so that
+    // dots (e.g. "Node.js", "React.js", ".NET") do not trigger Mongoose Map ValidationErrors.
+    // The original `analysis` object is left untouched for ATS scoring below.
     const jdVector = getEmbeddingVector(jdText);
+    const persistableAnalysis = {
+      ...analysis,
+      keywordImportance: sanitizeKeywordImportanceKeys(analysis.keywordImportance),
+    };
     const newJd = await JobDescription.create({
       userId: req.user._id,
       jobTitle: analysis.jobTitle || jobTitle,
       company: analysis.company || company,
       rawText: jdText,
-      analysis,
+      analysis: persistableAnalysis,
       embedding: jdVector,
     });
     jobDescriptionId = newJd._id;

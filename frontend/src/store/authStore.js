@@ -1,6 +1,16 @@
 import { create } from 'zustand';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+
+const refineError = (error) => {
+  if (error instanceof TypeError || error.message?.includes('fetch') || error.message?.includes('Failed to fetch')) {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      return 'Network disconnected. Please check your internet connection.';
+    }
+    return 'Backend server is unavailable or CORS policy blocked the request.';
+  }
+  return error.message || 'An unexpected error occurred.';
+};
 
 const getInitialState = () => {
   const token = localStorage.getItem('cf_token');
@@ -56,8 +66,9 @@ export const useAuthStore = create((set, get) => ({
       });
       return { success: true };
     } catch (error) {
-      set({ loading: false, error: error.message });
-      return { success: false, error: error.message };
+      const refined = refineError(error);
+      set({ loading: false, error: refined });
+      return { success: false, error: refined };
     }
   },
 
@@ -91,8 +102,9 @@ export const useAuthStore = create((set, get) => ({
       });
       return { success: true };
     } catch (error) {
-      set({ loading: false, error: error.message });
-      return { success: false, error: error.message };
+      const refined = refineError(error);
+      set({ loading: false, error: refined });
+      return { success: false, error: refined };
     }
   },
 
@@ -161,8 +173,9 @@ export const useAuthStore = create((set, get) => ({
       set({ user: data.data, loading: false, error: null });
       return { success: true };
     } catch (error) {
-      set({ loading: false, error: error.message });
-      return { success: false, error: error.message };
+      const refined = refineError(error);
+      set({ loading: false, error: refined });
+      return { success: false, error: refined };
     }
   },
 

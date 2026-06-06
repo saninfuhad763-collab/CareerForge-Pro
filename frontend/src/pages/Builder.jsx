@@ -197,7 +197,7 @@ const Builder = () => {
     }
   }, [currentResume?.templateId]);
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const API_URL = import.meta.env.VITE_API_URL || '/api';
 
   // State abstractions for JD ATS Check & AI Optimization
   const [jdText, setJdText] = useState('');
@@ -215,6 +215,8 @@ const Builder = () => {
   const [animatedScore, setAnimatedScore] = useState(50);
   const [keywordSearch, setKeywordSearch] = useState('');
   const [modalKeywordSearch, setModalKeywordSearch] = useState('');
+  // ATS Matcher error state — shows inline error inside the ATS panel (no browser alerts)
+  const [atsError, setAtsError] = useState(null);
 
   // Preset loading pipeline: ONLY populates state, does NOT trigger ATS analysis
   const handlePresetChange = (val) => {
@@ -783,33 +785,83 @@ const Builder = () => {
   const handleJdAnalysis = async () => {
     if (!jdText.trim()) return;
     setIsJdAnalyzing(true);
+    setAtsError(null); // Clear any previous error before new attempt
 
     try {
-      const response = await fetch(`${API_URL}/ai/analyze-jd`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('cf_token')}`
-        },
-        body: JSON.stringify({
-          resumeId: id,
-          jdText
-        })
-      });
-      const data = await response.json();
-      if (data.success) {
-        setAtsBreakdown(data.breakdown);
-        setAnalyzedJdPreset(selectedJdPreset);
-        setAnalyzedJdText(jdText);
-        await loadResumeById(id);
-        setShowConfetti(true);
+      let response;
+      try {
+        response = await fetch(`${API_URL}/ai/analyze-jd`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('cf_token')}`
+          },
+          body: JSON.stringify({
+            resumeId: id,
+            jdText
+          })
+        });
+      } catch (networkError) {
+        // Network-level failure (server unreachable, DNS failure, CORS, etc.)
+        const msg = 'Network error — could not reach the server. Check your connection and try again.';
+        setAtsError({ type: 'network', message: msg });
+        setSaveStatus('ATS analysis failed — network error.');
+        return;
       }
-    } catch (e) {
-      console.error('Failed to analyze JD:', e);
+
+      // Parse the response body safely
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        const msg = `Server returned an unreadable response (HTTP ${response.status}). Please try again.`;
+        setAtsError({ type: 'parse', message: msg });
+        setSaveStatus('ATS analysis failed — server error.');
+        return;
+      }
+
+      if (!response.ok || !data.success) {
+        // Classify server-side errors by HTTP status code
+        let userMsg;
+        if (response.status === 500) {
+          userMsg = data.message
+            ? `Server error: ${data.message}`
+            : 'The ATS analysis failed on the server (HTTP 500). This is a server-side issue — please try again in a moment.';
+          setAtsError({ type: 'server', message: userMsg, retry: true });
+          setSaveStatus('ATS analysis failed — server error (500).');
+        } else if (response.status === 400) {
+          userMsg = data.message || 'Invalid request. Please ensure the job description text is not empty.';
+          setAtsError({ type: 'validation', message: userMsg });
+          setSaveStatus('ATS analysis failed — invalid request.');
+        } else if (response.status === 401 || response.status === 403) {
+          userMsg = 'Your session has expired. Please log in again to run ATS analysis.';
+          setAtsError({ type: 'auth', message: userMsg });
+          setSaveStatus('ATS analysis failed — authentication required.');
+        } else if (response.status === 404) {
+          userMsg = 'Resume not found. Please refresh the page and try again.';
+          setAtsError({ type: 'notfound', message: userMsg });
+          setSaveStatus('ATS analysis failed — resume not found.');
+        } else {
+          userMsg = data.message || `ATS analysis failed (HTTP ${response.status}). Please try again.`;
+          setAtsError({ type: 'api', message: userMsg, retry: true });
+          setSaveStatus(`ATS analysis failed (${response.status}).`);
+        }
+        return;
+      }
+
+      // Success path — clear any residual error state
+      setAtsError(null);
+      setAtsBreakdown(data.breakdown);
+      setAnalyzedJdPreset(selectedJdPreset);
+      setAnalyzedJdText(jdText);
+      await loadResumeById(id);
+      setShowConfetti(true);
+      setSaveStatus('ATS analysis complete!');
     } finally {
       setIsJdAnalyzing(false);
     }
   };
+
 
   const openMagicOptimizer = (type, currentVal, applyFn) => {
     setOptimizerType(type);
@@ -1418,6 +1470,39 @@ const Builder = () => {
                     </>
                   )}
                 </button>
+
+                {/* Inline ATS Error Banner — shown when analysis fails, no browser alerts */}
+                {atsError && (
+                  <div className={`flex items-start gap-2.5 p-3 rounded-xl border text-xs leading-relaxed ${
+                    atsError.type === 'server' || atsError.type === 'network' || atsError.type === 'parse'
+                      ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800/40 text-red-700 dark:text-red-400'
+                      : atsError.type === 'validation'
+                      ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/40 text-amber-700 dark:text-amber-400'
+                      : 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800/40 text-red-700 dark:text-red-400'
+                  }`}>
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold">{atsError.message}</p>
+                      {atsError.retry && (
+                        <button
+                          type="button"
+                          onClick={() => { setAtsError(null); handleJdAnalysis(); }}
+                          className="mt-1.5 text-[10px] font-bold underline underline-offset-2 cursor-pointer hover:opacity-80 transition-opacity"
+                        >
+                          Retry Analysis →
+                        </button>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setAtsError(null)}
+                      className="text-inherit opacity-50 hover:opacity-100 transition-opacity cursor-pointer shrink-0"
+                      aria-label="Dismiss error"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
