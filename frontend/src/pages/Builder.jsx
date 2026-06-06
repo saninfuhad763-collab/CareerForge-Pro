@@ -784,44 +784,6 @@ const Builder = () => {
     if (!jdText.trim()) return;
     setIsJdAnalyzing(true);
 
-    if (selectedJdPreset && JD_PRESETS[selectedJdPreset]) {
-      const preset = JD_PRESETS[selectedJdPreset];
-      try {
-        const response = await fetch(`${API_URL}/ai/analyze-jd`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('cf_token')}`
-          },
-          body: JSON.stringify({
-            resumeId: id,
-            jdText: preset.jdText,
-            isPreset: true,
-            presetMetadata: {
-              score: preset.score,
-              keywordsFound: preset.breakdown.matchedKeywords,
-              keywordsMissing: preset.breakdown.missingKeywords,
-              feedback: preset.breakdown.recommendations,
-              breakdown: preset.breakdown
-            }
-          })
-        });
-        const data = await response.json();
-        if (data.success) {
-          setAtsBreakdown(data.breakdown);
-          setAnalyzedJdPreset(selectedJdPreset);
-          setAnalyzedJdText(preset.jdText);
-          await loadResumeById(id);
-          setShowConfetti(true);
-        }
-      } catch (e) {
-        console.error('Failed to analyze preset JD:', e);
-      } finally {
-        setIsJdAnalyzing(false);
-      }
-      return;
-    }
-
     try {
       const response = await fetch(`${API_URL}/ai/analyze-jd`, {
         method: 'POST',
@@ -837,9 +799,10 @@ const Builder = () => {
       const data = await response.json();
       if (data.success) {
         setAtsBreakdown(data.breakdown);
-        setAnalyzedJdPreset('');
+        setAnalyzedJdPreset(selectedJdPreset);
         setAnalyzedJdText(jdText);
         await loadResumeById(id);
+        setShowConfetti(true);
       }
     } catch (e) {
       console.error('Failed to analyze JD:', e);

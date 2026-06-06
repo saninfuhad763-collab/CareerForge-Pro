@@ -55,54 +55,30 @@ export const analyzeJdAndScoreResume = async (req, res, next) => {
 
     const currentJdHash = generateJdHash(jdText);
 
-    if (isPreset && presetMetadata) {
-      calculatedScore = presetMetadata.score;
-      breakdown = presetMetadata.breakdown;
-      analysis = {
-        requiredKeywords: [...(presetMetadata.keywordsFound || []), ...(presetMetadata.keywordsMissing || [])],
-        preferredKeywords: [],
-        softSkills: [],
-        technologies: [],
-        certifications: [],
-        keywordImportance: new Map()
-      };
-
-      const jdVector = getEmbeddingVector(jdText);
-      const newJd = await JobDescription.create({
-        userId: req.user._id,
-        jobTitle,
-        company,
-        rawText: jdText,
-        analysis,
-        embedding: jdVector,
-      });
-      jobDescriptionId = newJd._id;
-    } else {
-      // 1. Analyze Job Description via LangChain/Groq Agent
-      const analysisResult = await analyzeJobDescription(jdText);
-      if (!analysisResult.success) {
-        return res.status(500).json({ success: false, message: 'Failed to analyze Job Description.' });
-      }
-
-      analysis = analysisResult.analysis;
-
-      // 2. Persist the JD analysis & Vector Embeddings
-      const jdVector = getEmbeddingVector(jdText);
-      const newJd = await JobDescription.create({
-        userId: req.user._id,
-        jobTitle: analysis.jobTitle || jobTitle,
-        company: analysis.company || company,
-        rawText: jdText,
-        analysis,
-        embedding: jdVector,
-      });
-      jobDescriptionId = newJd._id;
-
-      // 3. Compute ATS Score and recommendations
-      const scoreResult = calculateAtsScore(resume, analysis);
-      calculatedScore = scoreResult.atsScore;
-      breakdown = scoreResult.breakdown;
+    // 1. Analyze Job Description via LangChain/Groq Agent
+    const analysisResult = await analyzeJobDescription(jdText);
+    if (!analysisResult.success) {
+      return res.status(500).json({ success: false, message: 'Failed to analyze Job Description.' });
     }
+
+    analysis = analysisResult.analysis;
+
+    // 2. Persist the JD analysis & Vector Embeddings
+    const jdVector = getEmbeddingVector(jdText);
+    const newJd = await JobDescription.create({
+      userId: req.user._id,
+      jobTitle: analysis.jobTitle || jobTitle,
+      company: analysis.company || company,
+      rawText: jdText,
+      analysis,
+      embedding: jdVector,
+    });
+    jobDescriptionId = newJd._id;
+
+    // 3. Compute ATS Score and recommendations
+    const scoreResult = calculateAtsScore(resume, analysis);
+    calculatedScore = scoreResult.atsScore;
+    breakdown = scoreResult.breakdown;
 
     // 4. Update Resume ATS Metadata and Embeddings with ATS History Lifecycle
     const lastHash = resume.atsMetadata?.lastJdHash || '';
@@ -132,29 +108,16 @@ export const analyzeJdAndScoreResume = async (req, res, next) => {
       }
     }
 
-    if (isPreset && presetMetadata) {
-      resume.atsMetadata = {
-        score: calculatedScore,
-        initialScore,
-        optimizedScore,
-        scoreImprovement,
-        lastJdHash: currentJdHash,
-        keywordsFound: presetMetadata.keywordsFound || [],
-        keywordsMissing: presetMetadata.keywordsMissing || [],
-        feedback: presetMetadata.feedback || []
-      };
-    } else {
-      resume.atsMetadata = {
-        score: calculatedScore,
-        initialScore,
-        optimizedScore,
-        scoreImprovement,
-        lastJdHash: currentJdHash,
-        keywordsFound: analysis.requiredKeywords.filter(kw => !breakdown.missingKeywords.includes(kw)),
-        keywordsMissing: breakdown.missingKeywords,
-        feedback: breakdown.recommendations,
-      };
-    }
+    resume.atsMetadata = {
+      score: calculatedScore,
+      initialScore,
+      optimizedScore,
+      scoreImprovement,
+      lastJdHash: currentJdHash,
+      keywordsFound: (analysis.requiredKeywords || []).filter(kw => !(breakdown.missingKeywords || []).includes(kw)),
+      keywordsMissing: breakdown.missingKeywords || [],
+      feedback: breakdown.recommendations || [],
+    };
 
     // Store resume embeddings vector for semantic matching
     const resumeTextCompiled = `${resume.title || ''} ${resume.summary || ''}`;
