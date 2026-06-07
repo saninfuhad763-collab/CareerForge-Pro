@@ -110,37 +110,7 @@ export function calculateAtsScore(resume, jdAnalysis) {
   const missingKeywords = [];
 
   allKeywords.forEach(kw => {
-    const cleanKw = kw.toLowerCase().trim();
-    if (cleanKw.length === 0) return;
-
-    const isAlphaNumeric = /^[a-z0-9\s]+$/i.test(cleanKw);
-    let isMatched = false;
-
-    if (isAlphaNumeric) {
-      // Safe word-boundary regex for standard alphanumeric words/phrases
-      const safeKw = cleanKw.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-      const regex = new RegExp(`\\b${safeKw}\\b`, 'i');
-      isMatched = regex.test(normalizedResume);
-    } else {
-      // Smart matching for keywords with special characters (e.g. C++, .NET, Node.js, C#, CI/CD)
-      let idx = normalizedResume.indexOf(cleanKw);
-      while (idx !== -1) {
-        const charBefore = idx > 0 ? normalizedResume[idx - 1] : ' ';
-        const charAfter = idx + cleanKw.length < normalizedResume.length ? normalizedResume[idx + cleanKw.length] : ' ';
-
-        // Ensure word boundaries: the surrounding characters must be non-alphanumeric
-        const isBeforeBoundary = !/[a-z0-9]/i.test(charBefore);
-        const isAfterBoundary = !/[a-z0-9]/i.test(charAfter);
-
-        if (isBeforeBoundary && isAfterBoundary) {
-          isMatched = true;
-          break;
-        }
-        idx = normalizedResume.indexOf(cleanKw, idx + 1);
-      }
-    }
-
-    if (isMatched) {
+    if (isKeywordMatched(kw, normalizedResume)) {
       foundKeywords.push(kw);
     } else {
       missingKeywords.push(kw);
@@ -252,3 +222,92 @@ export function calculateAtsScore(resume, jdAnalysis) {
     }
   };
 }
+
+const ALIAS_MAP = {
+  "mongodb": ["mongodb", "mongo", "nosql", "document database"],
+  "mongo": ["mongodb", "mongo", "nosql", "document database"],
+  "express.js": ["express.js", "expressjs", "express"],
+  "expressjs": ["express.js", "expressjs", "express"],
+  "express": ["express.js", "expressjs", "express"],
+  "node.js": ["node.js", "nodejs", "node"],
+  "nodejs": ["node.js", "nodejs", "node"],
+  "node": ["node.js", "nodejs", "node"],
+  "ci/cd": ["ci/cd", "cicd", "continuous integration", "continuous delivery", "github actions", "pipelines"],
+  "cicd": ["ci/cd", "cicd", "continuous integration", "continuous delivery", "github actions", "pipelines"],
+  "restful apis": ["restful apis", "rest api", "restful", "restapis", "rest apis"],
+  "rest apis": ["restful apis", "rest api", "restful", "restapis", "rest apis"],
+  "rest api": ["restful apis", "rest api", "restful", "restapis", "rest apis"],
+  "jwt": ["jwt", "json web token"],
+  "react": ["react", "reactjs", "react.js"],
+  "reactjs": ["react", "reactjs", "react.js"],
+  "react.js": ["react", "reactjs", "react.js"],
+  "redux": ["redux", "reduxtoolkit", "rtk"],
+  "aws": ["aws", "amazon web services", "s3", "ec2"],
+  "docker": ["docker", "containerization", "kubernetes", "containers"],
+  "typescript": ["typescript", "ts"],
+  "ts": ["typescript", "ts"],
+  "javascript": ["javascript", "js", "es6"],
+  "js": ["javascript", "js", "es6"],
+  "next.js": ["next.js", "nextjs"],
+  "nextjs": ["next.js", "nextjs"],
+  "jest": ["jest", "unit testing", "testing"],
+  "cypress": ["cypress", "e2e testing", "integration testing"],
+  "tailwind-css": ["tailwind-css", "tailwindcss", "tailwind"],
+  "tailwindcss": ["tailwind-css", "tailwindcss", "tailwind"],
+  "tailwind": ["tailwind-css", "tailwindcss", "tailwind"],
+  "tableau": ["tableau", "business intelligence", "bi dashboard"],
+  "looker": ["looker", "business intelligence", "bi dashboard"]
+};
+
+const checkSingleTermMatch = (term, text) => {
+  const cleanTerm = term.toLowerCase().trim();
+  const cleanText = text.toLowerCase();
+
+  if (!cleanTerm || !cleanText) return false;
+
+  const isAlphaNumeric = /^[a-z0-9\s]+$/i.test(cleanTerm);
+
+  if (isAlphaNumeric) {
+    const escaped = cleanTerm.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const regex = new RegExp(`\\b${escaped}\\b`, 'i');
+    return regex.test(cleanText);
+  } else {
+    let idx = cleanText.indexOf(cleanTerm);
+    while (idx !== -1) {
+      const charBefore = idx > 0 ? cleanText[idx - 1] : ' ';
+      const charAfter = idx + cleanTerm.length < cleanText.length ? cleanText[idx + cleanTerm.length] : ' ';
+
+      const startsWithAlpha = /[a-z0-9]/i.test(cleanTerm[0]);
+      const endsWithAlpha = /[a-z0-9]/i.test(cleanTerm[cleanTerm.length - 1]);
+
+      const isBeforeBoundary = !startsWithAlpha || !/[a-z0-9]/i.test(charBefore);
+      const isAfterBoundary = !endsWithAlpha || !/[a-z0-9]/i.test(charAfter);
+
+      if (isBeforeBoundary && isAfterBoundary) {
+        return true;
+      }
+      idx = cleanText.indexOf(cleanTerm, idx + 1);
+    }
+    return false;
+  }
+};
+
+export const isKeywordMatched = (keyword, text) => {
+  const cleanKw = keyword.toLowerCase().trim();
+  if (!cleanKw) return false;
+
+  const aliases = ALIAS_MAP[cleanKw] || [cleanKw];
+
+  if (aliases.some(alias => checkSingleTermMatch(alias, text))) {
+    return true;
+  }
+
+  if (cleanKw.includes(' ') || cleanKw.includes('-')) {
+    const words = cleanKw.split(/[\s\-._]+/).filter(w => w.length > 3);
+    if (words.length > 1) {
+      return words.every(word => checkSingleTermMatch(word, text));
+    }
+  }
+
+  return false;
+};

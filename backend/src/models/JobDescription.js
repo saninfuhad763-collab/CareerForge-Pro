@@ -15,6 +15,10 @@ const jobDescriptionSchema = new mongoose.Schema(
       type: String,
       default: 'Unknown Company',
     },
+    hash: {
+      type: String,
+      index: true,
+    },
     rawText: {
       type: String,
       required: true,

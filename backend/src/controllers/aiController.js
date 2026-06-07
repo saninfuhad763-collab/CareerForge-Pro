@@ -39,6 +39,19 @@ const sanitizeKeywordImportanceKeys = (importance) => {
   return safe;
 };
 
+const restoreKeywordImportanceKeys = (importance) => {
+  if (!importance || typeof importance !== 'object') {
+    return {};
+  }
+  const rawObj = typeof importance.toObject === 'function' ? importance.toObject() : importance;
+  const restored = {};
+  for (const [key, value] of Object.entries(rawObj)) {
+    const normalKey = String(key).replace(/___dot___/g, '.');
+    restored[normalKey] = value;
+  }
+  return restored;
+};
+
 const normalizeJdText = (text) => {
   if (!text) return '';
   return text
@@ -84,32 +97,48 @@ export const analyzeJdAndScoreResume = async (req, res, next) => {
 
     const currentJdHash = generateJdHash(jdText);
 
-    // 1. Analyze Job Description via LangChain/Groq Agent
-    const analysisResult = await analyzeJobDescription(jdText);
-    if (!analysisResult.success) {
-      return res.status(500).json({ success: false, message: 'Failed to analyze Job Description.' });
-    }
-
-    analysis = analysisResult.analysis;
-
-    // 2. Persist the JD analysis & Vector Embeddings
-    // Build a DB-safe copy of analysis: sanitize keywordImportance keys so that
-    // dots (e.g. "Node.js", "React.js", ".NET") do not trigger Mongoose Map ValidationErrors.
-    // The original `analysis` object is left untouched for ATS scoring below.
-    const jdVector = getEmbeddingVector(jdText);
-    const persistableAnalysis = {
-      ...analysis,
-      keywordImportance: sanitizeKeywordImportanceKeys(analysis.keywordImportance),
-    };
-    const newJd = await JobDescription.create({
+    // 1. Check if a Job Description analysis already exists for this hash and user
+    const existingJd = await JobDescription.findOne({
       userId: req.user._id,
-      jobTitle: analysis.jobTitle || jobTitle,
-      company: analysis.company || company,
-      rawText: jdText,
-      analysis: persistableAnalysis,
-      embedding: jdVector,
+      $or: [{ hash: currentJdHash }, { rawText: jdText }]
     });
-    jobDescriptionId = newJd._id;
+
+    if (existingJd) {
+      analysis = {
+        requiredKeywords: existingJd.analysis?.requiredKeywords || [],
+        preferredKeywords: existingJd.analysis?.preferredKeywords || [],
+        softSkills: existingJd.analysis?.softSkills || [],
+        technologies: existingJd.analysis?.technologies || [],
+        certifications: existingJd.analysis?.certifications || [],
+        keywordImportance: restoreKeywordImportanceKeys(existingJd.analysis?.keywordImportance)
+      };
+      jobDescriptionId = existingJd._id;
+    } else {
+      // 1. Analyze Job Description via LangChain/Groq Agent
+      const analysisResult = await analyzeJobDescription(jdText);
+      if (!analysisResult.success) {
+        return res.status(500).json({ success: false, message: 'Failed to analyze Job Description.' });
+      }
+
+      analysis = analysisResult.analysis;
+
+      // 2. Persist the JD analysis & Vector Embeddings
+      const jdVector = getEmbeddingVector(jdText);
+      const persistableAnalysis = {
+        ...analysis,
+        keywordImportance: sanitizeKeywordImportanceKeys(analysis.keywordImportance),
+      };
+      const newJd = await JobDescription.create({
+        userId: req.user._id,
+        hash: currentJdHash,
+        jobTitle: analysis.jobTitle || jobTitle,
+        company: analysis.company || company,
+        rawText: jdText,
+        analysis: persistableAnalysis,
+        embedding: jdVector,
+      });
+      jobDescriptionId = newJd._id;
+    }
 
     // 3. Compute ATS Score and recommendations
     const scoreResult = calculateAtsScore(resume, analysis);

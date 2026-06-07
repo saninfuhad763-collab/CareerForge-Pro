@@ -228,69 +228,90 @@ const Builder = () => {
     }
   };
 
-  // Reusable keyword normalization and dynamic matching engine utilities
-  const normalizeText = (str) => {
-    if (!str) return '';
-    return str
-      .toLowerCase()
-      .trim()
-      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "") // remove punctuation
-      .replace(/\s+/g, " ")                        // whitespace normalization
-      .replace(/\s/g, "");                         // remove spaces to handle "nodejs" == "node.js"
+  // Reusable keyword matching engine utilities
+  const ALIAS_MAP = {
+    "mongodb": ["mongodb", "mongo", "nosql", "document database"],
+    "mongo": ["mongodb", "mongo", "nosql", "document database"],
+    "express.js": ["express.js", "expressjs", "express"],
+    "expressjs": ["express.js", "expressjs", "express"],
+    "express": ["express.js", "expressjs", "express"],
+    "node.js": ["node.js", "nodejs", "node"],
+    "nodejs": ["node.js", "nodejs", "node"],
+    "node": ["node.js", "nodejs", "node"],
+    "ci/cd": ["ci/cd", "cicd", "continuous integration", "continuous delivery", "github actions", "pipelines"],
+    "cicd": ["ci/cd", "cicd", "continuous integration", "continuous delivery", "github actions", "pipelines"],
+    "restful apis": ["restful apis", "rest api", "restful", "restapis", "rest apis"],
+    "rest apis": ["restful apis", "rest api", "restful", "restapis", "rest apis"],
+    "rest api": ["restful apis", "rest api", "restful", "restapis", "rest apis"],
+    "jwt": ["jwt", "json web token"],
+    "react": ["react", "reactjs", "react.js"],
+    "reactjs": ["react", "reactjs", "react.js"],
+    "react.js": ["react", "reactjs", "react.js"],
+    "redux": ["redux", "reduxtoolkit", "rtk"],
+    "aws": ["aws", "amazon web services", "s3", "ec2"],
+    "docker": ["docker", "containerization", "kubernetes", "containers"],
+    "typescript": ["typescript", "ts"],
+    "ts": ["typescript", "ts"],
+    "javascript": ["javascript", "js", "es6"],
+    "js": ["javascript", "js", "es6"],
+    "next.js": ["next.js", "nextjs"],
+    "nextjs": ["next.js", "nextjs"],
+    "jest": ["jest", "unit testing", "testing"],
+    "cypress": ["cypress", "e2e testing", "integration testing"],
+    "tailwind-css": ["tailwind-css", "tailwindcss", "tailwind"],
+    "tailwindcss": ["tailwind-css", "tailwindcss", "tailwind"],
+    "tailwind": ["tailwind-css", "tailwindcss", "tailwind"],
+    "tableau": ["tableau", "business intelligence", "bi dashboard"],
+    "looker": ["looker", "business intelligence", "bi dashboard"]
+  };
+
+  const checkSingleTermMatch = (term, text) => {
+    const cleanTerm = term.toLowerCase().trim();
+    const cleanText = text.toLowerCase();
+
+    if (!cleanTerm || !cleanText) return false;
+
+    const isAlphaNumeric = /^[a-z0-9\s]+$/i.test(cleanTerm);
+
+    if (isAlphaNumeric) {
+      const escaped = cleanTerm.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const regex = new RegExp(`\\b${escaped}\\b`, 'i');
+      return regex.test(cleanText);
+    } else {
+      let idx = cleanText.indexOf(cleanTerm);
+      while (idx !== -1) {
+        const charBefore = idx > 0 ? cleanText[idx - 1] : ' ';
+        const charAfter = idx + cleanTerm.length < cleanText.length ? cleanText[idx + cleanTerm.length] : ' ';
+
+        const startsWithAlpha = /[a-z0-9]/i.test(cleanTerm[0]);
+        const endsWithAlpha = /[a-z0-9]/i.test(cleanTerm[cleanTerm.length - 1]);
+
+        const isBeforeBoundary = !startsWithAlpha || !/[a-z0-9]/i.test(charBefore);
+        const isAfterBoundary = !endsWithAlpha || !/[a-z0-9]/i.test(charAfter);
+
+        if (isBeforeBoundary && isAfterBoundary) {
+          return true;
+        }
+        idx = cleanText.indexOf(cleanTerm, idx + 1);
+      }
+      return false;
+    }
   };
 
   const isKeywordMatched = (keyword, compiledResumeText) => {
-    const normKw = normalizeText(keyword);
-    const normResume = normalizeText(compiledResumeText);
-    
-    if (!normKw || !normResume) return false;
-
-    // Direct substring check on stripped text
-    if (normResume.includes(normKw)) return true;
-    if (normKw.includes(normResume)) return true;
-
-    // Standard word boundaries or original spacing matching as fallback
     const cleanKw = keyword.toLowerCase().trim();
-    const cleanResume = compiledResumeText.toLowerCase();
-    if (cleanResume.includes(cleanKw)) return true;
+    if (!cleanKw) return false;
 
-    // Semantic expansions/aliases
-    const aliases = {
-      "mongodb": ["mongo", "nosql", "document database"],
-      "express.js": ["expressjs", "express"],
-      "node.js": ["nodejs", "node"],
-      "ci/cd": ["cicd", "continuous integration", "continuous delivery", "github actions", "pipelines"],
-      "restful apis": ["rest api", "restful", "restapis"],
-      "rest apis": ["rest api", "restful", "restapis"],
-      "jwt": ["json web token"],
-      "react": ["reactjs", "react.js"],
-      "redux": ["reduxtoolkit", "rtk"],
-      "aws": ["amazon web services", "s3", "ec2"],
-      "docker": ["containerization", "kubernetes", "containers"],
-      "typescript": ["ts"],
-      "javascript": ["js", "es6"],
-      "next.js": ["nextjs"],
-      "jest": ["unit testing", "testing"],
-      "cypress": ["e2e testing", "integration testing"],
-      "tailwind-css": ["tailwindcss", "tailwind"],
-      "tableau": ["business intelligence", "bi dashboard"],
-      "looker": ["business intelligence", "bi dashboard"]
-    };
+    const aliases = ALIAS_MAP[cleanKw] || [cleanKw];
 
-    const kwLower = keyword.toLowerCase();
-    for (const [key, list] of Object.entries(aliases)) {
-      if (kwLower.includes(key) || key.includes(kwLower)) {
-        if (list.some(alias => cleanResume.includes(alias) || normResume.includes(normalizeText(alias)))) {
-          return true;
-        }
-      }
+    if (aliases.some(alias => checkSingleTermMatch(alias, compiledResumeText))) {
+      return true;
     }
 
-    // Partial match for multi-word keywords
-    if (normKw.length > 4) {
-      const words = keyword.split(/[\s\-_.]+/).filter(w => w.length > 3);
-      if (words.length > 0 && words.every(word => normResume.includes(normalizeText(word)))) {
-        return true;
+    if (cleanKw.includes(' ') || cleanKw.includes('-')) {
+      const words = cleanKw.split(/[\s\-._]+/).filter(w => w.length > 3);
+      if (words.length > 1) {
+        return words.every(word => checkSingleTermMatch(word, compiledResumeText));
       }
     }
 
@@ -791,6 +812,19 @@ const Builder = () => {
     setAtsError(null); // Clear any previous error before new attempt
 
     try {
+      if (hasUnsavedChanges) {
+        setSaveStatus('Saving changes before analysis...');
+        const saveSuccess = await saveResumeImmediately();
+        if (!saveSuccess) {
+          setAtsError({
+            type: 'server',
+            message: 'Failed to auto-save resume changes before running analysis. Please check your network connection and try again.'
+          });
+          setSaveStatus('Save failed.');
+          return;
+        }
+      }
+
       let response;
       try {
         response = await fetch(`${API_URL}/ai/analyze-jd`, {
