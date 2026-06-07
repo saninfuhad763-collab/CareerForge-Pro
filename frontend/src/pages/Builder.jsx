@@ -507,6 +507,7 @@ const Builder = () => {
   const [currentLogId, setCurrentLogId] = useState(null);
   const [onApplyCallback, setOnApplyCallback] = useState(null);
   const [activeAbortController, setActiveAbortController] = useState(null);
+  const [localSkillsText, setLocalSkillsText] = useState({});
 
   // History & Plan Stats
   const [planStats, setPlanStats] = useState({ plan: 'FREE', aiRewriteCount: 0, resumeCount: 1, resumeLimit: 1, aiLimit: 10 });
@@ -709,6 +710,7 @@ const Builder = () => {
     setSaveStatus('Demo resume loaded successfully!');
     setJdText('');
     setSelectedJdPreset('');
+    setLocalSkillsText({});
   };
 
   // Instant full stack optimization for MERN Stack developer demo
@@ -778,6 +780,7 @@ const Builder = () => {
       }
     });
 
+    setLocalSkillsText({});
     setShowConfetti(true);
     setSaveStatus('ATS optimization complete!');
   };
@@ -1004,6 +1007,7 @@ const Builder = () => {
   // Load the specific resume on mount
   useEffect(() => {
     loadResumeById(id);
+    setLocalSkillsText({});
   }, [id, loadResumeById]);
 
   // Reset manual save state when autoSave is enabled again
@@ -1125,12 +1129,13 @@ const Builder = () => {
   const handleAddSkillCategory = () => {
     const newItem = { name: '', level: '', keywords: [] };
     updateResumeLocal({ skills: [...skills, newItem] });
+    setLocalSkillsText(prev => ({ ...prev, [skills.length]: '' }));
   };
 
   const handleUpdateSkillCategory = (index, field, value) => {
     const updated = [...skills];
     if (field === 'keywords') {
-      // Split comma separated list into string array
+      setLocalSkillsText(prev => ({ ...prev, [index]: value }));
       const arr = value.split(',').map(s => s.trim()).filter(s => s !== '');
       updated[index] = { ...updated[index], keywords: arr };
     } else {
@@ -1142,6 +1147,16 @@ const Builder = () => {
   const handleRemoveSkillCategory = (index) => {
     const updated = skills.filter((_, i) => i !== index);
     updateResumeLocal({ skills: updated });
+    setLocalSkillsText(prev => {
+      const next = {};
+      updated.forEach((_, i) => {
+        const oldKey = i >= index ? i + 1 : i;
+        if (prev[oldKey] !== undefined) {
+          next[i] = prev[oldKey];
+        }
+      });
+      return next;
+    });
   };
 
   // Projects CRUD
@@ -2254,7 +2269,7 @@ const Builder = () => {
                             <input
                               type="text"
                               placeholder="React, JavaScript, HTML, CSS"
-                              value={skill.keywords ? skill.keywords.join(', ') : ''}
+                              value={localSkillsText[idx] !== undefined ? localSkillsText[idx] : (skill.keywords ? skill.keywords.join(', ') : '')}
                               onChange={(e) => handleUpdateSkillCategory(idx, 'keywords', e.target.value)}
                               className="w-full px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-lg text-xs text-slate-800 dark:text-slate-100 focus:outline-none"
                             />
@@ -2650,7 +2665,7 @@ const Builder = () => {
                   </div>
                   <div className="text-xs text-slate-500 dark:text-slate-400 space-y-1 mt-4 sm:mt-0 sm:text-right font-sans">
                     {personalInfo.email ? (
-                      <a href={`mailto:${personalInfo.email}`} className="hover:underline block text-inherit">
+                      <a href={`mailto:${personalInfo.email}`} className="hover:underline block text-inherit break-all">
                         {personalInfo.email}
                       </a>
                     ) : (
@@ -2664,7 +2679,7 @@ const Builder = () => {
                           href={normalizeUrl(personalInfo.website)} 
                           target="_blank" 
                           rel="noopener noreferrer" 
-                          className="hover:underline text-[10px] text-inherit"
+                          className="hover:underline text-[10px] text-inherit break-all"
                         >
                           {personalInfo.website}
                         </a>
@@ -2674,7 +2689,7 @@ const Builder = () => {
                           href={normalizeUrl(personalInfo.github)} 
                           target="_blank" 
                           rel="noopener noreferrer" 
-                          className="hover:underline text-[10px] text-inherit"
+                          className="hover:underline text-[10px] text-inherit break-all"
                         >
                           {personalInfo.github}
                         </a>
@@ -2684,7 +2699,7 @@ const Builder = () => {
                           href={normalizeUrl(personalInfo.linkedin)} 
                           target="_blank" 
                           rel="noopener noreferrer" 
-                          className="hover:underline text-[10px] text-inherit"
+                          className="hover:underline text-[10px] text-inherit break-all"
                         >
                           {personalInfo.linkedin}
                         </a>
@@ -2702,7 +2717,7 @@ const Builder = () => {
                   </p>
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-450 dark:text-slate-500 font-normal tracking-wide pt-2.5 font-sans">
                     {personalInfo.email ? (
-                      <a href={`mailto:${personalInfo.email}`} className="hover:underline text-inherit">
+                      <a href={`mailto:${personalInfo.email}`} className="hover:underline text-inherit break-all">
                         {personalInfo.email}
                       </a>
                     ) : (
@@ -2717,7 +2732,7 @@ const Builder = () => {
                           href={normalizeUrl(personalInfo.website)} 
                           target="_blank" 
                           rel="noopener noreferrer" 
-                          className="hover:underline text-inherit"
+                          className="hover:underline text-inherit break-all"
                         >
                           {personalInfo.website}
                         </a>
@@ -2730,7 +2745,7 @@ const Builder = () => {
                           href={normalizeUrl(personalInfo.github)} 
                           target="_blank" 
                           rel="noopener noreferrer" 
-                          className="hover:underline text-inherit"
+                          className="hover:underline text-inherit break-all"
                         >
                           {personalInfo.github}
                         </a>
@@ -2743,7 +2758,7 @@ const Builder = () => {
                           href={normalizeUrl(personalInfo.linkedin)} 
                           target="_blank" 
                           rel="noopener noreferrer" 
-                          className="hover:underline text-inherit"
+                          className="hover:underline text-inherit break-all"
                         >
                           {personalInfo.linkedin}
                         </a>
@@ -2761,7 +2776,7 @@ const Builder = () => {
                   </p>
                   <div className="flex flex-wrap items-center justify-center gap-x-2.5 mt-2.5 text-[11px] text-slate-600 dark:text-slate-400 font-serif">
                     {personalInfo.email ? (
-                      <a href={`mailto:${personalInfo.email}`} className="hover:underline text-inherit">
+                      <a href={`mailto:${personalInfo.email}`} className="hover:underline text-inherit break-all">
                         {personalInfo.email}
                       </a>
                     ) : (
@@ -2776,7 +2791,7 @@ const Builder = () => {
                           href={normalizeUrl(personalInfo.website)} 
                           target="_blank" 
                           rel="noopener noreferrer" 
-                          className="hover:underline text-inherit"
+                          className="hover:underline text-inherit break-all"
                         >
                           {personalInfo.website}
                         </a>
@@ -2789,7 +2804,7 @@ const Builder = () => {
                           href={normalizeUrl(personalInfo.github)} 
                           target="_blank" 
                           rel="noopener noreferrer" 
-                          className="hover:underline text-inherit"
+                          className="hover:underline text-inherit break-all"
                         >
                           {personalInfo.github}
                         </a>
@@ -2802,7 +2817,7 @@ const Builder = () => {
                           href={normalizeUrl(personalInfo.linkedin)} 
                           target="_blank" 
                           rel="noopener noreferrer" 
-                          className="hover:underline text-inherit"
+                          className="hover:underline text-inherit break-all"
                         >
                           {personalInfo.linkedin}
                         </a>
@@ -2833,7 +2848,7 @@ const Builder = () => {
                             Professional Summary
                           </h2>
                         )}
-                        <p className={`text-xs leading-relaxed ${
+                        <p className={`text-xs leading-relaxed break-words ${
                           templateId === 'modern' ? 'text-slate-600 dark:text-slate-300 font-sans' :
                           templateId === 'minimalist' ? 'text-slate-600 dark:text-slate-400 font-normal font-sans' :
                           'text-slate-700 dark:text-slate-300 font-serif'
@@ -2878,9 +2893,9 @@ const Builder = () => {
                                   </div>
                                   {exp.location && <p className="text-[10px] text-slate-400 font-sans">{exp.location}</p>}
                                   {exp.description && (
-                                    <ul className="list-disc pl-4 text-xs text-slate-600 dark:text-slate-400 space-y-1 pt-1 font-sans">
+                                    <ul className="list-disc pl-4 text-xs text-slate-600 dark:text-slate-400 space-y-1 pt-1 font-sans break-words">
                                       {exp.description.split('\n').map((bullet, bIdx) => (
-                                        <li key={bIdx}>{bullet.replace(/^- /, '')}</li>
+                                        <li key={bIdx} className="break-words">{bullet.replace(/^- /, '')}</li>
                                       ))}
                                     </ul>
                                   )}
@@ -2901,9 +2916,9 @@ const Builder = () => {
                                     </span>
                                   </div>
                                   {exp.description && (
-                                    <ul className="list-disc pl-4 text-xs text-slate-600 dark:text-slate-400 space-y-0.5 pt-0.5 font-sans">
+                                    <ul className="list-disc pl-4 text-xs text-slate-600 dark:text-slate-400 space-y-0.5 pt-0.5 font-sans break-words">
                                       {exp.description.split('\n').map((bullet, bIdx) => (
-                                        <li key={bIdx}>{bullet.replace(/^- /, '')}</li>
+                                        <li key={bIdx} className="break-words">{bullet.replace(/^- /, '')}</li>
                                       ))}
                                     </ul>
                                   )}
@@ -2926,9 +2941,9 @@ const Builder = () => {
                                     </span>
                                   </div>
                                   {exp.description && (
-                                    <ul className="list-disc pl-4 text-[11px] text-slate-700 dark:text-slate-300 space-y-0.5 pt-0.5 font-serif">
+                                    <ul className="list-disc pl-4 text-[11px] text-slate-700 dark:text-slate-300 space-y-0.5 pt-0.5 font-serif break-words">
                                       {exp.description.split('\n').map((bullet, bIdx) => (
-                                        <li key={bIdx}>{bullet.replace(/^- /, '')}</li>
+                                        <li key={bIdx} className="break-words">{bullet.replace(/^- /, '')}</li>
                                       ))}
                                     </ul>
                                   )}
@@ -3037,11 +3052,11 @@ const Builder = () => {
                             if (templateId === 'modern') {
                               return (
                                 <div key={idx} className="grid grid-cols-1 sm:grid-cols-12 gap-1.5 font-sans text-xs">
-                                  <span className="sm:col-span-3 font-bold text-slate-700 dark:text-slate-300 capitalize">{skill.name || 'Group'}:</span>
+                                  <span className="sm:col-span-3 font-bold text-slate-700 dark:text-slate-300 capitalize break-words">{skill.name || 'Group'}:</span>
                                   <div className="sm:col-span-9">
                                     <div className="flex flex-wrap gap-1.5 pt-0.5">
                                       {skill.keywords && skill.keywords.map((kw, kwIdx) => (
-                                        <span key={kwIdx} className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-900/50 px-2 py-0.5 rounded-full text-[10px] font-medium">
+                                        <span key={kwIdx} className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-900/50 px-2 py-0.5 rounded-full text-[10px] font-medium break-all">
                                           {kw}
                                         </span>
                                       ))}
@@ -3052,10 +3067,10 @@ const Builder = () => {
                             } else if (templateId === 'minimalist') {
                               return (
                                 <div key={idx} className="flex flex-col sm:flex-row sm:items-start gap-1 font-sans text-xs">
-                                  <span className="font-bold text-slate-900 dark:text-slate-100 w-28 shrink-0 capitalize">{skill.name || 'Group'}:</span>
+                                  <span className="font-bold text-slate-900 dark:text-slate-100 w-28 shrink-0 capitalize break-words">{skill.name || 'Group'}:</span>
                                   <div className="flex flex-wrap gap-x-2 gap-y-1">
                                     {skill.keywords && skill.keywords.map((kw, kwIdx) => (
-                                      <span key={kwIdx} className="text-slate-600 dark:text-slate-400 font-normal">
+                                      <span key={kwIdx} className="text-slate-600 dark:text-slate-400 font-normal break-all">
                                         {kw}{kwIdx < skill.keywords.length - 1 ? ' ·' : ''}
                                       </span>
                                     ))}
@@ -3066,10 +3081,10 @@ const Builder = () => {
                               // classic traditional
                               return (
                                 <div key={idx} className="flex flex-col sm:flex-row sm:items-baseline gap-1 font-serif text-xs">
-                                  <span className="font-bold text-slate-950 dark:text-slate-100 w-32 shrink-0 capitalize">{skill.name || 'Group'}:</span>
+                                  <span className="font-bold text-slate-950 dark:text-slate-100 w-32 shrink-0 capitalize break-words">{skill.name || 'Group'}:</span>
                                   <div className="flex flex-wrap gap-x-1.5 gap-y-1">
                                     {skill.keywords && skill.keywords.map((kw, kwIdx) => (
-                                      <span key={kwIdx} className="text-slate-700 dark:text-slate-350">
+                                      <span key={kwIdx} className="text-slate-700 dark:text-slate-350 break-all">
                                         {kw}{kwIdx < skill.keywords.length - 1 ? ',' : ''}
                                       </span>
                                     ))}
@@ -3117,20 +3132,20 @@ const Builder = () => {
                                     </div>
                                     <span className="text-[10px] text-slate-400">{proj.startDate}</span>
                                   </div>
-                                  {proj.description && <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-sans">{proj.description}</p>}
+                                  {proj.description && <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-sans break-words">{proj.description}</p>}
                                 </div>
                               );
                             } else if (templateId === 'minimalist') {
                               return (
                                 <div key={idx} className="space-y-1 text-xs font-sans">
                                   <div className="flex justify-between items-baseline">
-                                    <div className="flex items-baseline gap-2">
-                                      <span className="font-bold text-slate-900 dark:text-slate-100">{proj.title || 'Project Title'}</span>
-                                      {proj.role && <span className="text-[10px] text-slate-500 dark:text-slate-400 font-normal">({proj.role})</span>}
+                                    <div className="flex items-baseline gap-2 font-sans">
+                                      <span className="font-bold text-slate-900 dark:text-slate-100 break-words">{proj.title || 'Project Title'}</span>
+                                      {proj.role && <span className="text-[10px] text-slate-500 dark:text-slate-400 font-normal break-words">({proj.role})</span>}
                                     </div>
                                     <span className="text-[10px] text-slate-450 dark:text-slate-500 font-normal">{proj.startDate}</span>
                                   </div>
-                                  {proj.description && <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-sans">{proj.description}</p>}
+                                  {proj.description && <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-sans break-words">{proj.description}</p>}
                                 </div>
                               );
                             } else {
@@ -3139,12 +3154,12 @@ const Builder = () => {
                                 <div key={idx} className="space-y-0.5 text-xs font-serif">
                                   <div className="flex justify-between items-baseline font-serif">
                                     <div className="flex items-baseline gap-2 font-serif">
-                                      <span className="font-bold text-slate-950 dark:text-slate-50">{proj.title || 'Project Title'}</span>
-                                      {proj.role && <span className="text-[11px] text-slate-650 dark:text-slate-400 italic">({proj.role})</span>}
+                                      <span className="font-bold text-slate-950 dark:text-slate-50 break-words">{proj.title || 'Project Title'}</span>
+                                      {proj.role && <span className="text-[11px] text-slate-650 dark:text-slate-400 italic break-words">({proj.role})</span>}
                                     </div>
                                     <span className="text-[10px] text-slate-600 dark:text-slate-450 italic">{proj.startDate}</span>
                                   </div>
-                                  {proj.description && <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-serif">{proj.description}</p>}
+                                  {proj.description && <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-serif break-words">{proj.description}</p>}
                                 </div>
                               );
                             }
