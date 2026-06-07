@@ -165,19 +165,64 @@ export function calculateAtsScore(resume, jdAnalysis) {
     skillAlignment = keywordMatchPercent;
   }
 
-  // 4. Recommendations compiling
-  const recommendations = [];
-  if (missingKeywords.length > 0) {
-    recommendations.push(`Integrate high-importance target terms: [${missingKeywords.slice(0, 4).join(', ')}] in your skills or experience fields.`);
+  const hasExperience = resume.experience && resume.experience.length > 0;
+  const experienceContribution = hasExperience ? 10 : 0;
+
+  // Controlled normalization strategy to remove the artificial 93% ceiling
+  // and reduce the noise of the hash-based vector generator.
+  let normalizedSemantic = semanticMatchPercent;
+  if (keywordMatchPercent === 100 && skillAlignment === 100 && hasExperience) {
+    // Perfect match conditions: normalize semanticMatchPercent to 100% to allow a final score of 100%
+    normalizedSemantic = 100;
+  } else {
+    // Reduce semantic noise: blend with keywordMatchPercent to act as a supporting signal
+    // This reduces the noise of the random vector generator and ensures it doesn't overpower keyword match.
+    normalizedSemantic = Math.round(semanticMatchPercent * 0.3 + keywordMatchPercent * 0.7);
   }
-  if (semanticMatchPercent < 70) {
-    recommendations.push('Incorporate professional metrics and active industry terminology to lift the contextual semantic density.');
+
+  // 4. Recommendations compiling (incorporating ATS Transparency Details)
+  const recommendations = [];
+
+  // ATS Transparency Breakdown
+  recommendations.push(
+    `ATS Score Breakdown: Keyword Match: ${keywordMatchPercent}% (Weight: 40%), Skill Alignment: ${skillAlignment}% (Weight: 20%), Semantic Match: ${normalizedSemantic}% (Weight: 30%), Experience Presence: ${experienceContribution} pts (Weight: 10%).`
+  );
+
+  // Positive vs. Negative Attribution
+  const positiveContribs = [];
+  const negativeContribs = [];
+
+  if (keywordMatchPercent >= 80) positiveContribs.push('Keyword Match');
+  else negativeContribs.push(`Keyword Match (-${Math.round((100 - keywordMatchPercent) * 0.4)} pts)`);
+
+  if (skillAlignment >= 80) positiveContribs.push('Skill Alignment');
+  else negativeContribs.push(`Skill Alignment (-${Math.round((100 - skillAlignment) * 0.2)} pts)`);
+
+  if (normalizedSemantic >= 80) positiveContribs.push('Semantic Match');
+  else negativeContribs.push(`Semantic Match (-${Math.round((100 - normalizedSemantic) * 0.3)} pts)`);
+
+  if (hasExperience) positiveContribs.push('Experience Presence');
+  else negativeContribs.push('Experience Presence (-10 pts)');
+
+  if (positiveContribs.length > 0) {
+    recommendations.push(`Positive Drivers: Strong alignment in ${positiveContribs.join(', ')}.`);
+  }
+  if (negativeContribs.length > 0) {
+    recommendations.push(`Improvement Drivers: Score reduced by ${negativeContribs.join(', ')}.`);
+  }
+
+  // Actionable strategic advice reflecting deficiencies
+  if (missingKeywords.length > 0) {
+    recommendations.push(`Action Plan (Keywords): Integrate target terms [${missingKeywords.slice(0, 4).join(', ')}] in your skills or experience fields.`);
+  }
+  if (normalizedSemantic < 80) {
+    recommendations.push('Action Plan (Semantic): Incorporate professional metrics and active industry terminology to lift contextual density.');
   }
   if (!resume.summary || resume.summary.length < 50) {
-    recommendations.push('Craft a strong Professional Summary containing target role keywords.');
+    recommendations.push('Action Plan (Summary): Craft a strong Professional Summary containing target role keywords.');
   }
-  if (resume.experience?.length === 0) {
-    recommendations.push('Add comprehensive professional experiences to satisfy resume structure parsing requirements.');
+  if (!hasExperience) {
+    recommendations.push('Action Plan (Experience): Add professional experience entries to satisfy resume structure parsing requirements.');
   }
 
   // Final Weighted ATS Score formulation
@@ -187,9 +232,9 @@ export function calculateAtsScore(resume, jdAnalysis) {
       100,
       Math.round(
         keywordMatchPercent * 0.4 +
-        semanticMatchPercent * 0.3 +
+        normalizedSemantic * 0.3 +
         skillAlignment * 0.2 +
-        (resume.experience?.length > 0 ? 10 : 0)
+        experienceContribution
       )
     )
   );
@@ -198,7 +243,10 @@ export function calculateAtsScore(resume, jdAnalysis) {
     atsScore: finalScore,
     breakdown: {
       keywordMatch: keywordMatchPercent,
-      semanticMatch: semanticMatchPercent,
+      semanticMatch: normalizedSemantic,
+      rawSemanticMatch: semanticMatchPercent,
+      skillAlignment: skillAlignment,
+      experienceContribution: experienceContribution,
       missingKeywords,
       recommendations
     }
