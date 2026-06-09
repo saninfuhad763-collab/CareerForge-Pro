@@ -217,6 +217,7 @@ const Builder = () => {
   const [modalKeywordSearch, setModalKeywordSearch] = useState('');
   // ATS Matcher error state — shows inline error inside the ATS panel (no browser alerts)
   const [atsError, setAtsError] = useState(null);
+  const [atsPhase, setAtsPhase] = useState('');
 
   // Preset loading pipeline: ONLY populates state, does NOT trigger ATS analysis
   const handlePresetChange = (val) => {
@@ -525,6 +526,7 @@ const Builder = () => {
   const [targetKeyword, setTargetKeyword] = useState('');
   const [magicPromptType, setMagicPromptType] = useState('summary_rewrite');
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [isAutoFixing, setIsAutoFixing] = useState(false);
   const [currentLogId, setCurrentLogId] = useState(null);
   const [onApplyCallback, setOnApplyCallback] = useState(null);
   const [activeAbortController, setActiveAbortController] = useState(null);
@@ -735,11 +737,13 @@ const Builder = () => {
   };
 
   // Instant full stack optimization for MERN Stack developer demo
-  const handleQuickOptimize = () => {
+  const handleQuickOptimize = async () => {
     if ((selectedJdPreset !== 'mern') && (analyzedJdPreset !== 'mern')) {
-      alert("Please select the MERN Stack Developer job description preset first to demonstrate the optimization flow!");
+      setAtsError({ type: 'validation', message: 'Please select the MERN Stack Developer job description preset first to use Auto-Fix.' });
       return;
     }
+    setIsAutoFixing(true);
+    await new Promise(resolve => setTimeout(resolve, 250));
 
     const optimizedExperience = [
       {
@@ -802,6 +806,7 @@ const Builder = () => {
     });
 
     setLocalSkillsText({});
+    setIsAutoFixing(false);
     setShowConfetti(true);
     setSaveStatus('ATS optimization complete!');
   };
@@ -809,6 +814,7 @@ const Builder = () => {
   const handleJdAnalysis = async () => {
     if (!jdText.trim()) return;
     setIsJdAnalyzing(true);
+    setAtsPhase('Analyzing Job Description...');
     setAtsError(null); // Clear any previous error before new attempt
 
     try {
@@ -888,13 +894,16 @@ const Builder = () => {
 
       // Success path — clear any residual error state
       setAtsError(null);
+      setAtsPhase('Calculating ATS Score...');
       setAtsBreakdown(data.breakdown);
+      setAtsPhase('Saving Results...');
       setAnalyzedJdPreset(selectedJdPreset);
       setAnalyzedJdText(jdText);
       await loadResumeById(id);
       setShowConfetti(true);
       setSaveStatus('ATS analysis complete!');
     } finally {
+      setAtsPhase('');
       setIsJdAnalyzing(false);
     }
   };
@@ -1505,12 +1514,12 @@ const Builder = () => {
                   type="button"
                   disabled={isJdAnalyzing || !jdText.trim()}
                   onClick={handleJdAnalysis}
-                  className="w-full py-2 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-indigo-500/25 transition-all disabled:opacity-50 cursor-pointer"
+                  className="w-full py-2 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-indigo-500/25 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {isJdAnalyzing ? (
                     <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Running ATS Matcher...</span>
+                      <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                      <span>{atsPhase || 'Running ATS Matcher...'}</span>
                     </>
                   ) : (
                     <>
@@ -1650,10 +1659,15 @@ const Builder = () => {
                       {analyzedJdPreset === 'mern' && dynamicAtsData.missingKeywords.length > 0 && (
                         <button
                           onClick={handleQuickOptimize}
-                          className="px-2 py-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-[9px] font-extrabold text-white rounded-lg flex items-center gap-0.5 animate-pulse cursor-pointer"
+                          disabled={isAutoFixing}
+                          className="px-2 py-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-[9px] font-extrabold text-white rounded-lg flex items-center gap-0.5 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
                         >
-                          <Sparkles className="w-2.5 h-2.5" />
-                          <span>Auto-Fix</span>
+                          {isAutoFixing ? (
+                            <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                          ) : (
+                            <Sparkles className="w-2.5 h-2.5" />
+                          )}
+                          <span>{isAutoFixing ? 'Fixing...' : 'Auto-Fix'}</span>
                         </button>
                       )}
                     </div>
@@ -1989,7 +2003,7 @@ const Builder = () => {
                         <button
                           type="button"
                           onClick={() => openMagicOptimizer('summary', summary, (newVal) => handleSummaryChange(newVal))}
-                          className="inline-flex items-center gap-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-sm shadow-indigo-500/25 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 transition-all duration-150"
+                          className="inline-flex items-center gap-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-sm shadow-indigo-500/25 cursor-pointer hover:-translate-y-0.5 active:scale-95 active:translate-y-0 transition-all duration-150"
                         >
                           <Sparkles className="w-3 h-3" />
                           <span>Magic AI Rewrite</span>
@@ -2115,7 +2129,7 @@ const Builder = () => {
                               <button
                                 type="button"
                                 onClick={() => openMagicOptimizer('bullet', exp.description, (newVal) => handleUpdateExperience(idx, 'description', newVal))}
-                                className="inline-flex items-center gap-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-[9px] font-bold px-2.5 py-1.5 rounded-md shadow-sm shadow-indigo-500/25 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 transition-all duration-150"
+                                className="inline-flex items-center gap-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-[9px] font-bold px-2.5 py-1.5 rounded-md shadow-sm shadow-indigo-500/25 cursor-pointer hover:-translate-y-0.5 active:scale-95 active:translate-y-0 transition-all duration-150"
                               >
                                 <Sparkles className="w-2.5 h-2.5" />
                                 <span>Optimize Bullets</span>
@@ -3441,7 +3455,7 @@ const Builder = () => {
                       <button
                         type="button"
                         onClick={startStreamOptimization}
-                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 flex items-center gap-1.5 cursor-pointer"
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
                       >
                         <Sparkles className="w-3.5 h-3.5" />
                         <span>Generate Optimizations</span>
@@ -3451,7 +3465,7 @@ const Builder = () => {
                       type="button"
                       disabled={!optimizedText || isOptimizing}
                       onClick={applySuggestion}
-                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-500/20 flex items-center gap-1.5 cursor-pointer"
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-500/20 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
                     >
                       <Check className="w-3.5 h-3.5" />
                       <span>Apply Changes</span>
