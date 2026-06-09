@@ -1,4 +1,4 @@
-import pdfParse from 'pdf-parse';
+import { PDFParse } from 'pdf-parse';
 import mammoth from 'mammoth';
 import { executeAiChain } from './aiService.js';
 
@@ -70,8 +70,17 @@ export const extractResumeText = async (file) => {
   let text = '';
 
   if (isPdf(file)) {
-    const parsed = await pdfParse(file.buffer);
+    const parser = new PDFParse({
+      data: new Uint8Array(file.buffer)
+    });
+  
+    await parser.load();
+  
+    const parsed = await parser.getText();
+  
     text = parsed?.text || '';
+  
+    await parser.destroy();
   } else if (isDocx(file)) {
     const parsed = await mammoth.extractRawText({ buffer: file.buffer });
     text = parsed?.value || '';
