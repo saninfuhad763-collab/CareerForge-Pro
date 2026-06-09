@@ -919,6 +919,29 @@ const Builder = () => {
     setIsOptimizerOpen(true);
   };
 
+  const getBackendPromptType = (promptType) => {
+    const promptTypeMap = {
+      quantify: 'achievement_quantification',
+      ats_inject: 'ats_optimization'
+    };
+    return promptTypeMap[promptType] || promptType;
+  };
+
+  const getOptimizerContextKeyword = () => {
+    const manualKeyword = targetKeyword.trim();
+    if (manualKeyword) return manualKeyword;
+
+    if (magicPromptType === 'summary_rewrite') {
+      return getTargetKeywords().slice(0, 8).join(', ');
+    }
+
+    if (magicPromptType === 'bullet_rewrite') {
+      return dynamicAtsData.missingKeywords[0] || '';
+    }
+
+    return '';
+  };
+
   const startStreamOptimization = async () => {
     setIsOptimizing(true);
     setOptimizedText('');
@@ -930,9 +953,9 @@ const Builder = () => {
     try {
       const params = new URLSearchParams({
         resumeId: id,
-        promptType: magicPromptType,
+        promptType: getBackendPromptType(magicPromptType),
         originalText,
-        contextKeyword: targetKeyword
+        contextKeyword: getOptimizerContextKeyword()
       });
 
       const response = await fetch(`${API_URL}/ai/stream-rewrite?${params.toString()}`, {
@@ -1017,6 +1040,12 @@ const Builder = () => {
           console.error(e);
         }
       }
+
+      if (currentResume?.atsMetadata?.lastJdHash && analyzedJdText) {
+        await saveResumeImmediately();
+        await handleJdAnalysis();
+      }
+
       setIsOptimizerOpen(false);
     }
   };

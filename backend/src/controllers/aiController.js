@@ -235,8 +235,14 @@ export const streamResumeRewrite = async (req, res, next) => {
       clearInterval(heartbeat);
     });
 
+    const normalizedContextKeyword = promptType === 'summary_rewrite'
+      ? (Array.isArray(contextKeyword) ? contextKeyword : String(contextKeyword || '').split(','))
+        .map(keyword => String(keyword).trim())
+        .filter(Boolean)
+      : contextKeyword;
+
     // Compile Prompt Templates
-    const userMsg = selectedPrompt.template(originalText, contextKeyword);
+    const userMsg = selectedPrompt.template(originalText, normalizedContextKeyword);
     const systemMsg = selectedPrompt.system;
 
     // Stream the output

@@ -40,17 +40,20 @@ export const PROMPT_LIBRARY = {
   summary_rewrite: {
     version: '1.0.0',
     system: 'You are a professional executive resume writer.',
-    template: (input, keywords = []) => `
+    template: (input, keywords = []) => {
+      const safeKeywords = Array.isArray(keywords) ? keywords : [];
+      return `
       Task: Rewrite the following professional summary to elevate its tone, flow, and align it to industry best practices.
       Original Summary: "${input}"
-      Target Keywords to Integrate: [${keywords.join(', ')}]
+      Target Keywords to Integrate: [${safeKeywords.join(', ')}]
       
       Requirements:
       1. Create a compelling, professional narrative (2-3 sentences max).
       2. Seamlessly blend the specified target keywords.
       3. Focus on value proposition, expertise, and career accomplishments.
       4. Return only the rewritten text, no greeting or commentary.
-    `
+    `;
+    }
   },
   experience_enhancement: {
     version: '1.1.0',
