@@ -10,6 +10,7 @@ import authRoutes from './routes/authRoutes.js';
 import resumeRoutes from './routes/resumeRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
+import { execSync } from 'child_process';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
 // Load environment configurations
@@ -99,6 +100,40 @@ const PORT = process.env.PORT || 5000;
 
 const server = app.listen(PORT, () => {
   console.log(`[Server] Production-ready instance running in [${process.env.NODE_ENV || 'development'}] mode on port: ${PORT}`);
+});
+
+// Handle port already in use — kill stale process and retry
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.warn(`[Server] Port ${PORT} is already in use. Attempting to free it...`);
+    try {
+      if (process.platform === 'win32') {
+        const result = execSync(`netstat -ano | findstr :${PORT}`).toString();
+        const lines = result.trim().split('\n').filter(l => l.includes('LISTENING'));
+        lines.forEach(line => {
+          const pid = line.trim().split(/\s+/).pop();
+          if (pid && pid !== process.pid.toString()) {
+            execSync(`taskkill /PID ${pid} /F`);
+            console.log(`[Server] Killed stale process PID ${pid} on port ${PORT}.`);
+          }
+        });
+      } else {
+        execSync(`lsof -ti tcp:${PORT} | xargs kill -9`);
+        console.log(`[Server] Freed port ${PORT}.`);
+      }
+      setTimeout(() => {
+        server.listen(PORT, () => {
+          console.log(`[Server] Re-bound successfully on port: ${PORT}`);
+        });
+      }, 1000);
+    } catch (killErr) {
+      console.error(`[Server] Could not free port ${PORT}. Please run: taskkill /F /IM node.exe`);
+      process.exit(1);
+    }
+  } else {
+    console.error('[Server] Unexpected server error:', err);
+    process.exit(1);
+  }
 });
 
 // Graceful Shutdown configurations
