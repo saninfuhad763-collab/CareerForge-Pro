@@ -143,6 +143,8 @@ export const useResumeStore = create((set, get) => ({
             scoreImprovement: backendAts.scoreImprovement !== undefined ? backendAts.scoreImprovement : localAts.scoreImprovement,
             lastJdHash:       backendAts.lastJdHash       !== undefined ? backendAts.lastJdHash       : localAts.lastJdHash,
           };
+          console.log('[TRACE-A][updateResumeLocal/auto-save] PRE-SET latestResume.personalInfo.fullName:', latestResume?.personalInfo?.fullName);
+          console.log('[TRACE-A][updateResumeLocal/auto-save] PRE-SET data.data.personalInfo.fullName:', data.data?.personalInfo?.fullName);
           set({
             currentResume: {
               ...latestResume,
@@ -199,6 +201,8 @@ export const useResumeStore = create((set, get) => ({
           scoreImprovement: backendAts.scoreImprovement !== undefined ? backendAts.scoreImprovement : localAts.scoreImprovement,
           lastJdHash:       backendAts.lastJdHash       !== undefined ? backendAts.lastJdHash       : localAts.lastJdHash,
         };
+        console.log('[TRACE-B][saveResumeImmediately] PRE-SET latestResume.personalInfo.fullName:', latestResume?.personalInfo?.fullName);
+        console.log('[TRACE-B][saveResumeImmediately] PRE-SET data.data.personalInfo.fullName:', data.data?.personalInfo?.fullName);
         set({
           currentResume: {
             ...latestResume,

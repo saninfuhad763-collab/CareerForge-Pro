@@ -140,6 +140,14 @@ async function main() {
     let updatePayloadReceived = null;
     let putResponseReceived = null;
 
+    // Capture browser console output (TRACE-A / TRACE-B logs)
+    page.on('console', msg => {
+      const text = msg.text();
+      if (text.includes('[TRACE')) {
+        console.log('[BROWSER CONSOLE]', text);
+      }
+    });
+
     page.on('request', req => {
       if (req.method() === 'PUT' && req.url().includes('/api/resumes/')) {
         try {
