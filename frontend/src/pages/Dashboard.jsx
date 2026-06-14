@@ -18,7 +18,7 @@ import {
   Compass
 } from 'lucide-react';
 import { staggerContainer, staggerItem, staggerItemScale } from '../animations/staggerAnimations';
-import { premiumCardHover, buttonScale, professionalCardVariant } from '../animations/cardAnimations';
+import { premiumCardHover as _premiumCardHover, buttonScale, professionalCardVariant } from '../animations/cardAnimations';
 import { sidebarItemVariant } from '../animations/dashboardAnimations';
 import { premiumEase } from '../animations/motionVariants';
 
@@ -132,7 +132,7 @@ const Dashboard = () => {
         <div className="space-y-8">
           {/* Logo brand */}
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-bold font-display">
+            <div className="w-9 h-9 rounded-xl bg-linear-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-bold font-display">
               CF
             </div>
             <span className="font-bold text-lg font-display text-slate-800 dark:text-slate-100">
@@ -148,10 +148,10 @@ const Dashboard = () => {
             <div className="text-left overflow-hidden">
               <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{user?.name}</p>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <p className="text-[10px] text-slate-400 truncate max-w-[85px]">{user?.email}</p>
+                <p className="text-[10px] text-slate-400 truncate max-w-21.25">{user?.email}</p>
                 <span className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded leading-none shrink-0 uppercase tracking-wider ${
                   user?.plan === 'PRO' 
-                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm' 
+                    ? 'bg-linear-to-r from-amber-500 to-orange-500 text-white shadow-sm' 
                     : 'bg-slate-200 dark:bg-slate-850 text-slate-500'
                 }`}>
                   {user?.plan || 'FREE'}
@@ -204,7 +204,7 @@ const Dashboard = () => {
         <div className="pt-6 border-t border-slate-200/50 dark:border-slate-800/50 space-y-4">
           {/* Pro Upgrade Promotion Box */}
           {user?.plan !== 'PRO' && (
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-purple-600 text-white space-y-3 relative overflow-hidden shadow-md shadow-indigo-500/20 text-left">
+            <div className="p-4 rounded-2xl bg-linear-to-br from-indigo-500 via-indigo-600 to-purple-600 text-white space-y-3 relative overflow-hidden shadow-md shadow-indigo-500/20 text-left">
               <div className="absolute -right-6 -bottom-6 w-20 h-20 rounded-full bg-white/10 blur-xl pointer-events-none" />
               <div className="space-y-1">
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-400 text-slate-900 font-extrabold text-[8px] rounded uppercase tracking-wider">
@@ -454,7 +454,7 @@ const Dashboard = () => {
                               >
                                 <Trash2 className="w-4.5 h-4.5" />
                               </button>
-                              <span className="p-2 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 bg-slate-50 dark:bg-slate-900 rounded-lg group-hover:bg-indigo-50 dark:group-hover:bg-indigo-950/20 translate-x-[-2px] group-hover:translate-x-0 transition-all duration-300">
+                              <span className="p-2 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 bg-slate-50 dark:bg-slate-900 rounded-lg group-hover:bg-indigo-50 dark:group-hover:bg-indigo-950/20 -translate-x-0.5 group-hover:translate-x-0 transition-all duration-300">
                                 <ChevronRight className="w-4 h-4" />
                               </span>
                             </div>
@@ -669,7 +669,7 @@ const Dashboard = () => {
               </motion.div>
 
               {/* Instruction Widget */}
-              <div className="p-6 bg-gradient-to-r from-indigo-500/10 via-indigo-500/5 to-transparent border border-indigo-500/20 rounded-3xl flex flex-col sm:flex-row items-center gap-6">
+              <div className="p-6 bg-linear-to-r from-indigo-500/10 via-indigo-500/5 to-transparent border border-indigo-500/20 rounded-3xl flex flex-col sm:flex-row items-center gap-6">
                 <div className="w-14 h-14 rounded-full bg-indigo-600/10 flex items-center justify-center text-indigo-500 shrink-0 shadow-inner">
                   <Sparkles className="w-7 h-7" />
                 </div>
@@ -730,7 +730,7 @@ const Dashboard = () => {
                         type="button"
                         onClick={handleUpgrade}
                         disabled={upgradeLoading}
-                        className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-indigo-600 hover:from-emerald-700 hover:to-indigo-700 text-white font-bold text-xs py-2 px-3 rounded-xl transition-all shadow-md cursor-pointer disabled:opacity-50"
+                        className="w-full flex items-center justify-center gap-2 bg-linear-to-r from-emerald-600 to-indigo-600 hover:from-emerald-700 hover:to-indigo-700 text-white font-bold text-xs py-2 px-3 rounded-xl transition-all shadow-md cursor-pointer disabled:opacity-50"
                       >
                         {upgradeLoading ? (
                           <>

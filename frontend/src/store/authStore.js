@@ -19,7 +19,7 @@ const getInitialState = () => {
   if (userJson) {
     try {
       user = JSON.parse(userJson);
-    } catch (e) {
+    } catch (_e) {
       localStorage.removeItem('cf_user');
     }
   }

@@ -110,11 +110,15 @@ server.on('error', (err) => {
       if (process.platform === 'win32') {
         const result = execSync(`netstat -ano | findstr :${PORT}`).toString();
         const lines = result.trim().split('\n').filter(l => l.includes('LISTENING'));
-        lines.forEach(line => {
-          const pid = line.trim().split(/\s+/).pop();
+        const pids = [...new Set(lines.map(line => line.trim().split(/\s+/).pop()).filter(Boolean))];
+        pids.forEach(pid => {
           if (pid && pid !== process.pid.toString()) {
-            execSync(`taskkill /PID ${pid} /F`);
-            console.log(`[Server] Killed stale process PID ${pid} on port ${PORT}.`);
+            try {
+              execSync(`taskkill /PID ${pid} /F`);
+              console.log(`[Server] Killed stale process PID ${pid} on port ${PORT}.`);
+            } catch (cmdErr) {
+              // Safe to ignore if taskkill fails because process was already terminated by a previous call
+            }
           }
         });
       } else {

@@ -195,6 +195,23 @@ Rules:
 
 export const importResumeFile = async (file) => {
   const text = await extractResumeText(file);
+
+  // High-fidelity Fast Track: Check if the PDF has embedded CareerForge metadata
+  const metadataRegex = /\[CAREERFORGE_METADATA_START\](.*?)\[CAREERFORGE_METADATA_END\]/s;
+  const match = text.match(metadataRegex);
+  
+  if (match && match[1]) {
+    try {
+      const parsedMetadata = JSON.parse(match[1].trim());
+      // Found our own structured schema, bypass LLM
+      const resume = normalizeImportedResume(parsedMetadata);
+      return { resume, extractedTextLength: text.length };
+    } catch (e) {
+      console.warn("Found CareerForge metadata but failed to parse it, falling back to LLM", e);
+    }
+  }
+
+  // Fallback: Proceed with LLM-based text parsing
   const resume = await parseResumeTextToSchema(text);
   return { resume, extractedTextLength: text.length };
 };

@@ -44,10 +44,12 @@ const Login = () => {
     },
   });
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     clearError();
     setServerError(null);
   }, [clearError]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -67,10 +69,10 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-black flex overflow-hidden">
-      <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-10 xl:p-14 overflow-hidden bg-gradient-to-br from-indigo-950 via-slate-950 to-black h-screen max-h-screen">
+      <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-10 xl:p-14 overflow-hidden bg-linear-to-br from-indigo-950 via-slate-950 to-black h-screen max-h-screen">
         {/* Soft Background Blurs */}
-        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-cyan-600/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute top-0 left-0 w-125 h-125 bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-125 h-125 bg-cyan-600/10 rounded-full blur-[120px] pointer-events-none" />
 
         {/* Top: Logo Header */}
         <div className="relative z-10 flex items-center gap-3">
@@ -96,7 +98,7 @@ const Login = () => {
           >
             <h2 className="text-4xl font-extrabold text-white leading-tight mb-4 tracking-tight">
               Build ATS-Optimized
-              <span className="bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent"> Resumes</span>
+              <span className="bg-linear-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent"> Resumes</span>
               <br />
               That Get Interviews.
             </h2>

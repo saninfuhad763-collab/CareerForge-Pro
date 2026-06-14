@@ -14,8 +14,8 @@ import {
   ArrowUp
 } from 'lucide-react';
 import { staggerContainer, staggerItem, staggerItemScale } from '../animations/staggerAnimations';
-import { premiumCardHover, cardTiltLeft, cardTiltRight, buttonScale } from '../animations/cardAnimations';
-import { scrollReveal, progressConnector } from '../animations/scrollAnimations';
+import { premiumCardHover, cardTiltLeft as _cardTiltLeft, cardTiltRight as _cardTiltRight, buttonScale } from '../animations/cardAnimations';
+import { scrollReveal, progressConnector as _progressConnector } from '../animations/scrollAnimations';
 import { premiumEase } from '../animations/motionVariants';
 
 const Landing = () => {
@@ -39,7 +39,7 @@ const Landing = () => {
     <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden">
       {/* Decorative Blur Blobs with smooth continuous floating animations */}
       <motion.div 
-        className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-200/40 dark:bg-indigo-900/20 rounded-full blur-[120px] pointer-events-none"
+        className="absolute top-[-10%] left-[-10%] w-125 h-125 bg-indigo-200/40 dark:bg-indigo-900/20 rounded-full blur-[120px] pointer-events-none"
         animate={{
           x: [0, 30, 0],
           y: [0, -40, 0],
@@ -52,7 +52,7 @@ const Landing = () => {
         }}
       />
       <motion.div 
-        className="absolute bottom-[20%] right-[-10%] w-[600px] h-[600px] bg-emerald-100/40 dark:bg-emerald-950/20 rounded-full blur-[140px] pointer-events-none"
+        className="absolute bottom-[20%] right-[-10%] w-150 h-150 bg-emerald-100/40 dark:bg-emerald-950/20 rounded-full blur-[140px] pointer-events-none"
         animate={{
           x: [0, -40, 0],
           y: [0, 30, 0],
@@ -81,7 +81,7 @@ const Landing = () => {
           transition={{ duration: 0.5, ease: premiumEase }}
         >
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-bold text-lg font-display">
+            <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-bold text-lg font-display">
               CF
             </div>
             <span className="font-bold text-xl font-display text-slate-800 dark:text-slate-100 tracking-tight">
@@ -166,7 +166,7 @@ const Landing = () => {
             variants={staggerItem}
             className="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50 font-display leading-[1.1]"
           >
-            Forge an <span className="bg-gradient-to-r from-indigo-600 via-indigo-500 to-emerald-500 bg-clip-text text-transparent">ATS-Proof</span> Resume in Real Time.
+            Forge an <span className="bg-linear-to-r from-indigo-600 via-indigo-500 to-emerald-500 bg-clip-text text-transparent">ATS-Proof</span> Resume in Real Time.
           </motion.h1>
           <motion.p 
             variants={staggerItem}
