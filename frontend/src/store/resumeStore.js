@@ -145,8 +145,8 @@ export const useResumeStore = create((set, get) => ({
           };
           set({
             currentResume: {
-              ...data.data,
               ...latestResume,
+              ...data.data,
               atsMetadata: mergedAts,
               atsScore: data.data.atsScore !== undefined ? data.data.atsScore : latestResume.atsScore,
             },
@@ -201,8 +201,8 @@ export const useResumeStore = create((set, get) => ({
         };
         set({
           currentResume: {
-            ...data.data,
             ...latestResume,
+            ...data.data,
             atsMetadata: mergedAts,
             atsScore: data.data.atsScore !== undefined ? data.data.atsScore : latestResume.atsScore,
           },
