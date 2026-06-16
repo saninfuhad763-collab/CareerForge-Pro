@@ -5,6 +5,9 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 // Debounce timer helper
 let saveTimeout = null;
 
+// Ignore stale loadResumeById responses (navigation / StrictMode double-fetch races)
+let loadResumeRequestSeq = 0;
+
 export const useResumeStore = create((set, get) => ({
   resumes: [],
   currentResume: null,
@@ -44,7 +47,12 @@ export const useResumeStore = create((set, get) => ({
     }
   },
 
+  invalidatePendingResumeLoads: () => {
+    loadResumeRequestSeq += 1;
+  },
+
   loadResumeById: async (id) => {
+    const requestSeq = ++loadResumeRequestSeq;
     set({ loading: true, error: null });
     try {
       const response = await fetch(`${API_URL}/resumes/${id}`, {
@@ -54,6 +62,10 @@ export const useResumeStore = create((set, get) => ({
 
       const data = await response.json();
 
+      if (requestSeq !== loadResumeRequestSeq) {
+        return null;
+      }
+
       if (!response.ok || !data.success) {
         throw new Error(data.message || 'Failed to load resume details');
       }
@@ -61,6 +73,9 @@ export const useResumeStore = create((set, get) => ({
       set({ currentResume: data.data, loading: false });
       return data.data;
     } catch (error) {
+      if (requestSeq !== loadResumeRequestSeq) {
+        return null;
+      }
       set({ loading: false, error: error.message });
       return null;
     }
@@ -143,8 +158,6 @@ export const useResumeStore = create((set, get) => ({
             scoreImprovement: backendAts.scoreImprovement !== undefined ? backendAts.scoreImprovement : localAts.scoreImprovement,
             lastJdHash:       backendAts.lastJdHash       !== undefined ? backendAts.lastJdHash       : localAts.lastJdHash,
           };
-          console.log('[TRACE-A][updateResumeLocal/auto-save] PRE-SET latestResume.personalInfo.fullName:', latestResume?.personalInfo?.fullName);
-          console.log('[TRACE-A][updateResumeLocal/auto-save] PRE-SET data.data.personalInfo.fullName:', data.data?.personalInfo?.fullName);
           set({
             currentResume: {
               ...latestResume,
@@ -167,17 +180,18 @@ export const useResumeStore = create((set, get) => ({
 
   // Save changes immediately (e.g. when exiting editor or templates switch)
   saveResumeImmediately: async () => {
-    const { currentResume } = get();
-    if (!currentResume) return;
-
     if (saveTimeout) clearTimeout(saveTimeout);
+
+    const resumeToSave = get().currentResume;
+    if (!resumeToSave) return false;
+
     set({ saving: true });
 
     try {
-      const response = await fetch(`${API_URL}/resumes/${currentResume._id}`, {
+      const response = await fetch(`${API_URL}/resumes/${resumeToSave._id}`, {
         method: 'PUT',
         headers: get().getHeaders(),
-        body: JSON.stringify(currentResume),
+        body: JSON.stringify(resumeToSave),
       });
 
       const data = await response.json();
@@ -201,8 +215,6 @@ export const useResumeStore = create((set, get) => ({
           scoreImprovement: backendAts.scoreImprovement !== undefined ? backendAts.scoreImprovement : localAts.scoreImprovement,
           lastJdHash:       backendAts.lastJdHash       !== undefined ? backendAts.lastJdHash       : localAts.lastJdHash,
         };
-        console.log('[TRACE-B][saveResumeImmediately] PRE-SET latestResume.personalInfo.fullName:', latestResume?.personalInfo?.fullName);
-        console.log('[TRACE-B][saveResumeImmediately] PRE-SET data.data.personalInfo.fullName:', data.data?.personalInfo?.fullName);
         set({
           currentResume: {
             ...latestResume,

@@ -165,7 +165,8 @@ const Builder = () => {
     currentResume, 
     loadResumeById, 
     updateResumeLocal, 
-    saveResumeImmediately, 
+    saveResumeImmediately,
+    invalidatePendingResumeLoads,
     saving, 
     loading, 
     error,
@@ -1425,6 +1426,7 @@ const Builder = () => {
       }
 
       const importedResume = data.data || {};
+      invalidatePendingResumeLoads();
       updateResumeLocal({
         personalInfo: importedResume.personalInfo || {},
         summary: importedResume.summary || '',

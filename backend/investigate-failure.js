@@ -13,6 +13,14 @@ async function main() {
   try {
     const page = await browser.newPage();
     
+    // Capture browser console output early (TRACE / RENDER-TRACE logs)
+    page.on('console', msg => {
+      const text = msg.text();
+      if (text.includes('TRACE')) {
+        console.log('[BROWSER CONSOLE]', text);
+      }
+    });
+    
     // Authenticate
     await page.goto('http://localhost:5173/', { waitUntil: 'load' });
     await page.evaluate(() => {
@@ -140,13 +148,7 @@ async function main() {
     let updatePayloadReceived = null;
     let putResponseReceived = null;
 
-    // Capture browser console output (TRACE-A / TRACE-B logs)
-    page.on('console', msg => {
-      const text = msg.text();
-      if (text.includes('[TRACE')) {
-        console.log('[BROWSER CONSOLE]', text);
-      }
-    });
+    // console logging moved to start
 
     page.on('request', req => {
       if (req.method() === 'PUT' && req.url().includes('/api/resumes/')) {
