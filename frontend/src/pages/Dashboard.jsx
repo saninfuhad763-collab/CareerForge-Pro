@@ -15,20 +15,25 @@ import {
   Sparkles,
   AlertCircle,
   ChevronRight,
-  Compass
+  Compass,
+  Download,
+  CreditCard,
+  Lock,
 } from 'lucide-react';
+import { isPremiumTemplate, isProUser } from '../utils/planConstants';
 import { staggerContainer, staggerItem, staggerItemScale } from '../animations/staggerAnimations';
 import { premiumCardHover as _premiumCardHover, buttonScale, professionalCardVariant } from '../animations/cardAnimations';
 import { sidebarItemVariant } from '../animations/dashboardAnimations';
 import { premiumEase } from '../animations/motionVariants';
 
 const Dashboard = () => {
-  const { user, logout, upgradePlan, checkAuth } = useAuthStore();
+  const { user, logout, upgradePlan } = useAuthStore();
   const { 
     resumes, 
     loadResumes, 
     createResume, 
-    deleteResume, 
+    deleteResume,
+    exportResumePdf,
     loading: storeLoading 
   } = useResumeStore();
 
@@ -42,7 +47,7 @@ const Dashboard = () => {
 
   const [createError, setCreateError] = useState(null);
   const [upgradeLoading, setUpgradeLoading] = useState(false);
-  const [upgradeSuccess, setUpgradeSuccess] = useState(false);
+  const [downloadLoadingId, setDownloadLoadingId] = useState(null);
 
   const navigate = useNavigate();
 
@@ -72,7 +77,6 @@ const Dashboard = () => {
 
   const openCreateModal = () => {
     setCreateError(null);
-    setUpgradeSuccess(false);
     setNewTitle('');
     setIsModalOpen(true);
   };
@@ -97,21 +101,25 @@ const Dashboard = () => {
     }
   };
 
+  const isPro = isProUser(user);
+
   const handleUpgrade = async () => {
     setUpgradeLoading(true);
     setCreateError(null);
     const res = await upgradePlan();
     setUpgradeLoading(false);
-    if (res.success) {
-      setUpgradeSuccess(true);
-      await checkAuth();
-      // Auto-trigger creation after dynamic delay
-      setTimeout(async () => {
-        await handleCreateResume();
-      }, 1200);
-    } else {
-      setCreateError(res.error || 'Failed to upgrade plan.');
+    if (res.success && res.url) {
+      window.location.href = res.url;
+      return;
     }
+    setCreateError(res.error || 'Failed to start Stripe checkout.');
+  };
+
+  const handleDownloadPdf = async (resume, e) => {
+    e.stopPropagation();
+    setDownloadLoadingId(resume._id);
+    await exportResumePdf(resume._id, resume.title);
+    setDownloadLoadingId(null);
   };
 
   const handleDelete = (id, e) => {
@@ -203,7 +211,7 @@ const Dashboard = () => {
         {/* Sidebar Footer Operations */}
         <div className="pt-6 border-t border-slate-200/50 dark:border-slate-800/50 space-y-4">
           {/* Pro Upgrade Promotion Box */}
-          {user?.plan !== 'PRO' && (
+          {user?.plan !== 'PRO' && !isPro && (
             <div className="p-4 rounded-2xl bg-linear-to-br from-indigo-500 via-indigo-600 to-purple-600 text-white space-y-3 relative overflow-hidden shadow-md shadow-indigo-500/20 text-left">
               <div className="absolute -right-6 -bottom-6 w-20 h-20 rounded-full bg-white/10 blur-xl pointer-events-none" />
               <div className="space-y-1">
@@ -220,10 +228,18 @@ const Dashboard = () => {
                 disabled={upgradeLoading}
                 className="w-full bg-white hover:bg-slate-50 text-indigo-600 disabled:opacity-50 transition-colors py-2 rounded-xl text-xs font-bold shadow-lg shadow-indigo-950/20 cursor-pointer"
               >
-                {upgradeLoading ? 'Activating Pro...' : 'Upgrade Now (Free)'}
+                {upgradeLoading ? 'Redirecting to Stripe...' : 'Upgrade with Stripe'}
               </button>
             </div>
           )}
+
+          <button
+            onClick={() => navigate('/billing')}
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-xl transition-colors cursor-pointer"
+          >
+            <CreditCard className="w-4.5 h-4.5" />
+            <span>Billing</span>
+          </button>
 
           <button
             onClick={() => {
@@ -447,6 +463,14 @@ const Dashboard = () => {
                               <span>Updated {new Date(resume.updatedAt).toLocaleDateString()}</span>
                             </div>
                             <div className="flex items-center gap-2">
+                              <button
+                                onClick={(e) => handleDownloadPdf(resume, e)}
+                                disabled={downloadLoadingId === resume._id}
+                                className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-50 dark:bg-slate-900 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/20 opacity-30 group-hover:opacity-100 focus:opacity-100 transition-all duration-300 cursor-pointer disabled:opacity-50"
+                                title="Download PDF"
+                              >
+                                <Download className="w-4.5 h-4.5" />
+                              </button>
                               <button
                                 onClick={(e) => handleDelete(resume._id, e)}
                                 className="p-2 text-slate-400 hover:text-red-500 dark:hover:text-red-400 bg-slate-50 dark:bg-slate-900 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 opacity-30 group-hover:opacity-100 focus:opacity-100 translate-x-1 group-hover:translate-x-0 transition-all duration-300 cursor-pointer"
@@ -735,28 +759,16 @@ const Dashboard = () => {
                         {upgradeLoading ? (
                           <>
                             <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            <span>Unlocking Pro Access...</span>
+                            <span>Redirecting to Stripe...</span>
                           </>
                         ) : (
                           <>
                             <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
-                            <span>Instantly Upgrade to PRO (Free sandbox checkout)</span>
+                            <span>Upgrade to Pro with Stripe</span>
                           </>
                         )}
                       </button>
                     )}
-                  </div>
-                )}
-
-                {upgradeSuccess && (
-                  <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/50 dark:border-emerald-800/40 rounded-2xl flex items-center gap-3 text-emerald-600 dark:text-emerald-400">
-                    <Sparkles className="w-5 h-5 animate-spin" />
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-wider">Congratulations!</p>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        You have successfully upgraded to the **PRO Plan**! Initializing resume generation...
-                      </p>
-                    </div>
                   </div>
                 )}
 
@@ -783,27 +795,40 @@ const Dashboard = () => {
                       { id: 'modern', name: 'Modern', desc: 'Elegant typography' },
                       { id: 'classic', name: 'Classic', desc: 'Standard layout' },
                       { id: 'minimalist', name: 'Minimal', desc: 'Ultra clean space' },
-                    ].map((tpl) => (
+                    ].map((tpl) => {
+                      const locked = isPremiumTemplate(tpl.id) && !isPro;
+                      return (
                       <button
                         key={tpl.id}
                         type="button"
-                        onClick={() => setSelectedTemplate(tpl.id)}
-                        className={`p-3 text-left border rounded-xl flex flex-col justify-between transition-all cursor-pointer ${
+                        onClick={() => {
+                          if (locked) {
+                            setCreateError('Classic and Minimalist templates are Pro-only. Upgrade to unlock premium templates.');
+                            return;
+                          }
+                          setSelectedTemplate(tpl.id);
+                        }}
+                        className={`p-3 text-left border rounded-xl flex flex-col justify-between transition-all ${
+                          locked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
+                        } ${
                           selectedTemplate === tpl.id
                             ? templateThemes[tpl.id]?.cardSelected || 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20'
                             : 'border-slate-200 dark:border-slate-800 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-950/50'
                         }`}
                       >
-                        <span className={`text-xs font-bold transition-colors ${
+                        <span className={`text-xs font-bold transition-colors flex items-center gap-1 ${
                           selectedTemplate === tpl.id 
                             ? 'text-indigo-600 dark:text-indigo-400'
                             : 'text-slate-700 dark:text-slate-300'
                         }`}>
                           {tpl.name}
+                          {locked && <Lock className="w-3 h-3 text-amber-500" />}
                         </span>
-                        <span className="text-[9px] text-slate-400 truncate mt-1 leading-none">{tpl.desc}</span>
+                        <span className="text-[9px] text-slate-400 truncate mt-1 leading-none">
+                          {locked ? 'Pro only' : tpl.desc}
+                        </span>
                       </button>
-                    ))}
+                    );})}
                   </div>
                 </div>
 

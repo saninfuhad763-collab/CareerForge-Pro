@@ -28,6 +28,8 @@ export const registerUser = async (req, res) => {
           _id: user._id,
           name: user.name,
           email: user.email,
+          plan: user.plan,
+          subscriptionStatus: user.subscriptionStatus,
           token: generateToken(user._id),
         },
       });
@@ -56,6 +58,8 @@ export const loginUser = async (req, res) => {
           _id: user._id,
           name: user.name,
           email: user.email,
+          plan: user.plan,
+          subscriptionStatus: user.subscriptionStatus,
           token: generateToken(user._id),
         },
       });
@@ -76,40 +80,19 @@ export const getUserProfile = async (req, res) => {
     if (user) {
       res.json({
         success: true,
-        data: user,
+        data: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          plan: user.plan,
+          subscriptionStatus: user.subscriptionStatus,
+          subscriptionExpiresAt: user.subscriptionExpiresAt,
+          aiRewriteCount: user.aiRewriteCount,
+        },
       });
     } else {
       res.status(404).json({ success: false, message: 'User not found' });
     }
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// @desc    Upgrade user to PRO plan (Simulated payment/direct upgrade for week 2 scope)
-// @route   PUT /api/auth/upgrade
-// @access  Private
-export const upgradeUserPlan = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-
-    user.plan = 'PRO';
-    await user.save();
-
-    res.json({
-      success: true,
-      message: 'Successfully upgraded to PRO plan!',
-      data: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        plan: user.plan,
-        aiRewriteCount: user.aiRewriteCount,
-      },
-    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

@@ -2,6 +2,7 @@ import JobDescription from '../models/JobDescription.js';
 import Resume from '../models/Resume.js';
 import HistoryLog from '../models/HistoryLog.js';
 import User from '../models/User.js';
+import { isProPlan } from '../utils/planConstants.js';
 import { executeAiChain, analyzeJobDescription, PROMPT_LIBRARY, getEmbeddingVector } from '../services/aiService.js';
 import { calculateAtsScore } from '../services/atsService.js';
 
@@ -368,8 +369,8 @@ export const getPlanStats = async (req, res, next) => {
       plan: user.plan,
       aiRewriteCount: user.aiRewriteCount,
       resumeCount,
-      resumeLimit: user.plan === 'FREE' ? 1 : Infinity,
-      aiLimit: user.plan === 'FREE' ? 10 : Infinity,
+      resumeLimit: isProPlan(user) ? Infinity : 1,
+      aiLimit: isProPlan(user) ? Infinity : 10,
     });
   } catch (error) {
     next(error);

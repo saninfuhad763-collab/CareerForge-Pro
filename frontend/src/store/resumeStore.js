@@ -269,5 +269,43 @@ export const useResumeStore = create((set, get) => ({
     }
   },
 
+  exportResumePdf: async (id, title = 'resume') => {
+    try {
+      const token = localStorage.getItem('cf_token');
+      const response = await fetch(`${API_URL}/resumes/${id}/export-pdf`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        let message = 'Failed to export PDF';
+        try {
+          const data = await response.json();
+          message = data.message || message;
+        } catch {
+          message = `PDF export failed (HTTP ${response.status})`;
+        }
+        throw new Error(message);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      const safeTitle = title.replace(/[^a-z0-9-_ ]/gi, '').trim().replace(/\s+/g, '-') || 'resume';
+      anchor.href = url;
+      anchor.download = `${safeTitle}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+      return true;
+    } catch (error) {
+      set({ error: error.message });
+      return false;
+    }
+  },
+
   clearCurrentResume: () => set({ currentResume: null }),
 }));

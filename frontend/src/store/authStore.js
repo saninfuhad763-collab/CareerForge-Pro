@@ -150,13 +150,17 @@ export const useAuthStore = create((set, get) => ({
   },
 
   upgradePlan: async () => {
+    return get().createCheckoutSession();
+  },
+
+  createCheckoutSession: async () => {
     const { token } = get();
     if (!token) return { success: false, error: 'Not authenticated' };
 
     set({ loading: true, error: null });
     try {
-      const response = await fetch(`${API_URL}/auth/upgrade`, {
-        method: 'PUT',
+      const response = await fetch(`${API_URL}/billing/create-checkout-session`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
@@ -166,12 +170,64 @@ export const useAuthStore = create((set, get) => ({
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Upgrade failed');
+        throw new Error(data.message || 'Checkout session creation failed');
       }
 
-      localStorage.setItem('cf_user', JSON.stringify(data.data));
-      set({ user: data.data, loading: false, error: null });
-      return { success: true };
+      set({ loading: false, error: null });
+      return { success: true, url: data.url, sessionId: data.sessionId };
+    } catch (error) {
+      const refined = refineError(error);
+      set({ loading: false, error: refined });
+      return { success: false, error: refined };
+    }
+  },
+
+  getBillingStatus: async () => {
+    const { token } = get();
+    if (!token) return { success: false, error: 'Not authenticated' };
+
+    try {
+      const response = await fetch(`${API_URL}/billing/status`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Failed to load billing status');
+      }
+
+      return { success: true, data: data.data };
+    } catch (error) {
+      return { success: false, error: refineError(error) };
+    }
+  },
+
+  cancelSubscription: async () => {
+    const { token } = get();
+    if (!token) return { success: false, error: 'Not authenticated' };
+
+    set({ loading: true, error: null });
+    try {
+      const response = await fetch(`${API_URL}/billing/cancel-subscription`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Subscription cancellation failed');
+      }
+
+      set({ loading: false, error: null });
+      return { success: true, message: data.message, data: data.data };
     } catch (error) {
       const refined = refineError(error);
       set({ loading: false, error: refined });

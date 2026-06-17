@@ -1,4 +1,6 @@
 import Resume from '../models/Resume.js';
+import { generateResumePdf } from '../services/pdfService.js';
+import { isPremiumTemplate, isProPlan, resolveTemplateForUser } from '../utils/planConstants.js';
 
 // @desc    Get all resumes for the authenticated user
 // @route   GET /api/resumes
@@ -50,11 +52,21 @@ export const getResumeById = async (req, res) => {
 export const createResume = async (req, res) => {
   try {
     const { title, templateId } = req.body;
+    const safeTemplateId = resolveTemplateForUser(templateId, req.user);
+
+    if (isPremiumTemplate(templateId) && !isProPlan(req.user)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Classic and Minimalist templates are Pro-only. Upgrade to unlock premium templates.',
+        requiresUpgrade: true,
+        allowedTemplates: ['modern'],
+      });
+    }
 
     const newResume = new Resume({
       userId: req.user._id,
       title: title || 'My Professional Resume',
-      templateId: templateId || 'modern',
+      templateId: safeTemplateId,
       personalInfo: {
         fullName: req.user.name,
         email: req.user.email,
@@ -111,7 +123,6 @@ export const updateResume = async (req, res) => {
     // Update body properties directly
     const fieldsToUpdate = [
       'title',
-      'templateId',
       'sectionOrder',
       'personalInfo',
       'summary',
@@ -130,6 +141,18 @@ export const updateResume = async (req, res) => {
         resume[field] = req.body[field];
       }
     });
+
+    if (req.body.templateId !== undefined) {
+      if (isPremiumTemplate(req.body.templateId) && !isProPlan(req.user)) {
+        return res.status(403).json({
+          success: false,
+          message: 'Classic and Minimalist templates are Pro-only. Upgrade to unlock premium templates.',
+          requiresUpgrade: true,
+          allowedTemplates: ['modern'],
+        });
+      }
+      resume.templateId = resolveTemplateForUser(req.body.templateId, req.user);
+    }
 
     // Preserve existing atsMetadata; initialize with clean baseline if not present
     if (!resume.atsMetadata || typeof resume.atsMetadata.score !== 'number') {
@@ -172,11 +195,47 @@ export const deleteResume = async (req, res) => {
 
     await resume.deleteOne();
 
-    res.json({
-      success: true,
-      message: 'Resume deleted successfully',
-    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Export resume as PDF
+// @route   POST /api/resumes/:id/export-pdf
+// @access  Private
+export const exportResumePdf = async (req, res) => {
+  try {
+    const resume = await Resume.findById(req.params.id);
+
+    if (!resume) {
+      return res.status(404).json({ success: false, message: 'Resume not found' });
+    }
+
+    if (resume.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'Not authorized to export this resume' });
+    }
+
+    const exportResume = resume.toObject();
+    if (isPremiumTemplate(exportResume.templateId) && !isProPlan(req.user)) {
+      exportResume.templateId = 'modern';
+    }
+
+    const pdfBuffer = await generateResumePdf(exportResume);
+    const safeTitle = (resume.title || 'resume')
+      .replace(/[^a-z0-9-_ ]/gi, '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .toLowerCase() || 'resume';
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${safeTitle}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.status(200).send(pdfBuffer);
+  } catch (error) {
+    console.error('[PDF Export] Failed:', error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to generate PDF export.',
+    });
   }
 };

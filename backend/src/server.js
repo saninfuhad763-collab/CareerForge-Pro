@@ -10,6 +10,8 @@ import authRoutes from './routes/authRoutes.js';
 import resumeRoutes from './routes/resumeRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
+import billingRoutes from './routes/billingRoutes.js';
+import { stripeWebhook } from './controllers/billingController.js';
 import { execSync } from 'child_process';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
@@ -52,6 +54,13 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
+// Stripe webhook requires raw body — must be registered before express.json()
+app.post(
+  '/api/billing/webhook',
+  express.raw({ type: 'application/json' }),
+  stripeWebhook
+);
+
 // HTTP Request Logging
 if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
   app.use(morgan('dev'));
@@ -91,6 +100,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/resumes', resumeRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/billing', billingRoutes);
 
 // Catch 404 & Centralized Error Handlers
 app.use(notFound);

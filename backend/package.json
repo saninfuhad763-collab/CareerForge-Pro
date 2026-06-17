@@ -24,6 +24,7 @@
     "multer": "^2.1.1",
     "pdf-parse": "^2.4.5",
     "puppeteer-core": "^24.43.1",
+    "stripe": "^22.2.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {

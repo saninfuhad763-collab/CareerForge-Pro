@@ -1,4 +1,5 @@
 import Resume from '../models/Resume.js';
+import { isPremiumTemplate, isProPlan } from '../utils/planConstants.js';
 
 /**
  * Feature gate middleware to enforce maximum resume limits based on subscription plan
@@ -7,7 +8,7 @@ export const checkResumeLimit = async (req, res, next) => {
   try {
     const user = req.user; // Set by protect middleware
     
-    if (user.plan === 'FREE') {
+    if (!isProPlan(user)) {
       const count = await Resume.countDocuments({ userId: user._id });
       if (count >= 1) {
         return res.status(403).json({
@@ -31,7 +32,7 @@ export const checkAiRewriteLimit = async (req, res, next) => {
   try {
     const user = req.user; // Set by protect middleware
     
-    if (user.plan === 'FREE') {
+    if (!isProPlan(user)) {
       if (user.aiRewriteCount >= 10) {
         return res.status(403).json({
           success: false,
@@ -45,4 +46,25 @@ export const checkAiRewriteLimit = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+/**
+ * Reject premium template usage for free-tier users
+ */
+export const checkPremiumTemplate = (req, res, next) => {
+  const templateId = req.body?.templateId;
+  if (!templateId || !isPremiumTemplate(templateId)) {
+    return next();
+  }
+
+  if (!isProPlan(req.user)) {
+    return res.status(403).json({
+      success: false,
+      message: 'Classic and Minimalist templates are Pro-only. Upgrade to unlock premium templates.',
+      requiresUpgrade: true,
+      allowedTemplates: ['modern'],
+    });
+  }
+
+  return next();
 };

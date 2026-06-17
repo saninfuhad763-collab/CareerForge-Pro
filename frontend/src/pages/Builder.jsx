@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useResumeStore } from '../store/resumeStore';
+import { useAuthStore } from '../store/authStore';
+import { isPremiumTemplate, isProUser } from '../utils/planConstants';
 import { motion, AnimatePresence } from 'framer-motion';
 import { pageTransitions, slideUp } from '../animations/pageTransitions';
 import { 
@@ -36,7 +38,8 @@ import {
   Lightbulb,
   Palette,
   Download,
-  Upload
+  Upload,
+  Lock,
 } from 'lucide-react';
 
 const normalizeUrl = (url) => {
@@ -159,6 +162,8 @@ const JD_PRESETS = {
 const Builder = () => {
   const { id } = useParams();
   const _navigate = useNavigate();
+  const { user } = useAuthStore();
+  const isPro = isProUser(user);
   const [searchParams] = useSearchParams();
   const isOptimizeMode = searchParams.get('mode') === 'optimize';
   const { 
@@ -167,6 +172,7 @@ const Builder = () => {
     updateResumeLocal, 
     saveResumeImmediately,
     invalidatePendingResumeLoads,
+    exportResumePdf,
     saving, 
     loading, 
     error,
@@ -179,12 +185,12 @@ const Builder = () => {
   const [saveStatus, setSaveStatus] = useState('Saved to cloud');
   const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
   const [activeTheme, setActiveTheme] = useState('modern');
-  const [_isPrinting, setIsPrinting] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [manualSavePerformed, setManualSavePerformed] = useState(false);
 
   useEffect(() => {
-    const handleBeforePrint = () => setIsPrinting(true);
-    const handleAfterPrint = () => setIsPrinting(false);
+    const handleBeforePrint = () => setIsExportingPdf(true);
+    const handleAfterPrint = () => setIsExportingPdf(false);
     window.addEventListener('beforeprint', handleBeforePrint);
     window.addEventListener('afterprint', handleAfterPrint);
     return () => {
@@ -196,9 +202,12 @@ const Builder = () => {
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (currentResume?.templateId) {
-      setActiveTheme(currentResume.templateId);
+      const nextTheme = isPremiumTemplate(currentResume.templateId) && !isPro
+        ? 'modern'
+        : currentResume.templateId;
+      setActiveTheme(nextTheme);
     }
-  }, [currentResume?.templateId]);
+  }, [currentResume?.templateId, isPro]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -1572,29 +1581,37 @@ const Builder = () => {
                     { id: 'modern',     label: 'Modern' },
                     { id: 'minimalist', label: 'Minimalist' },
                     { id: 'classic',    label: 'Classic' },
-                  ].map((t) => (
+                  ].map((t) => {
+                    const locked = isPremiumTemplate(t.id) && !isPro;
+                    return (
                     <button
                       key={t.id}
                       onClick={async () => {
+                        if (locked) return;
                         setActiveTheme(t.id);
                         updateResumeLocal({ templateId: t.id });
                         setThemeDropdownOpen(false);
                         await saveResumeImmediately();
                       }}
+                      disabled={locked}
                       className={`
-                        w-full flex items-center justify-between px-3.5 py-2 text-left transition-colors duration-150 cursor-pointer text-xs
+                        w-full flex items-center justify-between px-3.5 py-2 text-left transition-colors duration-150 text-xs
+                        ${locked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                         ${activeTheme === t.id
                           ? 'bg-indigo-50/60 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 font-bold'
                           : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/60 font-medium'
                         }
                       `}
                     >
-                      <span>{t.label}</span>
+                      <span className="flex items-center gap-1.5">
+                        {t.label}
+                        {locked && <Lock className="w-3 h-3 text-amber-500" />}
+                      </span>
                       {activeTheme === t.id && (
                         <Check className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                       )}
                     </button>
-                  ))}
+                  );})}
                 </div>
               </>
             )}
@@ -1612,11 +1629,16 @@ const Builder = () => {
           )}
 
           <button
-            onClick={() => window.print()}
-            className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-500/20 hover:shadow-indigo-500/35 hover:-translate-y-0.5 cursor-pointer active:scale-95"
+            onClick={async () => {
+              setIsExportingPdf(true);
+              await exportResumePdf(id, currentResume?.title || 'resume');
+              setIsExportingPdf(false);
+            }}
+            disabled={isExportingPdf}
+            className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-500/20 hover:shadow-indigo-500/35 hover:-translate-y-0.5 cursor-pointer active:scale-95"
           >
             <Download className="w-4 h-4" />
-            <span>Export PDF</span>
+            <span>{isExportingPdf ? 'Generating PDF...' : 'Export PDF'}</span>
           </button>
         </div>
       </header>
