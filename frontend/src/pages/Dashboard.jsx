@@ -205,6 +205,15 @@ const Dashboard = () => {
               <Gauge className="w-4.5 h-4.5" />
               <span>AI Scoring</span>
             </motion.button>
+            <motion.button 
+              onClick={() => navigate('/cover-letter')}
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-xl transition-colors cursor-pointer"
+              whileHover="hover"
+              variants={sidebarItemVariant}
+            >
+              <FileText className="w-4.5 h-4.5" />
+              <span>Cover Letter</span>
+            </motion.button>
           </nav>
         </div>
 

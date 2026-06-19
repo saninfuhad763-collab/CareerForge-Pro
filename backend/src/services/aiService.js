@@ -108,6 +108,35 @@ export const PROMPT_LIBRARY = {
       2. Keep it factual-sounding and professional.
       3. Return only the updated sentence.
     `
+  },
+  generate_cover_letter: {
+    version: '1.0.0',
+    system: 'You are an expert career consultant and professional resume writer. Write a compelling, highly professional cover letter based on the applicant\'s resume details and the target job description. The cover letter should be formatted professionally, beginning with a standard professional greeting and ending with a formal sign-off. Return ONLY the cover letter text, with no preamble, postscript, or explanations.',
+    template: (resumeData, jobData) => `
+      Task: Generate a professional cover letter matching the candidate's background to the target role.
+      
+      Candidate Info:
+      Name: ${resumeData.fullName || 'Applicant'}
+      Email: ${resumeData.email || ''}
+      Phone: ${resumeData.phone || ''}
+      Location: ${resumeData.location || ''}
+      Summary: ${resumeData.summary || ''}
+      
+      Experience:
+      ${resumeData.experience || ''}
+      
+      Skills:
+      ${resumeData.skills || ''}
+      
+      Projects:
+      ${resumeData.projects || ''}
+      
+      Target Role:
+      Job Title: ${jobData.jobTitle}
+      Company: ${jobData.companyName}
+      Job Description:
+      ${jobData.jobDescription || ''}
+    `
   }
 };
 
@@ -344,6 +373,29 @@ function handleMockAiResponse({ promptType, sanitizedUser, stream, sseResponse }
     text = `• Pioneered robust modular state systems, delivering an 18% lift in client-side loading metrics.\n• Standardized multi-tenant database designs, guaranteeing complete operational isolation and scaling up to 100k requests.`;
   } else if (promptType === 'achievement_quantification') {
     text = `Spearheaded software modularization efforts, driving a 30% reduction in system latency and optimizing user conversion rate by 15%.`;
+  } else if (promptType === 'generate_cover_letter') {
+    text = `[Your Name]
+[Your Address]
+[Your Phone Number]
+[Your Email]
+
+[Date]
+
+Hiring Manager
+[Company Name]
+[Company Address]
+
+Dear Hiring Manager,
+
+I am writing to express my enthusiastic interest in the [Job Title] position at [Company Name]. With my background in software engineering and hands-on experience in full-stack development, I am confident in my ability to contribute value to your engineering team.
+
+In my previous roles, I have spearheaded the design and implementation of highly scalable applications, optimized database query performance, and collaborated with cross-functional teams to deliver projects on time. I am particularly drawn to [Company Name]'s commitment to innovation and look forward to the possibility of leveraging my skills to support your business objectives.
+
+Thank you for your time and consideration. I welcome the opportunity to discuss my qualifications further in an interview.
+
+Sincerely,
+
+[Your Name]`;
   }
 
   if (stream && sseResponse) {

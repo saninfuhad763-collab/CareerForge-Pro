@@ -5,6 +5,7 @@ import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Builder from './pages/Builder';
 import Billing from './pages/Billing';
+import CoverLetter from './pages/CoverLetter';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -38,6 +39,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Billing />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/cover-letter"
+          element={
+            <ProtectedRoute>
+              <CoverLetter />
             </ProtectedRoute>
           }
         />

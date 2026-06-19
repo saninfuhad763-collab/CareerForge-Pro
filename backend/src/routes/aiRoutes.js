@@ -7,6 +7,7 @@ import {
   getHistoryLogs,
   getPlanStats,
 } from '../controllers/aiController.js';
+import { generateCoverLetter } from '../controllers/coverLetterController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { checkAiRewriteLimit } from '../middleware/planMiddleware.js';
 
@@ -21,6 +22,9 @@ router.get('/stream-rewrite', protect, checkAiRewriteLimit, streamResumeRewrite)
 // Acceptance & rollbacks tracking
 router.post('/accept', protect, acceptRewrite);
 router.post('/rollback', protect, rollbackRewrite);
+
+// Cover Letter generation
+router.post('/generate-cover-letter', protect, generateCoverLetter);
 
 // Logging and plans configuration
 router.get('/history/:resumeId', protect, getHistoryLogs);
