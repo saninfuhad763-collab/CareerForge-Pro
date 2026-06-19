@@ -757,7 +757,7 @@ const Dashboard = () => {
                       </p>
                     </div>
                     
-                    {/* Simulated direct upgrade option since it's sandbox testing */}
+                    {/* Stripe upgrade — shown when free resume limit is hit */}
                     {createError.includes('Free tier is limited') && (
                       <button
                         type="button"
@@ -776,6 +776,18 @@ const Dashboard = () => {
                             <span>Upgrade to Pro with Stripe</span>
                           </>
                         )}
+                      </button>
+                    )}
+
+                    {/* Billing page redirect — shown when a locked premium template is clicked */}
+                    {createError.includes('Pro-only') && (
+                      <button
+                        type="button"
+                        onClick={() => navigate('/billing')}
+                        className="w-full flex items-center justify-center gap-2 bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs py-2 px-3 rounded-xl transition-all shadow-md cursor-pointer"
+                      >
+                        <Lock className="w-3.5 h-3.5" />
+                        <span>View Pro Plans &rarr;</span>
                       </button>
                     )}
                   </div>

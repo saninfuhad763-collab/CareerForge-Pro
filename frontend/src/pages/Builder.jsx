@@ -184,6 +184,7 @@ const Builder = () => {
   const [activeAccordion, setActiveAccordion] = useState('personal');
   const [saveStatus, setSaveStatus] = useState('Saved to cloud');
   const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
+  const [showProBanner, setShowProBanner] = useState(false);
   const [activeTheme, setActiveTheme] = useState('modern');
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [manualSavePerformed, setManualSavePerformed] = useState(false);
@@ -1587,16 +1588,20 @@ const Builder = () => {
                     <button
                       key={t.id}
                       onClick={async () => {
-                        if (locked) return;
+                        if (locked) {
+                          setShowProBanner(true);
+                          setThemeDropdownOpen(false);
+                          return;
+                        }
+                        setShowProBanner(false);
                         setActiveTheme(t.id);
                         updateResumeLocal({ templateId: t.id });
                         setThemeDropdownOpen(false);
                         await saveResumeImmediately();
                       }}
-                      disabled={locked}
                       className={`
                         w-full flex items-center justify-between px-3.5 py-2 text-left transition-colors duration-150 text-xs
-                        ${locked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                        ${locked ? 'opacity-50 cursor-pointer' : 'cursor-pointer'}
                         ${activeTheme === t.id
                           ? 'bg-indigo-50/60 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 font-bold'
                           : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/60 font-medium'
@@ -1614,6 +1619,30 @@ const Builder = () => {
                   );})}
                 </div>
               </>
+            )}
+
+            {/* Pro upgrade panel — appears when FREE user clicks a locked template */}
+            {showProBanner && (
+              <div className="absolute inset-x-0 top-full mt-2 z-50 bg-white dark:bg-slate-950 border border-indigo-200 dark:border-indigo-800/60 rounded-xl shadow-xl p-3 space-y-2.5">
+                <div className="flex items-start gap-2">
+                  <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                  <p className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 leading-snug flex-1">
+                    Classic &amp; Minimalist templates require Pro.
+                  </p>
+                  <button
+                    onClick={() => setShowProBanner(false)}
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer shrink-0"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <button
+                  onClick={() => _navigate('/billing')}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold py-1.5 rounded-lg cursor-pointer transition-colors"
+                >
+                  Upgrade Now →
+                </button>
+              </div>
             )}
           </div>
 
