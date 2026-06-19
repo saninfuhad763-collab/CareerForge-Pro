@@ -11,6 +11,7 @@ import resumeRoutes from './routes/resumeRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import billingRoutes from './routes/billingRoutes.js';
+import coverLetterRoutes from './routes/coverLetterRoutes.js';
 import { stripeWebhook } from './controllers/billingController.js';
 import { execSync } from 'child_process';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
@@ -101,6 +102,7 @@ app.use('/api/resumes', resumeRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/billing', billingRoutes);
+app.use('/api/cover-letters', coverLetterRoutes);
 
 // Catch 404 & Centralized Error Handlers
 app.use(notFound);

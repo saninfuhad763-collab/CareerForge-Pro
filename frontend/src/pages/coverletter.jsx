@@ -16,6 +16,11 @@ import {
   Compass,
   CreditCard,
   ChevronRight,
+  Save,
+  Loader2,
+  Trash2,
+  History,
+  Eye,
 } from 'lucide-react';
 import { isProUser } from '../utils/planConstants';
 import { staggerContainer, staggerItem } from '../animations/staggerAnimations';
@@ -41,8 +46,102 @@ const CoverLetter = () => {
   const [showSignoutConfirm, setShowSignoutConfirm] = useState(false);
   const [upgradeLoading, setUpgradeLoading] = useState(false);
 
+  const [savedCoverLetters, setSavedCoverLetters] = useState([]);
+  const [loadingSaved, setLoadingSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const fetchSavedCoverLetters = async () => {
+    setLoadingSaved(true);
+    try {
+      const token = localStorage.getItem('cf_token');
+      const response = await fetch(`${API_URL}/cover-letters`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setSavedCoverLetters(data.data);
+      }
+    } catch (err) {
+      console.error('Failed to load saved cover letters', err);
+    } finally {
+      setLoadingSaved(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!coverLetter) return;
+    setSaving(true);
+    setSaveSuccess(false);
+    setError('');
+    try {
+      const token = localStorage.getItem('cf_token');
+      const response = await fetch(`${API_URL}/cover-letters`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          resumeId: selectedResumeId,
+          companyName: companyName.trim(),
+          jobTitle: jobTitle.trim(),
+          coverLetter: coverLetter,
+        }),
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 2000);
+        fetchSavedCoverLetters();
+      } else {
+        setError(data.message || 'Failed to save cover letter.');
+      }
+    } catch (err) {
+      setError('Network error: Failed to save cover letter.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteSaved = async (id, e) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this cover letter?')) return;
+    setError('');
+    try {
+      const token = localStorage.getItem('cf_token');
+      const response = await fetch(`${API_URL}/cover-letters/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        fetchSavedCoverLetters();
+      } else {
+        setError(data.message || 'Failed to delete cover letter.');
+      }
+    } catch (err) {
+      setError('Network error: Failed to delete cover letter.');
+    }
+  };
+
+  const handleViewSaved = (cl) => {
+    setCoverLetter(cl.coverLetter);
+    setCompanyName(cl.companyName);
+    setJobTitle(cl.jobTitle);
+    if (cl.resumeId) {
+      const rId = typeof cl.resumeId === 'object' ? cl.resumeId._id : cl.resumeId;
+      setSelectedResumeId(rId);
+    }
+  };
+
   useEffect(() => {
     loadResumes();
+    fetchSavedCoverLetters();
   }, [loadResumes]);
 
   useEffect(() => {
@@ -245,124 +344,194 @@ const CoverLetter = () => {
         {/* Outer Split Layout Container */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
           
-          {/* Left panel: input forms */}
-          <motion.div 
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 md:p-8 space-y-6 shadow-xs"
-          >
-            <h2 className="text-lg font-bold font-display text-slate-800 dark:text-slate-100">
-              Customize Cover Letter Details
-            </h2>
+          {/* Left panel: input forms + saved list */}
+          <div className="space-y-6">
+            <motion.div 
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 md:p-8 space-y-6 shadow-xs"
+            >
+              <h2 className="text-lg font-bold font-display text-slate-800 dark:text-slate-100">
+                Customize Cover Letter Details
+              </h2>
 
-            {error && (
-              <div className="p-4 bg-red-50 dark:bg-red-950/20 border border-red-200/50 dark:border-red-800/40 rounded-2xl flex items-center gap-3 text-red-600 dark:text-red-400">
-                <AlertCircle className="w-5 h-5 shrink-0" />
-                <p className="text-xs font-semibold leading-normal">{error}</p>
-              </div>
-            )}
+              {error && (
+                <div className="p-4 bg-red-50 dark:bg-red-950/20 border border-red-200/50 dark:border-red-800/40 rounded-2xl flex items-center gap-3 text-red-600 dark:text-red-400">
+                  <AlertCircle className="w-5 h-5 shrink-0" />
+                  <p className="text-xs font-semibold leading-normal">{error}</p>
+                </div>
+              )}
 
-            <form onSubmit={handleGenerate} className="space-y-5">
-              {/* Resume Selector */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-indigo-500 uppercase tracking-wider">Select Resume Profile</label>
-                <div className="relative">
-                  {resumesLoading ? (
-                    <div className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm text-slate-400">
-                      Loading your resumes...
-                    </div>
-                  ) : resumes.length === 0 ? (
-                    <div className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-red-200 dark:border-red-900 rounded-xl text-sm text-red-500 flex items-center justify-between">
-                      <span>No resumes found. Please create a resume first.</span>
-                      <button 
-                        type="button" 
-                        onClick={() => navigate('/dashboard')} 
-                        className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+              <form onSubmit={handleGenerate} className="space-y-5">
+                {/* Resume Selector */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-indigo-500 uppercase tracking-wider">Select Resume Profile</label>
+                  <div className="relative">
+                    {resumesLoading ? (
+                      <div className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm text-slate-400">
+                        Loading your resumes...
+                      </div>
+                    ) : resumes.length === 0 ? (
+                      <div className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-red-200 dark:border-red-900 rounded-xl text-sm text-red-500 flex items-center justify-between">
+                        <span>No resumes found. Please create a resume first.</span>
+                        <button 
+                          type="button" 
+                          onClick={() => navigate('/dashboard')} 
+                          className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                        >
+                          Create
+                        </button>
+                      </div>
+                    ) : (
+                      <select
+                        value={selectedResumeId}
+                        onChange={(e) => setSelectedResumeId(e.target.value)}
+                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-xl text-sm text-slate-800 dark:text-slate-100 outline-none transition-all cursor-pointer"
                       >
-                        Create
-                      </button>
-                    </div>
+                        {resumes.map((resume) => (
+                          <option key={resume._id} value={resume._id}>
+                            {resume.title} (ATS Score: {resume.atsMetadata?.score || 0}%)
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                </div>
+
+                {/* Company & Title Row */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <Building className="w-3.5 h-3.5" /> Target Company
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Google"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-xl text-sm text-slate-800 dark:text-slate-100 outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <Briefcase className="w-3.5 h-3.5" /> Target Job Title
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Senior Frontend Engineer"
+                      value={jobTitle}
+                      onChange={(e) => setJobTitle(e.target.value)}
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-xl text-sm text-slate-800 dark:text-slate-100 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Job Description Textarea */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Job Description (Recommended)</label>
+                  <textarea
+                    rows={6}
+                    placeholder="Paste the target job description to match skills and criteria..."
+                    value={jobDescription}
+                    onChange={(e) => setJobDescription(e.target.value)}
+                    className="w-full px-4 py-3 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-xl text-sm text-slate-800 dark:text-slate-100 outline-none transition-all resize-y"
+                  />
+                </div>
+
+                <motion.button
+                  type="submit"
+                  disabled={generating || resumes.length === 0}
+                  variants={buttonScale}
+                  initial="initial"
+                  whileHover="hover"
+                  whileTap="tap"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-600/60 text-white py-3.5 rounded-xl font-semibold text-sm transition-all shadow-md shadow-indigo-500/10 cursor-pointer disabled:cursor-not-allowed"
+                >
+                  {generating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Analyzing & Crafting Cover Letter...</span>
+                    </>
                   ) : (
-                    <select
-                      value={selectedResumeId}
-                      onChange={(e) => setSelectedResumeId(e.target.value)}
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-xl text-sm text-slate-800 dark:text-slate-100 outline-none transition-all cursor-pointer"
-                    >
-                      {resumes.map((resume) => (
-                        <option key={resume._id} value={resume._id}>
-                          {resume.title} (ATS Score: {resume.atsMetadata?.score || 0}%)
-                        </option>
-                      ))}
-                    </select>
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>Generate Cover Letter</span>
+                    </>
                   )}
-                </div>
+                </motion.button>
+              </form>
+            </motion.div>
+
+            {/* Saved Cover Letters Card */}
+            <motion.div 
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 md:p-8 space-y-6 shadow-xs text-left"
+            >
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-bold font-display text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                  <History className="w-5 h-5 text-indigo-500" />
+                  <span>Saved Cover Letters History</span>
+                </h2>
+                <span className="text-xs bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-bold px-2.5 py-0.5 rounded-full">
+                  {savedCoverLetters.length}
+                </span>
               </div>
 
-              {/* Company & Title Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                    <Building className="w-3.5 h-3.5" /> Target Company
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Google"
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    className="w-full px-4 py-3 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-xl text-sm text-slate-800 dark:text-slate-100 outline-none transition-all"
-                  />
+              {loadingSaved ? (
+                <div className="flex flex-col items-center justify-center py-8 text-slate-400">
+                  <Loader2 className="w-6 h-6 animate-spin mb-2 text-indigo-500" />
+                  <p className="text-xs font-semibold">Loading history...</p>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                    <Briefcase className="w-3.5 h-3.5" /> Target Job Title
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Senior Frontend Engineer"
-                    value={jobTitle}
-                    onChange={(e) => setJobTitle(e.target.value)}
-                    className="w-full px-4 py-3 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-xl text-sm text-slate-800 dark:text-slate-100 outline-none transition-all"
-                  />
+              ) : savedCoverLetters.length === 0 ? (
+                <div className="text-center py-8 text-slate-400">
+                  <p className="text-xs font-semibold">No saved cover letters found.</p>
+                  <p className="text-[10px] text-slate-400 mt-1">Generated letters saved to history will appear here.</p>
                 </div>
-              </div>
-
-              {/* Job Description Textarea */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Job Description (Recommended)</label>
-                <textarea
-                  rows={6}
-                  placeholder="Paste the target job description to match skills and criteria..."
-                  value={jobDescription}
-                  onChange={(e) => setJobDescription(e.target.value)}
-                  className="w-full px-4 py-3 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-xl text-sm text-slate-800 dark:text-slate-100 outline-none transition-all resize-y"
-                />
-              </div>
-
-              <motion.button
-                type="submit"
-                disabled={generating || resumes.length === 0}
-                variants={buttonScale}
-                initial="initial"
-                whileHover="hover"
-                whileTap="tap"
-                className="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-600/60 text-white py-3.5 rounded-xl font-semibold text-sm transition-all shadow-md shadow-indigo-500/10 cursor-pointer disabled:cursor-not-allowed"
-              >
-                {generating ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Analyzing & Crafting Cover Letter...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    <span>Generate Cover Letter</span>
-                  </>
-                )}
-              </motion.button>
-            </form>
-          </motion.div>
+              ) : (
+                <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                  {savedCoverLetters.map((cl) => (
+                    <div
+                      key={cl._id}
+                      onClick={() => handleViewSaved(cl)}
+                      className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-800/60 cursor-pointer transition-all hover:-translate-y-0.5"
+                    >
+                      <div className="text-left space-y-0.5 min-w-0 flex-1">
+                        <h4 className="text-xs font-bold text-slate-800 dark:text-slate-250 truncate">{cl.jobTitle}</h4>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold truncate">at {cl.companyName}</p>
+                        {cl.resumeId?.title && (
+                          <p className="text-[9px] text-slate-400 truncate">Resume: {cl.resumeId.title}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0 ml-4">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewSaved(cl);
+                          }}
+                          className="p-1.5 bg-white dark:bg-slate-850 hover:bg-indigo-50 dark:hover:bg-indigo-950 text-slate-500 hover:text-indigo-600 rounded-lg transition-colors cursor-pointer"
+                          title="View Cover Letter"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteSaved(cl._id, e)}
+                          className="p-1.5 bg-white dark:bg-slate-855 hover:bg-red-50 dark:hover:bg-red-950 text-slate-500 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
+                          title="Delete Cover Letter"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          </div>
 
           {/* Right panel: preview cover letter */}
           <motion.div
@@ -377,22 +546,40 @@ const CoverLetter = () => {
                   Cover Letter Preview
                 </h3>
                 {coverLetter && (
-                  <button
-                    onClick={handleCopy}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg text-xs font-semibold cursor-pointer transition-colors"
-                  >
-                    {copied ? (
-                      <>
+                  <div className="flex items-center gap-2">
+                    {/* Save Button */}
+                    <button
+                      onClick={handleSave}
+                      disabled={saving}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 rounded-lg text-xs font-semibold cursor-pointer transition-colors disabled:opacity-50"
+                    >
+                      {saving ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : saveSuccess ? (
                         <Check className="w-3.5 h-3.5 text-emerald-500" />
-                        <span className="text-emerald-500">Copied!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5" />
-                        <span>Copy Letter</span>
-                      </>
-                    )}
-                  </button>
+                      ) : (
+                        <Save className="w-3.5 h-3.5" />
+                      )}
+                      <span>{saveSuccess ? 'Saved!' : 'Save to History'}</span>
+                    </button>
+
+                    <button
+                      onClick={handleCopy}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg text-xs font-semibold cursor-pointer transition-colors"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-500" />
+                          <span className="text-emerald-500">Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Copy Letter</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 )}
               </div>
 
