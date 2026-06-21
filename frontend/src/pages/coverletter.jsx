@@ -21,6 +21,7 @@ import {
   Trash2,
   History,
   Eye,
+  Download,
 } from 'lucide-react';
 import { isProUser } from '../utils/planConstants';
 import { staggerContainer, staggerItem } from '../animations/staggerAnimations';
@@ -50,6 +51,9 @@ const CoverLetter = () => {
   const [loadingSaved, setLoadingSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [exportCoverLetterId, setExportCoverLetterId] = useState('');
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportError, setExportError] = useState('');
 
   const fetchSavedCoverLetters = async () => {
     setLoadingSaved(true);
@@ -94,6 +98,7 @@ const CoverLetter = () => {
       const data = await response.json();
       if (response.ok && data.success) {
         setSaveSuccess(true);
+        setExportCoverLetterId(data.data._id);
         setTimeout(() => setSaveSuccess(false), 2000);
         fetchSavedCoverLetters();
       } else {
@@ -133,6 +138,8 @@ const CoverLetter = () => {
     setCoverLetter(cl.coverLetter);
     setCompanyName(cl.companyName);
     setJobTitle(cl.jobTitle);
+    setExportCoverLetterId(cl._id);
+    setExportError('');
     if (cl.resumeId) {
       const rId = typeof cl.resumeId === 'object' ? cl.resumeId._id : cl.resumeId;
       setSelectedResumeId(rId);
@@ -167,7 +174,9 @@ const CoverLetter = () => {
 
     setGenerating(true);
     setError('');
+    setExportError('');
     setCoverLetter('');
+    setExportCoverLetterId('');
 
     try {
       const token = localStorage.getItem('cf_token');
@@ -204,6 +213,53 @@ const CoverLetter = () => {
     navigator.clipboard.writeText(coverLetter);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleExportPdf = async () => {
+    if (!exportCoverLetterId) {
+      setExportError('Save this cover letter to history before exporting PDF.');
+      return;
+    }
+
+    setExportingPdf(true);
+    setExportError('');
+
+    try {
+      const token = localStorage.getItem('cf_token');
+      const response = await fetch(`${API_URL}/cover-letters/${exportCoverLetterId}/export-pdf`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        let message = 'Failed to export cover letter PDF.';
+        try {
+          const data = await response.json();
+          message = data.message || message;
+        } catch {
+          message = `PDF export failed (HTTP ${response.status}).`;
+        }
+        throw new Error(message);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      const safeCompany = (companyName || 'cover-letter').replace(/[^a-z0-9-_ ]/gi, '').trim().replace(/\s+/g, '-') || 'cover-letter';
+      const safeTitle = (jobTitle || 'letter').replace(/[^a-z0-9-_ ]/gi, '').trim().replace(/\s+/g, '-') || 'letter';
+      anchor.href = url;
+      anchor.download = `${safeCompany}-${safeTitle}-cover-letter.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setExportError(err.message || 'Failed to export cover letter PDF.');
+    } finally {
+      setExportingPdf(false);
+    }
   };
 
   const handleUpgrade = async () => {
@@ -564,6 +620,20 @@ const CoverLetter = () => {
                     </button>
 
                     <button
+                      onClick={handleExportPdf}
+                      disabled={exportingPdf || !exportCoverLetterId}
+                      title={exportCoverLetterId ? 'Download PDF' : 'Save to history before exporting PDF'}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-indigo-600/50 disabled:cursor-not-allowed rounded-lg text-xs font-semibold cursor-pointer transition-colors"
+                    >
+                      {exportingPdf ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Download className="w-3.5 h-3.5" />
+                      )}
+                      <span>{exportingPdf ? 'Exporting...' : 'Export PDF'}</span>
+                    </button>
+
+                    <button
                       onClick={handleCopy}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg text-xs font-semibold cursor-pointer transition-colors"
                     >
@@ -582,6 +652,13 @@ const CoverLetter = () => {
                   </div>
                 )}
               </div>
+
+              {exportError && (
+                <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 rounded-xl flex items-center gap-2 text-amber-700 dark:text-amber-300">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <p className="text-xs font-semibold">{exportError}</p>
+                </div>
+              )}
 
               {/* Cover Letter Content Body */}
               <div className="flex-1 flex flex-col justify-center mt-2">

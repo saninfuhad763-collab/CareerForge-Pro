@@ -1,5 +1,6 @@
 import CoverLetter from '../models/CoverLetter.js';
 import Resume from '../models/Resume.js';
+import { generateCoverLetterPdf } from '../services/coverLetterPdfService.js';
 
 /**
  * @desc    Save a new cover letter
@@ -88,5 +89,55 @@ export const deleteCoverLetter = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+};
+
+/**
+ * @desc    Export a saved cover letter as PDF
+ * @route   POST /api/cover-letters/:id/export-pdf
+ * @access  Private
+ */
+export const exportCoverLetterPdf = async (req, res) => {
+  try {
+    const coverLetter = await CoverLetter.findOne({
+      _id: req.params.id,
+      userId: req.user._id,
+    });
+
+    if (!coverLetter) {
+      return res.status(404).json({
+        success: false,
+        message: 'Cover letter not found or unauthorized.',
+      });
+    }
+
+    const pdfBuffer = await generateCoverLetterPdf({
+      companyName: coverLetter.companyName,
+      jobTitle: coverLetter.jobTitle,
+      coverLetter: coverLetter.coverLetter,
+    });
+
+    const safeCompany = (coverLetter.companyName || 'cover-letter')
+      .replace(/[^a-z0-9-_ ]/gi, '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .toLowerCase() || 'cover-letter';
+
+    const safeTitle = (coverLetter.jobTitle || 'letter')
+      .replace(/[^a-z0-9-_ ]/gi, '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .toLowerCase() || 'letter';
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${safeCompany}-${safeTitle}-cover-letter.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.status(200).send(pdfBuffer);
+  } catch (error) {
+    console.error('[Cover Letter PDF Export] Failed:', error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to generate cover letter PDF.',
+    });
   }
 };
