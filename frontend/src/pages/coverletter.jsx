@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
@@ -15,7 +15,6 @@ import {
   LogOut,
   Compass,
   CreditCard,
-  ChevronRight,
   Save,
   Loader2,
   Trash2,
@@ -24,7 +23,6 @@ import {
   Download,
 } from 'lucide-react';
 import { isProUser } from '../utils/planConstants';
-import { staggerContainer, staggerItem } from '../animations/staggerAnimations';
 import { buttonScale } from '../animations/cardAnimations';
 import { sidebarItemVariant } from '../animations/dashboardAnimations';
 
@@ -55,7 +53,7 @@ const CoverLetter = () => {
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportError, setExportError] = useState('');
 
-  const fetchSavedCoverLetters = async () => {
+  const fetchSavedCoverLetters = useCallback(async () => {
     setLoadingSaved(true);
     try {
       const token = localStorage.getItem('cf_token');
@@ -68,12 +66,12 @@ const CoverLetter = () => {
       if (response.ok && data.success) {
         setSavedCoverLetters(data.data);
       }
-    } catch (err) {
-      console.error('Failed to load saved cover letters', err);
+    } catch (_err) {
+      console.error('Failed to load saved cover letters', _err);
     } finally {
       setLoadingSaved(false);
     }
-  };
+  }, []);
 
   const handleSave = async () => {
     if (!coverLetter) return;
@@ -104,7 +102,7 @@ const CoverLetter = () => {
       } else {
         setError(data.message || 'Failed to save cover letter.');
       }
-    } catch (err) {
+    } catch (_err) {
       setError('Network error: Failed to save cover letter.');
     } finally {
       setSaving(false);
@@ -129,7 +127,7 @@ const CoverLetter = () => {
       } else {
         setError(data.message || 'Failed to delete cover letter.');
       }
-    } catch (err) {
+    } catch (_err) {
       setError('Network error: Failed to delete cover letter.');
     }
   };
@@ -148,12 +146,18 @@ const CoverLetter = () => {
 
   useEffect(() => {
     loadResumes();
-    fetchSavedCoverLetters();
-  }, [loadResumes]);
+    const timer = setTimeout(() => {
+      fetchSavedCoverLetters();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadResumes, fetchSavedCoverLetters]);
 
   useEffect(() => {
     if (resumes.length > 0 && !selectedResumeId) {
-      setSelectedResumeId(resumes[0]._id);
+      const timer = setTimeout(() => {
+        setSelectedResumeId(resumes[0]._id);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [resumes, selectedResumeId]);
 
@@ -201,7 +205,7 @@ const CoverLetter = () => {
       } else {
         setError(data.message || 'Failed to generate cover letter.');
       }
-    } catch (err) {
+    } catch (_err) {
       setError('Network error: Failed to connect to server.');
     } finally {
       setGenerating(false);

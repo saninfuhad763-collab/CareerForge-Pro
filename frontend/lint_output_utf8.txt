@@ -1,0 +1,80 @@
+﻿
+> frontend@0.0.0 lint
+> eslint .
+
+
+C:\Users\DELL\Desktop\CareerForge-Pro\frontend\src\pages\Billing.jsx
+  47:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  45 |   useEffect(() => {
+  46 |     if (checkoutResult === 'success') {
+> 47 |       setSuccessMessage('Payment successful! Your Pro subscription is now active.');
+     |       ^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  48 |       checkAuth();
+  49 |       getBillingStatus().then((result) => {
+  50 |         if (result.success) setBilling(result.data);  react-hooks/set-state-in-effect
+
+C:\Users\DELL\Desktop\CareerForge-Pro\frontend\src\pages\Dashboard.jsx
+  124:5  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  122 |   useEffect(() => {
+  123 |     loadResumes();
+> 124 |     loadCoverLetters();
+      |     ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  125 |   }, [loadResumes]);
+  126 |
+  127 |   const openCreateModal = () => {  react-hooks/set-state-in-effect
+  125:6  warning  React Hook useEffect has a missing dependency: 'loadCoverLetters'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       react-hooks/exhaustive-deps
+
+C:\Users\DELL\Desktop\CareerForge-Pro\frontend\src\pages\coverletter.jsx
+   18:3   error  'ChevronRight' is defined but never used. Allowed unused vars must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      no-unused-vars
+   27:10  error  'staggerContainer' is defined but never used. Allowed unused vars must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  no-unused-vars
+   27:28  error  'staggerItem' is defined but never used. Allowed unused vars must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       no-unused-vars
+  107:14  error  'err' is defined but never used. Allowed unused caught errors must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      no-unused-vars
+  132:14  error  'err' is defined but never used. Allowed unused caught errors must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      no-unused-vars
+  151:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  149 |   useEffect(() => {
+  150 |     loadResumes();
+> 151 |     fetchSavedCoverLetters();
+      |     ^^^^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  152 |   }, [loadResumes]);
+  153 |
+  154 |   useEffect(() => {                                              react-hooks/set-state-in-effect
+  156:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  154 |   useEffect(() => {
+  155 |     if (resumes.length > 0 && !selectedResumeId) {
+> 156 |       setSelectedResumeId(resumes[0]._id);
+      |       ^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  157 |     }
+  158 |   }, [resumes, selectedResumeId]);
+  159 |  react-hooks/set-state-in-effect
+  204:14  error  'err' is defined but never used. Allowed unused caught errors must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      no-unused-vars
+
+Γ£û 11 problems (10 errors, 1 warning)
+

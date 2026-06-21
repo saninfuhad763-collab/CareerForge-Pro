@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
@@ -30,6 +30,8 @@ import { premiumCardHover as _premiumCardHover, buttonScale, professionalCardVar
 import { sidebarItemVariant } from '../animations/dashboardAnimations';
 import { premiumEase } from '../animations/motionVariants';
 
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+
 const Dashboard = () => {
   const { user, logout, upgradePlan } = useAuthStore();
   const { 
@@ -55,12 +57,11 @@ const Dashboard = () => {
 
   const navigate = useNavigate();
 
-  const API_URL = import.meta.env.VITE_API_URL || '/api';
   const [coverLetters, setCoverLetters] = useState([]);
   const [coverLettersLoading, setCoverLettersLoading] = useState(false);
   const [viewingCoverLetter, setViewingCoverLetter] = useState(null);
 
-  const loadCoverLetters = async () => {
+  const loadCoverLetters = useCallback(async () => {
     setCoverLettersLoading(true);
     try {
       const token = localStorage.getItem('cf_token');
@@ -78,7 +79,7 @@ const Dashboard = () => {
     } finally {
       setCoverLettersLoading(false);
     }
-  };
+  }, []);
 
   const handleDeleteCoverLetter = async (id) => {
     if (!window.confirm('Are you sure you want to delete this cover letter?')) return;
@@ -121,8 +122,11 @@ const Dashboard = () => {
   // Load user data on mount
   useEffect(() => {
     loadResumes();
-    loadCoverLetters();
-  }, [loadResumes]);
+    const timer = setTimeout(() => {
+      loadCoverLetters();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadResumes, loadCoverLetters]);
 
   const openCreateModal = () => {
     setCreateError(null);

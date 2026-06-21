@@ -44,13 +44,17 @@ const Billing = () => {
 
   useEffect(() => {
     if (checkoutResult === 'success') {
-      setSuccessMessage('Payment successful! Your Pro subscription is now active.');
+      setTimeout(() => {
+        setSuccessMessage('Payment successful! Your Pro subscription is now active.');
+      }, 0);
       checkAuth();
       getBillingStatus().then((result) => {
         if (result.success) setBilling(result.data);
       });
     } else if (checkoutResult === 'cancelled') {
-      setError('Checkout was cancelled. No charges were made.');
+      setTimeout(() => {
+        setError('Checkout was cancelled. No charges were made.');
+      }, 0);
     }
   }, [checkoutResult, checkAuth, getBillingStatus]);
 
