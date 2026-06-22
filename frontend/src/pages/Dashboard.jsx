@@ -234,8 +234,8 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col md:flex-row">
       {/* Dynamic Sidebar Navigation */}
-      <aside className="w-full md:w-64 bg-white dark:bg-slate-900 border-b md:border-r border-slate-200/50 dark:border-slate-800/50 flex flex-col justify-between p-6 shrink-0 md:sticky md:top-0 md:h-screen">
-        <div className="space-y-8">
+      <aside className="w-full md:w-64 bg-white dark:bg-slate-900 border-b md:border-r border-slate-200/50 dark:border-slate-800/50 flex flex-col p-4 py-5 shrink-0 md:sticky md:top-0 md:h-screen">
+        <div className="space-y-5 shrink-0">
           {/* Logo brand */}
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-xl bg-linear-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-bold font-display">
@@ -270,7 +270,7 @@ const Dashboard = () => {
           <nav className="space-y-1 text-left">
             <motion.button 
               onClick={() => navigate('/')}
-              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-xl transition-colors cursor-pointer"
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-xl transition-colors cursor-pointer"
               whileHover="hover"
               variants={sidebarItemVariant}
             >
@@ -279,7 +279,7 @@ const Dashboard = () => {
             </motion.button>
             <motion.button 
               onClick={() => setActiveTab('resumes')}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition-all cursor-pointer ${
+              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer ${
                 activeTab === 'resumes'
                   ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400'
                   : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/40'
@@ -292,7 +292,7 @@ const Dashboard = () => {
             </motion.button>
              <motion.button 
               onClick={() => setActiveTab('ai-scoring')}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition-all cursor-pointer ${
+              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer ${
                 activeTab === 'ai-scoring'
                   ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400'
                   : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/40'
@@ -305,7 +305,7 @@ const Dashboard = () => {
             </motion.button>
             <motion.button 
               onClick={() => setActiveTab('cover-letters')}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition-all cursor-pointer ${
+              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer ${
                 activeTab === 'cover-letters'
                   ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400'
                   : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/40'
@@ -320,33 +320,30 @@ const Dashboard = () => {
         </div>
 
         {/* Sidebar Footer Operations */}
-        <div className="pt-6 border-t border-slate-200/50 dark:border-slate-800/50 space-y-4">
-          {/* Pro Upgrade Promotion Box */}
+        <div className="mt-auto pt-4 border-t border-slate-200/50 dark:border-slate-800/50 space-y-2 shrink-0">
+          {/* Pro Upgrade Promotion Box — Compact */}
           {user?.plan !== 'PRO' && !isPro && (
-            <div className="p-4 rounded-2xl bg-linear-to-br from-indigo-500 via-indigo-600 to-purple-600 text-white space-y-3 relative overflow-hidden shadow-md shadow-indigo-500/20 text-left">
-              <div className="absolute -right-6 -bottom-6 w-20 h-20 rounded-full bg-white/10 blur-xl pointer-events-none" />
-              <div className="space-y-1">
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-400 text-slate-900 font-extrabold text-[8px] rounded uppercase tracking-wider">
-                  <Sparkles className="w-2 h-2 fill-current" /> Premium
+            <div className="p-3 rounded-xl bg-linear-to-br from-indigo-500 via-indigo-600 to-purple-600 text-white relative overflow-hidden shadow-sm shadow-indigo-500/20 text-left">
+              <div className="absolute -right-4 -bottom-4 w-14 h-14 rounded-full bg-white/10 blur-xl pointer-events-none" />
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-400 text-slate-900 font-extrabold text-[7px] rounded uppercase tracking-wider">
+                  <Sparkles className="w-2 h-2 fill-current" /> PRO
                 </span>
-                <h4 className="font-bold text-xs font-display">Upgrade to Pro Plan</h4>
-                <p className="text-[10px] text-indigo-100 leading-normal">
-                  Unlock unlimited resume generation, keyword analytics, and premium templates!
-                </p>
+                <h4 className="font-bold text-[11px] font-display">Upgrade to Pro</h4>
               </div>
               <button
                 onClick={handleUpgrade}
                 disabled={upgradeLoading}
-                className="w-full bg-white hover:bg-slate-50 text-indigo-600 disabled:opacity-50 transition-colors py-2 rounded-xl text-xs font-bold shadow-lg shadow-indigo-950/20 cursor-pointer"
+                className="w-full bg-white hover:bg-slate-50 text-indigo-600 disabled:opacity-50 transition-colors py-1.5 rounded-lg text-[11px] font-bold shadow-md shadow-indigo-950/20 cursor-pointer"
               >
-                {upgradeLoading ? 'Redirecting to Stripe...' : 'Upgrade with Stripe'}
+                {upgradeLoading ? 'Redirecting...' : 'Upgrade with Stripe'}
               </button>
             </div>
           )}
 
           <button
             onClick={() => navigate('/billing')}
-            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-xl transition-colors cursor-pointer"
+            className="w-full flex items-center gap-3 px-4 py-2 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-xl transition-colors cursor-pointer"
           >
             <CreditCard className="w-4.5 h-4.5" />
             <span>Billing</span>
@@ -356,7 +353,7 @@ const Dashboard = () => {
             onClick={() => {
               setShowSignoutConfirm(true);
             }}
-            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-colors cursor-pointer"
+            className="w-full flex items-center gap-3 px-4 py-2 text-sm font-semibold text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-colors cursor-pointer"
           >
             <LogOut className="w-4.5 h-4.5" />
             <span>Sign Out</span>
@@ -655,17 +652,19 @@ const Dashboard = () => {
                     Manage and view your generated cover letters history.
                   </p>
                 </div>
-                <motion.button
-                  onClick={() => navigate('/cover-letter')}
-                  variants={buttonScale}
-                  initial="initial"
-                  whileHover="hover"
-                  whileTap="tap"
-                  className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl font-semibold text-sm transition-all shadow-md shadow-indigo-500/10 cursor-pointer self-start sm:self-center"
-                >
-                  <Plus className="w-4.5 h-4.5" />
-                  <span>Generate Cover Letter</span>
-                </motion.button>
+                {coverLetters.length > 0 && (
+                  <motion.button
+                    onClick={() => navigate('/cover-letter')}
+                    variants={buttonScale}
+                    initial="initial"
+                    whileHover="hover"
+                    whileTap="tap"
+                    className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl font-semibold text-sm transition-all shadow-md shadow-indigo-500/10 cursor-pointer self-start sm:self-center"
+                  >
+                    <Plus className="w-4.5 h-4.5" />
+                    <span>Generate Cover Letter</span>
+                  </motion.button>
+                )}
               </motion.div>
 
               {coverLetterExportError && (
@@ -692,7 +691,7 @@ const Dashboard = () => {
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.96 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="bg-white dark:bg-slate-900 rounded-3xl p-12 border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center max-w-xl mx-auto space-y-5 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 hover:-translate-y-0.5 transition-all duration-300 shadow-sm"
+                  className="mt-10 bg-white dark:bg-slate-900 rounded-3xl p-12 border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center max-w-xl mx-auto space-y-5 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 hover:-translate-y-0.5 transition-all duration-300 shadow-sm"
                 >
                   <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400">
                     <History className="w-8 h-8" />
