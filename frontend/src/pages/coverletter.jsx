@@ -21,6 +21,7 @@ import {
   History,
   Eye,
   Download,
+  FileSignature,
 } from 'lucide-react';
 import { isProUser } from '../utils/planConstants';
 import { buttonScale } from '../animations/cardAnimations';
@@ -306,8 +307,8 @@ const CoverLetter = () => {
                 <p className="text-[10px] text-slate-400 truncate max-w-21.25">{user?.email}</p>
                 <span className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded leading-none shrink-0 uppercase tracking-wider ${
                   user?.plan === 'PRO' 
-                    ? 'bg-linear-to-r from-amber-500 to-orange-500 text-white shadow-sm' 
-                    : 'bg-slate-200 dark:bg-slate-850 text-slate-500'
+                    ? 'bg-amber-400 text-slate-900 shadow-sm' 
+                    : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
                 }`}>
                   {user?.plan || 'FREE'}
                 </span>
@@ -316,10 +317,10 @@ const CoverLetter = () => {
           </div>
 
           {/* Sidebar Menu Links */}
-          <nav className="space-y-1 text-left">
+          <nav className="space-y-0.5 text-left mt-6">
             <motion.button 
               onClick={() => navigate('/dashboard')}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-xl transition-colors cursor-pointer"
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-lg transition-colors cursor-pointer"
               whileHover="hover"
               variants={sidebarItemVariant}
             >
@@ -328,7 +329,7 @@ const CoverLetter = () => {
             </motion.button>
             <motion.button 
               onClick={() => navigate('/dashboard')}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-xl transition-colors cursor-pointer"
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-lg transition-colors cursor-pointer"
               whileHover="hover"
               variants={sidebarItemVariant}
             >
@@ -336,40 +337,45 @@ const CoverLetter = () => {
               <span>Explore Resumes</span>
             </motion.button>
             <motion.button 
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl transition-all cursor-pointer"
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 rounded-lg transition-all cursor-pointer font-semibold shadow-sm shadow-indigo-100 dark:shadow-none"
               whileHover="hover"
               variants={sidebarItemVariant}
             >
-              <FileText className="w-4.5 h-4.5" />
+              <FileSignature className="w-4.5 h-4.5" />
               <span>Cover Letter</span>
             </motion.button>
           </nav>
         </div>
 
         {/* Sidebar Footer Operations */}
-        <div className="mt-auto pt-4 border-t border-slate-200/50 dark:border-slate-800/50 space-y-2 shrink-0">
+        <div className="mt-auto pt-4 space-y-2 shrink-0">
           {user?.plan !== 'PRO' && !isPro && (
-            <div className="p-3 rounded-xl bg-linear-to-br from-indigo-500 via-indigo-600 to-purple-600 text-white relative overflow-hidden shadow-sm shadow-indigo-500/20 text-left">
-              <div className="absolute -right-4 -bottom-4 w-14 h-14 rounded-full bg-white/10 blur-xl pointer-events-none" />
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-400 text-slate-900 font-extrabold text-[7px] rounded uppercase tracking-wider">
-                  <Sparkles className="w-2 h-2 fill-current" /> PRO
-                </span>
-                <h4 className="font-bold text-[11px] font-display">Upgrade to Pro</h4>
+            <div className="p-3.5 rounded-xl bg-linear-to-br from-indigo-500 via-indigo-600 to-purple-600 text-white relative overflow-hidden shadow-sm shadow-indigo-500/20 text-left group">
+              <div className="absolute -right-4 -bottom-4 w-16 h-16 rounded-full bg-white/10 blur-xl pointer-events-none transition-transform group-hover:scale-150" />
+              <div className="relative z-10">
+                <div className="mb-1.5">
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-400 text-slate-900 font-bold text-[8px] rounded uppercase tracking-wider shadow-sm">
+                    <Sparkles className="w-2 h-2 fill-slate-900" /> PREMIUM
+                  </span>
+                </div>
+                <h4 className="font-bold text-xs mb-1">Upgrade to Pro Plan</h4>
+                <p className="text-[10px] text-indigo-100 mb-2.5 leading-tight">
+                  Unlock unlimited resume generation, keyword analytics, and premium templates!
+                </p>
+                <button
+                  onClick={handleUpgrade}
+                  disabled={upgradeLoading}
+                  className="w-full bg-white hover:bg-slate-50 text-indigo-600 disabled:opacity-50 transition-colors py-1.5 rounded-lg text-[11px] font-bold shadow-md shadow-indigo-950/20 cursor-pointer"
+                >
+                  {upgradeLoading ? 'Redirecting...' : 'Upgrade with Stripe'}
+                </button>
               </div>
-              <button
-                onClick={handleUpgrade}
-                disabled={upgradeLoading}
-                className="w-full bg-white hover:bg-slate-50 text-indigo-600 disabled:opacity-50 transition-colors py-1.5 rounded-lg text-[11px] font-bold shadow-md shadow-indigo-950/20 cursor-pointer"
-              >
-                {upgradeLoading ? 'Redirecting...' : 'Upgrade with Stripe'}
-              </button>
             </div>
           )}
 
           <button
             onClick={() => navigate('/billing')}
-            className="w-full flex items-center gap-3 px-4 py-2 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-xl transition-colors cursor-pointer"
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-lg transition-colors cursor-pointer"
           >
             <CreditCard className="w-4.5 h-4.5" />
             <span>Billing</span>
@@ -377,7 +383,7 @@ const CoverLetter = () => {
 
           <button
             onClick={() => setShowSignoutConfirm(true)}
-            className="w-full flex items-center gap-3 px-4 py-2 text-sm font-semibold text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-colors cursor-pointer"
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors cursor-pointer"
           >
             <LogOut className="w-4.5 h-4.5" />
             <span>Sign Out</span>

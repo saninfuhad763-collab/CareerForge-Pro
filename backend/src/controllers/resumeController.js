@@ -194,6 +194,7 @@ export const deleteResume = async (req, res) => {
     }
 
     await resume.deleteOne();
+    res.json({ success: true, message: 'Resume removed' });
 
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
