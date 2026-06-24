@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
+  ArrowRight,
   Loader2,
   CheckCircle2,
   AlertCircle,
@@ -64,11 +65,12 @@ const BillingDetails = () => {
       </div>
 
       <div className="relative z-10 max-w-4xl mx-auto px-5 sm:px-8 py-10 space-y-12">
-        {/* ── Back Navigation ── */}
+        {/* ── Header Actions Row ── */}
         <motion.div
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.3, ease: premiumEase }}
+          className="flex items-center justify-between gap-4"
         >
           <button
             onClick={() => navigate('/dashboard')}
@@ -77,6 +79,14 @@ const BillingDetails = () => {
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
             Back to Dashboard
           </button>
+
+          <button
+            onClick={() => navigate('/billing')}
+            className="inline-flex items-center gap-2 justify-center px-5 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80 rounded-xl shadow-sm transition-colors cursor-pointer group"
+          >
+            View Pricing & Plans
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+          </button>
         </motion.div>
 
         {/* ── Page Header ── */}
@@ -84,7 +94,7 @@ const BillingDetails = () => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: premiumEase, delay: 0.06 }}
-          className="flex flex-col sm:flex-row sm:items-end justify-between gap-4"
+          className="flex flex-col gap-4"
         >
           <div>
             <h1 className="text-3xl sm:text-4xl font-extrabold font-display text-slate-900 dark:text-slate-50">
@@ -94,12 +104,6 @@ const BillingDetails = () => {
               Manage your subscription and billing information.
             </p>
           </div>
-          <button
-            onClick={() => navigate('/billing')}
-            className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80 rounded-xl shadow-sm transition-colors cursor-pointer"
-          >
-            View Pricing & Plans
-          </button>
         </motion.div>
 
         {error && (
