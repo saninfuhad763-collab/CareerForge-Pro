@@ -26,6 +26,8 @@ import {
 import { isProUser } from '../utils/planConstants';
 
 import { sidebarItemVariant } from '../animations/dashboardAnimations';
+import { premiumEase } from '../animations/motionVariants';
+import DeleteModal from '../components/DeleteModal';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -44,6 +46,7 @@ const CoverLetter = () => {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [showSignoutConfirm, setShowSignoutConfirm] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   const [savedCoverLetters, setSavedCoverLetters] = useState([]);
   const [loadingSaved, setLoadingSaved] = useState(false);
@@ -109,9 +112,12 @@ const CoverLetter = () => {
     }
   };
 
-  const handleDeleteSaved = async (id, e) => {
+  const handleDeleteSavedClick = (id, e) => {
     if (e) e.stopPropagation();
-    if (!window.confirm('Are you sure you want to delete this cover letter?')) return;
+    setDeleteConfirmId(id);
+  };
+
+  const executeDelete = async (id) => {
     setError('');
     try {
       const token = localStorage.getItem('cf_token');
@@ -599,7 +605,7 @@ const CoverLetter = () => {
                         </button>
                         <button
                           type="button"
-                          onClick={(e) => handleDeleteSaved(cl._id, e)}
+                          onClick={(e) => handleDeleteSavedClick(cl._id, e)}
                           className="p-1.5 bg-white dark:bg-slate-855 hover:bg-red-50 dark:hover:bg-red-950 text-slate-500 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
                           title="Delete Cover Letter"
                         >
@@ -723,6 +729,18 @@ const CoverLetter = () => {
           </motion.div>
         </div>
       </main>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteModal
+        isOpen={!!deleteConfirmId}
+        onClose={() => setDeleteConfirmId(null)}
+        onConfirm={async () => {
+          await executeDelete(deleteConfirmId);
+          setDeleteConfirmId(null);
+        }}
+        title="Delete Cover Letter?"
+        description="Are you sure you want to delete this cover letter? This action is permanent and cannot be undone."
+      />
 
       {/* Sign Out Confirmation Modal */}
       <AnimatePresence>

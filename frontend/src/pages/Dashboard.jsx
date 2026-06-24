@@ -32,6 +32,7 @@ import { staggerContainer, staggerItem, staggerItemScale } from '../animations/s
 import { premiumCardHover as _premiumCardHover, buttonScale, professionalCardVariant } from '../animations/cardAnimations';
 import { sidebarItemVariant } from '../animations/dashboardAnimations';
 import { premiumEase } from '../animations/motionVariants';
+import DeleteModal from '../components/DeleteModal';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -52,6 +53,7 @@ const Dashboard = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('resumes');
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [deleteCoverLetterConfirmId, setDeleteCoverLetterConfirmId] = useState(null);
   const [showSignoutConfirm, setShowSignoutConfirm] = useState(false);
 
   const [createError, setCreateError] = useState(null);
@@ -86,8 +88,12 @@ const Dashboard = () => {
     }
   }, []);
 
-  const handleDeleteCoverLetter = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this cover letter?')) return;
+  const handleDeleteCoverLetterClick = (id, e) => {
+    if (e) e.stopPropagation();
+    setDeleteCoverLetterConfirmId(id);
+  };
+
+  const executeDeleteCoverLetter = async (id) => {
     try {
       const token = localStorage.getItem('cf_token');
       const response = await fetch(`${API_URL}/cover-letters/${id}`, {
@@ -805,7 +811,7 @@ const Dashboard = () => {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleDeleteCoverLetter(letter._id);
+                                handleDeleteCoverLetterClick(letter._id, e);
                               }}
                               className="p-2 text-slate-400 hover:text-red-500 dark:hover:text-red-400 bg-slate-50 dark:bg-slate-900 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 opacity-30 group-hover:opacity-100 focus:opacity-100 translate-x-1 group-hover:translate-x-0 transition-all duration-300 cursor-pointer"
                               title="Delete Cover Letter"
@@ -1189,61 +1195,29 @@ const Dashboard = () => {
         )}
       </AnimatePresence>
 
-      {/* Delete Confirmation Modal */}
-      <AnimatePresence>
-        {deleteConfirmId && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Backdrop */}
-            <motion.div
-              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setDeleteConfirmId(null)}
-            />
+      {/* Delete Resume Modal */}
+      <DeleteModal
+        isOpen={!!deleteConfirmId}
+        onClose={() => setDeleteConfirmId(null)}
+        onConfirm={async () => {
+          await deleteResume(deleteConfirmId);
+          setDeleteConfirmId(null);
+        }}
+        title="Delete Resume?"
+        description="Are you sure you want to delete this resume? This action is permanent and cannot be undone."
+      />
 
-            {/* Modal Box */}
-            <motion.div
-              className="w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl relative z-10 space-y-5"
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              transition={{ duration: 0.25, ease: premiumEase }}
-            >
-              <div className="flex items-center gap-3 text-red-500">
-                <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-950/50 flex items-center justify-center">
-                  <AlertCircle className="w-5 h-5" />
-                </div>
-                <h3 className="text-lg font-bold font-display text-slate-800 dark:text-slate-100 text-left">Delete Resume?</h3>
-              </div>
-              
-              <p className="text-sm text-slate-500 dark:text-slate-400 leading-normal text-left">
-                Are you sure you want to delete this resume? This action is permanent and cannot be undone.
-              </p>
-
-              <div className="flex gap-3 justify-end pt-2">
-                <button
-                  type="button"
-                  onClick={() => setDeleteConfirmId(null)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-950 text-xs font-semibold text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await deleteResume(deleteConfirmId);
-                    setDeleteConfirmId(null);
-                  }}
-                  className="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-semibold text-xs transition-all shadow-md shadow-red-500/10 cursor-pointer"
-                >
-                  Delete Permanent
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {/* Delete Cover Letter Modal */}
+      <DeleteModal
+        isOpen={!!deleteCoverLetterConfirmId}
+        onClose={() => setDeleteCoverLetterConfirmId(null)}
+        onConfirm={async () => {
+          await executeDeleteCoverLetter(deleteCoverLetterConfirmId);
+          setDeleteCoverLetterConfirmId(null);
+        }}
+        title="Delete Cover Letter?"
+        description="Are you sure you want to delete this cover letter? This action is permanent and cannot be undone."
+      />
 
       {/* Sign Out Confirmation Modal */}
       <AnimatePresence>
