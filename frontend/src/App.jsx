@@ -5,6 +5,7 @@ import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Builder from './pages/Builder';
 import Billing from './pages/Billing';
+import BillingDetails from './pages/BillingDetails';
 import CoverLetter from './pages/CoverLetter';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -39,6 +40,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Billing />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/billing/details"
+          element={
+            <ProtectedRoute>
+              <BillingDetails />
             </ProtectedRoute>
           }
         />

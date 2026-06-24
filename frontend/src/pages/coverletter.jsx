@@ -24,13 +24,13 @@ import {
   FileSignature,
 } from 'lucide-react';
 import { isProUser } from '../utils/planConstants';
-import { buttonScale } from '../animations/cardAnimations';
+
 import { sidebarItemVariant } from '../animations/dashboardAnimations';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const CoverLetter = () => {
-  const { user, logout, upgradePlan } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const { resumes, loadResumes, loading: resumesLoading } = useResumeStore();
   const navigate = useNavigate();
 
@@ -44,7 +44,6 @@ const CoverLetter = () => {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [showSignoutConfirm, setShowSignoutConfirm] = useState(false);
-  const [upgradeLoading, setUpgradeLoading] = useState(false);
 
   const [savedCoverLetters, setSavedCoverLetters] = useState([]);
   const [loadingSaved, setLoadingSaved] = useState(false);
@@ -267,16 +266,8 @@ const CoverLetter = () => {
     }
   };
 
-  const handleUpgrade = async () => {
-    setUpgradeLoading(true);
-    setError('');
-    const res = await upgradePlan();
-    setUpgradeLoading(false);
-    if (res.success && res.url) {
-      window.location.href = res.url;
-      return;
-    }
-    setError(res.error || 'Failed to start Stripe checkout.');
+  const handleUpgrade = () => {
+    navigate('/billing');
   };
 
   const isPro = isProUser(user);
@@ -349,8 +340,39 @@ const CoverLetter = () => {
 
         {/* Sidebar Footer Operations */}
         <div className="mt-auto pt-4 space-y-2 shrink-0">
-          {user?.plan !== 'PRO' && !isPro && (
-            <div className="p-3.5 rounded-xl bg-linear-to-br from-indigo-500 via-indigo-600 to-purple-600 text-white relative overflow-hidden shadow-sm shadow-indigo-500/20 text-left group">
+          {user?.plan === 'PRO' || isPro ? (
+            <motion.div 
+              whileHover={{ y: -2, scale: 1.01 }}
+              transition={{ duration: 0.2 }}
+              className="p-3.5 rounded-xl bg-linear-to-br from-indigo-500 via-indigo-600 to-purple-600 text-white relative overflow-hidden shadow-sm shadow-indigo-500/20 text-left group"
+            >
+              <div className="absolute -right-4 -bottom-4 w-16 h-16 rounded-full bg-white/10 blur-xl pointer-events-none transition-transform group-hover:scale-150" />
+              <div className="relative z-10">
+                <div className="mb-1.5">
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-400 text-slate-900 font-bold text-[8px] rounded uppercase tracking-wider shadow-sm">
+                    <Sparkles className="w-2 h-2 fill-slate-900" /> PRO MEMBER
+                  </span>
+                </div>
+                <h4 className="font-bold text-xs mb-1">Pro Plan Active</h4>
+                <div className="text-[10px] text-indigo-100 mb-2.5 leading-tight space-y-0.5">
+                  <p>Unlimited resumes</p>
+                  <p>Unlimited AI rewrites</p>
+                  <p>Premium templates unlocked</p>
+                </div>
+                <button
+                  onClick={() => navigate('/billing')}
+                  className="w-full bg-white/20 hover:bg-white/30 text-white transition-colors py-1.5 rounded-lg text-[11px] font-bold shadow-sm shadow-indigo-950/10 cursor-pointer"
+                >
+                  View Plan
+                </button>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div 
+              whileHover={{ y: -2, scale: 1.01 }}
+              transition={{ duration: 0.2 }}
+              className="p-3.5 rounded-xl bg-linear-to-br from-indigo-500 via-indigo-600 to-purple-600 text-white relative overflow-hidden shadow-sm shadow-indigo-500/20 text-left group"
+            >
               <div className="absolute -right-4 -bottom-4 w-16 h-16 rounded-full bg-white/10 blur-xl pointer-events-none transition-transform group-hover:scale-150" />
               <div className="relative z-10">
                 <div className="mb-1.5">
@@ -364,17 +386,16 @@ const CoverLetter = () => {
                 </p>
                 <button
                   onClick={handleUpgrade}
-                  disabled={upgradeLoading}
-                  className="w-full bg-white hover:bg-slate-50 text-indigo-600 disabled:opacity-50 transition-colors py-1.5 rounded-lg text-[11px] font-bold shadow-md shadow-indigo-950/20 cursor-pointer"
+                  className="w-full bg-white hover:bg-slate-50 text-indigo-600 transition-colors py-1.5 rounded-lg text-[11px] font-bold shadow-md shadow-indigo-950/20 cursor-pointer"
                 >
-                  {upgradeLoading ? 'Redirecting...' : 'Upgrade with Stripe'}
+                  Upgrade to Pro
                 </button>
               </div>
-            </div>
+            </motion.div>
           )}
 
           <button
-            onClick={() => navigate('/billing')}
+            onClick={() => navigate('/billing/details')}
             className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-lg transition-colors cursor-pointer"
           >
             <CreditCard className="w-4.5 h-4.5" />
@@ -405,14 +426,14 @@ const CoverLetter = () => {
         </div>
 
         {/* Outer Split Layout Container */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start xl:items-stretch">
           
           {/* Left panel: input forms + saved list */}
           <div className="space-y-6">
             <motion.div 
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 md:p-8 space-y-6 shadow-xs"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 md:p-8 space-y-6 shadow-xs hover:-translate-y-0.5 hover:shadow-md hover:border-indigo-500/30 transition-all duration-300"
             >
               <h2 className="text-lg font-bold font-display text-slate-800 dark:text-slate-100">
                 Customize Cover Letter Details
@@ -503,14 +524,10 @@ const CoverLetter = () => {
                   />
                 </div>
 
-                <motion.button
+                <button
                   type="submit"
                   disabled={generating || resumes.length === 0}
-                  variants={buttonScale}
-                  initial="initial"
-                  whileHover="hover"
-                  whileTap="tap"
-                  className="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-600/60 text-white py-3.5 rounded-xl font-semibold text-sm transition-all shadow-md shadow-indigo-500/10 cursor-pointer disabled:cursor-not-allowed"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-600/60 text-white py-3.5 rounded-xl font-semibold text-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg shadow-md shadow-indigo-500/10 cursor-pointer disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-md"
                 >
                   {generating ? (
                     <>
@@ -523,7 +540,7 @@ const CoverLetter = () => {
                       <span>Generate Cover Letter</span>
                     </>
                   )}
-                </motion.button>
+                </button>
               </form>
             </motion.div>
 
@@ -531,7 +548,7 @@ const CoverLetter = () => {
             <motion.div 
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 md:p-8 space-y-6 shadow-xs text-left"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 md:p-8 space-y-6 shadow-xs text-left hover:-translate-y-0.5 hover:shadow-md hover:border-indigo-500/30 transition-all duration-300"
             >
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-bold font-display text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -600,7 +617,7 @@ const CoverLetter = () => {
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 md:p-8 flex flex-col justify-between min-h-[500px] shadow-xs"
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 md:p-8 flex flex-col shadow-xs h-full hover:-translate-y-0.5 hover:shadow-md hover:border-indigo-500/30 transition-all duration-300"
           >
             {/* Header section with buttons */}
             <div className="space-y-4 flex-1 flex flex-col">
@@ -668,7 +685,7 @@ const CoverLetter = () => {
               )}
 
               {/* Cover Letter Content Body */}
-              <div className="flex-1 flex flex-col justify-center mt-2">
+              <div className="flex-1 flex flex-col justify-center mt-2 min-h-0">
                 {generating ? (
                   <div className="space-y-4 animate-pulse p-4">
                     <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-1/4" />
@@ -686,7 +703,7 @@ const CoverLetter = () => {
                     <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-1/4 pt-4" />
                   </div>
                 ) : coverLetter ? (
-                  <div className="p-4 bg-slate-50 dark:bg-slate-950/45 border border-slate-100 dark:border-slate-800/60 rounded-2xl max-h-[450px] overflow-y-auto">
+                  <div className="p-4 bg-slate-50 dark:bg-slate-950/45 border border-slate-100 dark:border-slate-800/60 rounded-2xl h-full flex-1 overflow-y-auto">
                     <pre className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300 font-sans leading-relaxed text-left">
                       {coverLetter}
                     </pre>

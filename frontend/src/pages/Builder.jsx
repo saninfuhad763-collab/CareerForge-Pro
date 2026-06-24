@@ -2952,7 +2952,7 @@ const Builder = () => {
                           rel="noopener noreferrer" 
                           className="hover:underline text-[10px] text-inherit break-all"
                         >
-                          {personalInfo.website}
+                          Portfolio
                         </a>
                       )}
                       {personalInfo.github && (
@@ -2962,7 +2962,7 @@ const Builder = () => {
                           rel="noopener noreferrer" 
                           className="hover:underline text-[10px] text-inherit break-all"
                         >
-                          {personalInfo.github}
+                          GitHub
                         </a>
                       )}
                       {personalInfo.linkedin && (
@@ -2972,7 +2972,7 @@ const Builder = () => {
                           rel="noopener noreferrer" 
                           className="hover:underline text-[10px] text-inherit break-all"
                         >
-                          {personalInfo.linkedin}
+                          LinkedIn
                         </a>
                       )}
                     </div>
@@ -3005,7 +3005,7 @@ const Builder = () => {
                           rel="noopener noreferrer" 
                           className="hover:underline text-inherit break-all"
                         >
-                          {personalInfo.website}
+                          Portfolio
                         </a>
                       </span>
                     )}
@@ -3018,7 +3018,7 @@ const Builder = () => {
                           rel="noopener noreferrer" 
                           className="hover:underline text-inherit break-all"
                         >
-                          {personalInfo.github}
+                          GitHub
                         </a>
                       </span>
                     )}
@@ -3031,7 +3031,7 @@ const Builder = () => {
                           rel="noopener noreferrer" 
                           className="hover:underline text-inherit break-all"
                         >
-                          {personalInfo.linkedin}
+                          LinkedIn
                         </a>
                       </span>
                     )}
@@ -3064,7 +3064,7 @@ const Builder = () => {
                           rel="noopener noreferrer" 
                           className="hover:underline text-inherit break-all"
                         >
-                          {personalInfo.website}
+                          Portfolio
                         </a>
                       </span>
                     )}
@@ -3077,7 +3077,7 @@ const Builder = () => {
                           rel="noopener noreferrer" 
                           className="hover:underline text-inherit break-all"
                         >
-                          {personalInfo.github}
+                          GitHub
                         </a>
                       </span>
                     )}
@@ -3090,7 +3090,7 @@ const Builder = () => {
                           rel="noopener noreferrer" 
                           className="hover:underline text-inherit break-all"
                         >
-                          {personalInfo.linkedin}
+                          LinkedIn
                         </a>
                       </span>
                     )}
@@ -3457,7 +3457,7 @@ const Builder = () => {
                             Certifications
                           </h2>
                         )}
-                        <div className={`${dynamicStyles.itemSpace} text-xs`}>
+                        <div className={`${dynamicStyles.skillsListSpace} text-xs`}>
                           {certifications.map((cert, idx) => {
                             if (templateId === 'modern') {
                               return (

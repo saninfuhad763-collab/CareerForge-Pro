@@ -36,7 +36,7 @@ import { premiumEase } from '../animations/motionVariants';
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const Dashboard = () => {
-  const { user, logout, upgradePlan } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const { 
     resumes, 
     loadResumes, 
@@ -55,7 +55,6 @@ const Dashboard = () => {
   const [showSignoutConfirm, setShowSignoutConfirm] = useState(false);
 
   const [createError, setCreateError] = useState(null);
-  const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [downloadLoadingId, setDownloadLoadingId] = useState(null);
 
   const navigate = useNavigate();
@@ -202,16 +201,8 @@ const Dashboard = () => {
 
   const isPro = isProUser(user);
 
-  const handleUpgrade = async () => {
-    setUpgradeLoading(true);
-    setCreateError(null);
-    const res = await upgradePlan();
-    setUpgradeLoading(false);
-    if (res.success && res.url) {
-      window.location.href = res.url;
-      return;
-    }
-    setCreateError(res.error || 'Failed to start Stripe checkout.');
+  const handleUpgrade = () => {
+    navigate('/billing');
   };
 
   const handleDownloadPdf = async (resume, e) => {
@@ -322,8 +313,39 @@ const Dashboard = () => {
 
         {/* Sidebar Footer Operations */}
         <div className="mt-auto pt-4 space-y-2 shrink-0">
-          {user?.plan !== 'PRO' && !isPro && (
-            <div className="p-3.5 rounded-xl bg-linear-to-br from-indigo-500 via-indigo-600 to-purple-600 text-white relative overflow-hidden shadow-sm shadow-indigo-500/20 text-left group">
+          {user?.plan === 'PRO' || isPro ? (
+            <motion.div 
+              whileHover={{ y: -2, scale: 1.01 }}
+              transition={{ duration: 0.2 }}
+              className="p-3.5 rounded-xl bg-linear-to-br from-indigo-500 via-indigo-600 to-purple-600 text-white relative overflow-hidden shadow-sm shadow-indigo-500/20 text-left group"
+            >
+              <div className="absolute -right-4 -bottom-4 w-16 h-16 rounded-full bg-white/10 blur-xl pointer-events-none transition-transform group-hover:scale-150" />
+              <div className="relative z-10">
+                <div className="mb-1.5">
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-400 text-slate-900 font-bold text-[8px] rounded uppercase tracking-wider shadow-sm">
+                    <Sparkles className="w-2 h-2 fill-slate-900" /> PRO MEMBER
+                  </span>
+                </div>
+                <h4 className="font-bold text-xs mb-1">Pro Plan Active</h4>
+                <div className="text-[10px] text-indigo-100 mb-2.5 leading-tight space-y-0.5">
+                  <p>Unlimited resumes</p>
+                  <p>Unlimited AI rewrites</p>
+                  <p>Premium templates unlocked</p>
+                </div>
+                <button
+                  onClick={() => navigate('/billing')}
+                  className="w-full bg-white/20 hover:bg-white/30 text-white transition-colors py-1.5 rounded-lg text-[11px] font-bold shadow-sm shadow-indigo-950/10 cursor-pointer"
+                >
+                  View Plan
+                </button>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div 
+              whileHover={{ y: -2, scale: 1.01 }}
+              transition={{ duration: 0.2 }}
+              className="p-3.5 rounded-xl bg-linear-to-br from-indigo-500 via-indigo-600 to-purple-600 text-white relative overflow-hidden shadow-sm shadow-indigo-500/20 text-left group"
+            >
               <div className="absolute -right-4 -bottom-4 w-16 h-16 rounded-full bg-white/10 blur-xl pointer-events-none transition-transform group-hover:scale-150" />
               <div className="relative z-10">
                 <div className="mb-1.5">
@@ -337,17 +359,16 @@ const Dashboard = () => {
                 </p>
                 <button
                   onClick={handleUpgrade}
-                  disabled={upgradeLoading}
-                  className="w-full bg-white hover:bg-slate-50 text-indigo-600 disabled:opacity-50 transition-colors py-1.5 rounded-lg text-[11px] font-bold shadow-md shadow-indigo-950/20 cursor-pointer"
+                  className="w-full bg-white hover:bg-slate-50 text-indigo-600 transition-colors py-1.5 rounded-lg text-[11px] font-bold shadow-md shadow-indigo-950/20 cursor-pointer"
                 >
-                  {upgradeLoading ? 'Redirecting...' : 'Upgrade with Stripe'}
+                  Upgrade to Pro
                 </button>
               </div>
-            </div>
+            </motion.div>
           )}
 
           <button
-            onClick={() => navigate('/billing')}
+            onClick={() => navigate('/billing/details')}
             className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-lg transition-colors cursor-pointer"
           >
             <CreditCard className="w-4.5 h-4.5" />
@@ -1057,25 +1078,15 @@ const Dashboard = () => {
                       </p>
                     </div>
                     
-                    {/* Stripe upgrade — shown when free resume limit is hit */}
+                    {/* Upgrade CTA — shown when free resume limit is hit */}
                     {createError.includes('Free tier is limited') && (
                       <button
                         type="button"
                         onClick={handleUpgrade}
-                        disabled={upgradeLoading}
-                        className="w-full flex items-center justify-center gap-2 bg-linear-to-r from-emerald-600 to-indigo-600 hover:from-emerald-700 hover:to-indigo-700 text-white font-bold text-xs py-2 px-3 rounded-xl transition-all shadow-md cursor-pointer disabled:opacity-50"
+                        className="w-full flex items-center justify-center gap-2 bg-linear-to-r from-emerald-600 to-indigo-600 hover:from-emerald-700 hover:to-indigo-700 text-white font-bold text-xs py-2 px-3 rounded-xl transition-all shadow-md cursor-pointer"
                       >
-                        {upgradeLoading ? (
-                          <>
-                            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            <span>Redirecting to Stripe...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
-                            <span>Upgrade to Pro with Stripe</span>
-                          </>
-                        )}
+                        <Sparkles className="w-4 h-4 text-amber-300" />
+                        <span>Upgrade to Pro &rarr;</span>
                       </button>
                     )}
 

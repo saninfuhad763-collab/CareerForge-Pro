@@ -40,10 +40,17 @@ const renderBullets = (description) => {
 const renderHeader = (resume, templateId) => {
   const p = resume.personalInfo || {};
   const role = resume.experience?.[0]?.position || 'Target Professional Role';
-  const contactLinks = [
-    p.website,
-    p.github,
-    p.linkedin,
+  
+  const formatLink = (url, label) => {
+    if (!url) return null;
+    const href = url.startsWith('http') ? url : `https://${url}`;
+    return `<a href="${escapeHtml(href)}" style="text-decoration: none; color: inherit;">${escapeHtml(label)}</a>`;
+  };
+
+  const contactLinksHtml = [
+    formatLink(p.website, 'Portfolio'),
+    formatLink(p.github, 'GitHub'),
+    formatLink(p.linkedin, 'LinkedIn'),
   ].filter(Boolean);
 
   if (templateId === 'modern') {
@@ -57,37 +64,37 @@ const renderHeader = (resume, templateId) => {
           <p>${escapeHtml(p.email || 'email@address.com')}</p>
           <p>${escapeHtml(p.phone || '')}</p>
           <p>${escapeHtml(p.location || '')}</p>
-          ${contactLinks.map((link) => `<p>${escapeHtml(link)}</p>`).join('')}
+          ${contactLinksHtml.map((linkHtml) => `<p>${linkHtml}</p>`).join('')}
         </div>
       </header>`;
   }
 
   if (templateId === 'minimalist') {
     const parts = [
-      p.email,
-      p.phone,
-      p.location,
-      ...contactLinks,
+      p.email ? escapeHtml(p.email) : null,
+      p.phone ? escapeHtml(p.phone) : null,
+      p.location ? escapeHtml(p.location) : null,
+      ...contactLinksHtml,
     ].filter(Boolean);
     return `
       <header class="header minimalist">
         <h1>${escapeHtml(p.fullName || 'YOUR FULL NAME')}</h1>
         <p class="role">${escapeHtml(role)}</p>
-        <p class="contact-line">${parts.map((part) => escapeHtml(part)).join(' · ')}</p>
+        <p class="contact-line">${parts.join(' · ')}</p>
       </header>`;
   }
 
   const parts = [
-    p.email,
-    p.phone,
-    p.location,
-    ...contactLinks,
+    p.email ? escapeHtml(p.email) : null,
+    p.phone ? escapeHtml(p.phone) : null,
+    p.location ? escapeHtml(p.location) : null,
+    ...contactLinksHtml,
   ].filter(Boolean);
   return `
     <header class="header classic">
       <h1>${escapeHtml(p.fullName || 'YOUR FULL NAME')}</h1>
       <p class="role">${escapeHtml(role)}</p>
-      <p class="contact-line">${parts.map((part) => escapeHtml(part)).join(' | ')}</p>
+      <p class="contact-line">${parts.join(' | ')}</p>
       <div class="classic-rule"></div>
     </header>`;
 };
