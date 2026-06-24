@@ -110,10 +110,21 @@ export const PROMPT_LIBRARY = {
     `
   },
   generate_cover_letter: {
-    version: '1.0.0',
-    system: 'You are an expert career consultant and professional resume writer. Write a compelling, highly professional cover letter based on the applicant\'s resume details and the target job description. The cover letter should be formatted professionally, beginning with a standard professional greeting and ending with a formal sign-off. Return ONLY the cover letter text, with no preamble, postscript, or explanations.',
+    version: '1.2.0',
+    system: 'You are an expert career consultant and professional resume writer. Write a compelling, highly professional cover letter based on the applicant\'s resume details and the target job description. Return ONLY the cover letter text, with no preamble, postscript, or explanations. Begin with a standard professional greeting and end with a formal sign-off. Provide the output in plain text with newlines (no markdown).',
     template: (resumeData, jobData) => `
-      Task: Generate a professional cover letter matching the candidate's background to the target role.
+      Task: Generate a professional, impact-driven cover letter matching the candidate's background to the target role.
+      
+      STRICT REQUIREMENTS:
+      1. Length: 250–350 words maximum. Exactly 3–4 concise paragraphs. One-page output. Do not write long essays.
+      2. Opening Hook: Do NOT use generic openings like "As a seasoned...", "I am excited...", or "I am passionate...". Begin immediately with business impact, relevant expertise, and alignment to the target role.
+      3. Achievement Focus: Highlight 2–3 measurable achievements from the resume. Prefer percentages, metrics, savings, growth, or performance improvements. Demonstrate direct business impact.
+      4. Language constraints: Minimize self-description (e.g., avoid "I bring", "I have", "My expertise"). Focus heavily on results and employer value. Avoid generic filler language ("I am writing to apply...").
+      5. Job Description Alignment: You MUST include at least one sentence that explicitly connects a specific requirement from the Job Description to a concrete achievement from the resume (e.g., "[Company] requires scalable systems, and I recently reduced initial paint times by 42%").
+      6. Structure: 
+         - Strong opening paragraph hook focusing on impact.
+         - Achievement-driven middle section detailing metrics and explicit company alignment.
+         - Concise closing paragraph.
       
       Candidate Info:
       Name: ${resumeData.fullName || 'Applicant'}
@@ -387,11 +398,11 @@ Hiring Manager
 
 Dear Hiring Manager,
 
-I am writing to express my enthusiastic interest in the [Job Title] position at [Company Name]. With my background in software engineering and hands-on experience in full-stack development, I am confident in my ability to contribute value to your engineering team.
+Delivering highly scalable web applications and optimizing system performance directly aligns with the engineering culture at [Company Name]. Architecting robust, user-centric solutions consistently drives critical business value, as demonstrated by recent work in full-stack modernization.
 
-In my previous roles, I have spearheaded the design and implementation of highly scalable applications, optimized database query performance, and collaborated with cross-functional teams to deliver projects on time. I am particularly drawn to [Company Name]'s commitment to innovation and look forward to the possibility of leveraging my skills to support your business objectives.
+[Company Name] requires systems built to scale rapidly, and standardizing multi-tenant database designs recently eliminated data contention and scaled throughput by 42% to support over 100k concurrent requests. Furthermore, spearheading the modularization of core state management systems directly resulted in an 18% lift in client-side loading metrics. These measurable performance improvements allowed operations to expand into new markets seamlessly.
 
-Thank you for your time and consideration. I welcome the opportunity to discuss my qualifications further in an interview.
+This proven history of driving technical excellence and high-availability architecture maps directly to the [Job Title] requirements at [Company Name]. Connecting over an interview will provide the opportunity to discuss how this background can immediately contribute to your engineering goals.
 
 Sincerely,
 

@@ -74,15 +74,6 @@ export const renderCoverLetterHtml = (coverLetterDoc) => {
       margin-bottom: 14px;
       text-align: left;
     }
-    .footer-note {
-      margin-top: 28px;
-      padding-top: 16px;
-      border-top: 1px solid #e2e8f0;
-      font-size: 9px;
-      color: #94a3b8;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
   </style>
 </head>
 <body>
@@ -98,7 +89,6 @@ export const renderCoverLetterHtml = (coverLetterDoc) => {
     <div class="letter-body">
       ${bodyHtml}
     </div>
-    <div class="footer-note">Generated with CareerForge Pro</div>
   </div>
 </body>
 </html>`;
