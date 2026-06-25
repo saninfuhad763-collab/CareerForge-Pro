@@ -1,4 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
+import UploadResumeModal from '../components/UploadResumeModal';
+import MagicOptimizerModal from '../components/MagicOptimizerModal';
+import ATSReportModal from '../components/ATSReportModal';
+
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useResumeStore } from '../store/resumeStore';
 import { useAuthStore } from '../store/authStore';
@@ -3582,469 +3586,46 @@ const Builder = () => {
 
 
       {/* Upload Existing Resume Dialog Overlay */}
-      <AnimatePresence>
-        {isUploadModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 text-left"
-          >
-            <motion.div
-              initial={{ scale: 0.95, y: 15 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 15 }}
-              className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xl rounded-2xl w-full max-w-lg overflow-hidden flex flex-col"
-            >
-              <div className="bg-linear-to-r from-indigo-500 via-indigo-600 to-purple-600 px-6 py-4 flex items-center justify-between text-white shrink-0">
-                <div className="flex items-center gap-2">
-                  <Upload className="w-5 h-5 text-indigo-100" />
-                  <div>
-                    <h3 className="font-extrabold text-sm tracking-wide">Upload Existing Resume</h3>
-                    <p className="text-[10px] text-indigo-100 font-medium">Import a PDF or DOCX into the builder schema</p>
-                  </div>
-                </div>
-                <button
-                  onClick={closeUploadModal}
-                  disabled={isImportingResume}
-                  className="text-white/80 hover:text-white transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="p-6 space-y-4 text-slate-800 dark:text-slate-200">
-                <div className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-5 bg-slate-50/70 dark:bg-slate-950/40 text-center">
-                  <Upload className="w-9 h-9 mx-auto text-indigo-500 mb-3" />
-                  <label className="inline-flex items-center justify-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-indigo-500/20">
-                    Choose PDF or DOCX
-                    <input
-                      type="file"
-                      accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                      onChange={handleResumeFileChange}
-                      disabled={isImportingResume}
-                      className="sr-only"
-                    />
-                  </label>
-                  <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 font-medium">
-                    {selectedResumeFile ? selectedResumeFile.name : 'Supported formats: .pdf and .docx'}
-                  </p>
-                </div>
-
-                {uploadError && (
-                  <div className="flex items-start gap-2 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/20 p-3 text-xs font-semibold text-rose-700 dark:text-rose-300">
-                    <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                    <span>{uploadError}</span>
-                  </div>
-                )}
-
-                {uploadSuccess && (
-                  <div className="flex items-start gap-2 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/20 p-3 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                    <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                    <span>{uploadSuccess}</span>
-                  </div>
-                )}
-
-                <p className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-                  CareerForge will extract text, use AI to map it into your existing resume fields, update this builder, and save through the current save flow.
-                </p>
-              </div>
-
-              <div className="px-6 py-4 bg-slate-50 dark:bg-slate-950/60 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-end gap-3 text-xs shrink-0">
-                <button
-                  onClick={closeUploadModal}
-                  disabled={isImportingResume}
-                  className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-bold transition-all cursor-pointer disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleResumeImport}
-                  disabled={isImportingResume || !selectedResumeFile}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all shadow-md shadow-indigo-500/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isImportingResume ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                  <span>{isImportingResume ? 'Importing...' : 'Import Resume'}</span>
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <UploadResumeModal
+        isOpen={isUploadModalOpen}
+        onClose={closeUploadModal}
+        isImportingResume={isImportingResume}
+        selectedResumeFile={selectedResumeFile}
+        uploadError={uploadError}
+        uploadSuccess={uploadSuccess}
+        handleResumeFileChange={handleResumeFileChange}
+        handleResumeImport={handleResumeImport}
+      />
 
       {/* Dynamic Streaming AI Magic Optimizer Dialog Overlay */}
-      <AnimatePresence>
-        {isOptimizerOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 text-left"
-          >
-            <motion.div
-              initial={{ scale: 0.95, y: 15 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 15 }}
-              className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xl rounded-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
-            >
-              {/* Header */}
-              <div className="bg-linear-to-r from-indigo-500 via-indigo-600 to-purple-600 px-6 py-4 flex items-center justify-between text-white shrink-0">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 animate-pulse text-purple-200" />
-                  <div>
-                    <h3 className="font-extrabold text-sm tracking-wide">
-                      CareerForge AI Spark Assistant
-                    </h3>
-                    <p className="text-[10px] text-indigo-100 font-medium">
-                      Real-time professional stream optimizer
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setIsOptimizerOpen(false)}
-                  className="text-white/80 hover:text-white transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Body */}
-              <div className="p-6 space-y-4 overflow-y-auto flex-1 text-slate-800 dark:text-slate-200">
-                {/* Configuration panel */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Optimize Action</label>
-                    <select
-                      value={magicPromptType}
-                      onChange={(e) => setMagicPromptType(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-indigo-500"
-                    >
-                      <option value="summary_rewrite">Professional Bio Rewrite</option>
-                      <option value="bullet_rewrite">Resume Bullet Rewrite</option>
-                      <option value="quantify">Quantify Achievements (+ Metrics)</option>
-                      <option value="ats_inject">ATS Keyword Injection Focus</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                      <Target className="w-3.5 h-3.5 text-indigo-500" /> Focus Keyword (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. AWS, React, Kubernetes..."
-                      value={targetKeyword}
-                      onChange={(e) => setTargetKeyword(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-indigo-500"
-                    />
-                  </div>
-                </div>
-
-                {/* Original content comparison */}
-                {originalText && (
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Original Text</label>
-                    <div className="px-3 py-2 bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/80 rounded-xl text-xs text-slate-500 dark:text-slate-400 line-clamp-3 select-none">
-                      {originalText}
-                    </div>
-                  </div>
-                )}
-
-                {/* Live stream block */}
-                <div className="space-y-1 relative">
-                  <label className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5 animate-spin" /> AI Generated Suggestion
-                  </label>
-                  
-                  <div className="relative">
-                    <textarea
-                      rows={6}
-                      readOnly
-                      placeholder="Click 'Generate Suggestions' to initiate the streaming optimizer. The model will draft modern, impact-driven sentences in real time."
-                      value={optimizedText}
-                      className="w-full px-4 py-3 bg-indigo-50/20 dark:bg-indigo-950/10 border border-indigo-100 dark:border-indigo-900/60 focus:outline-none rounded-2xl text-xs leading-relaxed font-medium text-slate-800 dark:text-slate-100 resize-none shadow-inner"
-                    />
-                    {isOptimizing && (
-                      <div className="absolute inset-0 bg-slate-900/5 dark:bg-slate-950/10 backdrop-blur-[0.5px] rounded-2xl flex items-center justify-center">
-                        <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border rounded-xl shadow-lg">
-                          <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />
-                          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Streaming tokens...</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Actions row */}
-                <div className="flex items-center justify-between pt-2">
-                  <div className="text-[10px] font-medium text-slate-400">
-                    Remaining credits: <span className="font-bold text-slate-600 dark:text-slate-300">{planStats.aiLimit === Infinity ? 'Unlimited' : `${planStats.aiLimit - planStats.aiRewriteCount} free credits left`}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {isOptimizing ? (
-                      <button
-                        type="button"
-                        onClick={cancelOptimization}
-                        className="px-4 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-950 text-red-600 dark:text-red-400 rounded-xl text-xs font-bold cursor-pointer"
-                      >
-                        Cancel
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={startStreamOptimization}
-                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
-                      >
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>Generate Optimizations</span>
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      disabled={!optimizedText || isOptimizing}
-                      onClick={applySuggestion}
-                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-500/20 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                      <span>Apply Changes</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Audit trail & Rollbacks */}
-                {historyLogs.length > 0 && (
-                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                      History / Undo Actions
-                    </h4>
-                    <div className="space-y-2 max-h-32 overflow-y-auto pr-1">
-                      {historyLogs.slice(0, 3).map((log) => (
-                        <div
-                          key={log._id}
-                          className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/80 rounded-xl text-xs"
-                        >
-                          <div className="space-y-0.5 text-left min-w-0">
-                            <div className="font-bold capitalize text-slate-700 dark:text-slate-300">
-                              {log.actionType.replace('_', ' ')}
-                            </div>
-                            <div className="text-[10px] text-slate-400 truncate max-w-[320px]">
-                              {log.generatedContent}
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => rollbackSuggestion(log._id)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-950 text-amber-700 dark:text-amber-400 rounded-lg text-[10px] font-bold border border-amber-200/40 dark:border-amber-900/40 cursor-pointer"
-                          >
-                            <RotateCcw className="w-3 h-3" />
-                            <span>Undo</span>
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <MagicOptimizerModal
+        isOpen={isOptimizerOpen}
+        onClose={() => setIsOptimizerOpen(false)}
+        magicPromptType={magicPromptType}
+        setMagicPromptType={setMagicPromptType}
+        targetKeyword={targetKeyword}
+        setTargetKeyword={setTargetKeyword}
+        originalText={originalText}
+        optimizedText={optimizedText}
+        isOptimizing={isOptimizing}
+        planStats={planStats}
+        historyLogs={historyLogs}
+        cancelOptimization={cancelOptimization}
+        startStreamOptimization={startStreamOptimization}
+        applySuggestion={applySuggestion}
+        rollbackSuggestion={rollbackSuggestion}
+      />
 
       {/* ATS Score Breakdown detailed report modal */}
-      <AnimatePresence>
-        {showAtsReportModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 text-left font-sans animate-fade-in"
-          >
-            <motion.div
-              initial={{ scale: 0.95, y: 15 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 15 }}
-              className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xl rounded-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
-            >
-              {/* Header */}
-              <div className="bg-linear-to-r from-slate-900 to-indigo-950 dark:from-slate-950 dark:to-indigo-950 px-6 py-4 flex items-center justify-between text-white shrink-0 border-b border-slate-200/20">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-indigo-500/20 rounded-xl text-indigo-400">
-                    <Target className="w-5 h-5 animate-pulse" />
-                  </div>
-                  <div>
-                    <h3 className="font-extrabold text-sm tracking-wide">
-                      ATS Real-time Compliance Audit
-                    </h3>
-                    <p className="text-[10px] text-slate-300 font-medium">
-                      High-fidelity screening simulation report
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowAtsReportModal(false)}
-                  className="text-slate-400 hover:text-white transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Body */}
-              <div className="p-6 space-y-6 overflow-y-auto flex-1">
-                {/* Score Summary Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {/* Keyword Score card */}
-                  <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800/80 p-4 rounded-2xl flex flex-col justify-between">
-                    <div>
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Keyword Match</div>
-                      <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 mt-1">
-                        {safeAtsMetadata.score}%
-                      </div>
-                    </div>
-                    <div className="w-full bg-slate-200 dark:bg-slate-800 h-1 rounded-full overflow-hidden mt-3">
-                      <div 
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          safeAtsMetadata.score >= 80 ? 'bg-emerald-500' : safeAtsMetadata.score >= 60 ? 'bg-amber-500' : 'bg-red-500'
-                        }`}
-                        style={{ width: `${safeAtsMetadata.score}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Skills Score Card */}
-                  <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800/80 p-4 rounded-2xl flex flex-col justify-between">
-                    <div>
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Formatting Check</div>
-                      <div className="text-2xl font-extrabold text-emerald-500 mt-1 flex items-center gap-1.5">
-                        <CheckCircle className="w-6 h-6 text-emerald-500" />
-                        <span>Pass</span>
-                      </div>
-                    </div>
-                    <p className="text-[9px] text-slate-400 font-semibold mt-3">
-                      Standard layout and parsing readable.
-                    </p>
-                  </div>
-
-                  {/* AI Recommendation Match */}
-                  <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800/80 p-4 rounded-2xl flex flex-col justify-between">
-                    <div>
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Overall Impact</div>
-                      <div className="text-2xl font-extrabold text-indigo-500 mt-1">
-                        {safeAtsMetadata.score >= 80 ? 'Strong' : safeAtsMetadata.score >= 60 ? 'Moderate' : 'Weak'}
-                      </div>
-                    </div>
-                    <p className="text-[9px] text-slate-400 font-semibold mt-3">
-                      Quantifiable work descriptions.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Keyword Compliance */}
-                <div className="space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                      <Target className="w-4 h-4 text-indigo-500" />
-                      <span>Keyword Compliance Breakdown</span>
-                    </h4>
-                    <input
-                      type="text"
-                      placeholder="Filter keywords..."
-                      value={modalKeywordSearch}
-                      onChange={(e) => setModalKeywordSearch(e.target.value)}
-                      className="px-2.5 py-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-[10px] focus:outline-none focus:border-indigo-500 w-full sm:w-44"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Matched Keywords */}
-                    <div className="bg-emerald-50/20 dark:bg-emerald-950/10 border border-emerald-100/50 dark:border-emerald-900/30 rounded-2xl p-4 space-y-2">
-                      <div className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1">
-                        <CheckCircle className="w-3.5 h-3.5" />
-                        <span>Matched Keywords ({dynamicAtsData.matchedKeywords.length})</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {dynamicAtsData.matchedKeywords
-                          .filter(k => k.toLowerCase().includes(modalKeywordSearch.toLowerCase()))
-                          .map(k => (
-                            <span key={k} className="px-2 py-0.5 bg-emerald-100/40 dark:bg-emerald-900/30 border border-emerald-200/20 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-lg text-[9px] font-bold flex items-center gap-1">
-                              <span className="w-1 h-1 rounded-full bg-emerald-500" />
-                              {k}
-                            </span>
-                          ))}
-                        {dynamicAtsData.matchedKeywords.filter(k => k.toLowerCase().includes(modalKeywordSearch.toLowerCase())).length === 0 && (
-                          <span className="text-[9px] text-slate-400">No matching keywords found.</span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Missing Keywords */}
-                    <div className="bg-rose-50/20 dark:bg-rose-950/10 border border-rose-100/50 dark:border-rose-900/30 rounded-2xl p-4 space-y-2">
-                      <div className="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider flex items-center gap-1">
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                        <span>Missing Keywords ({dynamicAtsData.missingKeywords.length})</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {dynamicAtsData.missingKeywords
-                          .filter(k => k.toLowerCase().includes(modalKeywordSearch.toLowerCase()))
-                          .map(k => (
-                            <span key={k} className="px-2 py-0.5 bg-amber-100/40 dark:bg-rose-950/20 border border-amber-200/20 dark:border-rose-900/30 text-amber-700 dark:text-rose-400 rounded-lg text-[9px] font-bold flex items-center gap-1 transition-colors cursor-pointer hover:border-indigo-500" title="Click to auto-fix or optimize" onClick={() => {
-                              openMagicOptimizer('bullet', '', (newVal) => {
-                                alert(`Suggested optimized sentence to inject:\n\n${newVal}`);
-                              });
-                            }}>
-                              <span className="w-1 h-1 rounded-full bg-amber-500 animate-pulse" />
-                              {k}
-                            </span>
-                          ))}
-                        {dynamicAtsData.missingKeywords.filter(k => k.toLowerCase().includes(modalKeywordSearch.toLowerCase())).length === 0 && (
-                          <span className="text-[9px] text-slate-400">No missing keywords! All matched.</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Professional Optimization Recommendations */}
-                <div className="space-y-3">
-                  <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                    <Lightbulb className="w-4 h-4 text-indigo-500 animate-bounce" />
-                    <span>AI Strategic Advice</span>
-                  </h4>
-                  <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800/80 rounded-2xl p-4 space-y-3">
-                    {safeAtsMetadata.feedback && safeAtsMetadata.feedback.length > 0 ? (
-                      safeAtsMetadata.feedback.map((item, idx) => (
-                        <div key={idx} className="flex gap-2.5 text-xs">
-                          <span className="text-indigo-500 font-bold">0{idx + 1}.</span>
-                          <span className="text-slate-600 dark:text-slate-300 leading-relaxed font-medium">{item}</span>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="flex gap-2.5 text-xs">
-                        <span className="text-indigo-500 font-bold">01.</span>
-                        <span className="text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
-                          Select one of our premium job presets or paste a target job description to run a detailed multi-vector parser simulation.
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Footer */}
-              <div className="px-6 py-4 bg-slate-50 dark:bg-slate-950/60 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs shrink-0">
-                <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-                  CareerForge Pro ATS v2.1
-                </span>
-                <button
-                  onClick={() => setShowAtsReportModal(false)}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all shadow-md shadow-indigo-500/20 cursor-pointer"
-                >
-                  Close Report
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <ATSReportModal
+        isOpen={showAtsReportModal}
+        onClose={() => setShowAtsReportModal(false)}
+        safeAtsMetadata={safeAtsMetadata}
+        dynamicAtsData={dynamicAtsData}
+        modalKeywordSearch={modalKeywordSearch}
+        setModalKeywordSearch={setModalKeywordSearch}
+        openMagicOptimizer={openMagicOptimizer}
+      />
     </motion.div>
   );
 };
