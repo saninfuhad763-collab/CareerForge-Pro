@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 const personalInfoSchema = new mongoose.Schema({
   fullName: { type: String, default: '' },
+  title: { type: String, default: '' }, // added professional title
   email: { type: String, default: '' },
   phone: { type: String, default: '' },
   location: { type: String, default: '' },

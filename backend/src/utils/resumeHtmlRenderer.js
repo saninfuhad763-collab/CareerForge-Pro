@@ -39,7 +39,7 @@ const renderBullets = (description) => {
 
 const renderHeader = (resume, templateId) => {
   const p = resume.personalInfo || {};
-  const role = resume.experience?.[0]?.position || 'Target Professional Role';
+  const role = resume.personalInfo?.title || resume.experience?.[0]?.position || 'Target Professional Role';
   
   const formatLink = (url, label) => {
     if (!url) return null;
