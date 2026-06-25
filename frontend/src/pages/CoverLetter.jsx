@@ -3,27 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  FileText,
-  Sparkles,
-  Copy,
-  Check,
-  Briefcase,
-  Building,
-  AlertCircle,
-  ArrowLeft,
-  LogOut,
-  Compass,
-  CreditCard,
-  Save,
-  Loader2,
-  Trash2,
-  History,
-  Eye,
-  Download,
-  FileSignature,
-  Gauge,
-} from 'lucide-react';
+import { FileText, Sparkles, Copy, Check, Briefcase, Building, AlertCircle, ArrowLeft, LogOut, Compass, CreditCard, Save, Loader2, Download, FileSignature, Gauge } from 'lucide-react';
 import { isProUser } from '../utils/planConstants';
 
 import { sidebarItemVariant } from '../animations/dashboardAnimations';

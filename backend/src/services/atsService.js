@@ -86,12 +86,21 @@ export function calculateAtsScore(resume, jdAnalysis) {
   const resumeText = extractResumeText(resume);
   const normalizedResume = resumeText.toLowerCase();
 
-  const required = jdAnalysis.requiredKeywords || [];
-  const preferred = jdAnalysis.preferredKeywords || [];
-  const soft = jdAnalysis.softSkills || [];
-  const tech = jdAnalysis.technologies || [];
+  const normalizeList = (list) => (list || []).map(k => typeof k === 'string' ? k.trim() : '').filter(k => k.length > 0);
 
-  const allKeywords = [...new Set([...required, ...preferred, ...soft, ...tech])].filter(k => k.trim().length > 0);
+  const required = normalizeList(jdAnalysis.requiredKeywords);
+  const preferred = normalizeList(jdAnalysis.preferredKeywords);
+  const soft = normalizeList(jdAnalysis.softSkills);
+  const tech = normalizeList(jdAnalysis.technologies);
+
+  // Case-insensitive deduplication preserving original casing for visualization
+  const uniqueMap = new Map();
+  [...required, ...preferred, ...soft, ...tech].forEach(k => {
+    if (!uniqueMap.has(k.toLowerCase())) {
+      uniqueMap.set(k.toLowerCase(), k);
+    }
+  });
+  const allKeywords = Array.from(uniqueMap.values());
 
   if (allKeywords.length === 0) {
     return {
@@ -127,9 +136,14 @@ export function calculateAtsScore(resume, jdAnalysis) {
 
   // 3. Alignment Checks
   let skillAlignment = 0;
-  const reqTechCount = required.filter(k => tech.includes(k)).length;
+  const techLower = tech.map(t => t.toLowerCase());
+  const requiredLower = required.map(r => r.toLowerCase());
+  
+  const reqTechCount = required.filter(k => techLower.includes(k.toLowerCase())).length;
   if (reqTechCount > 0) {
-    const foundTechCount = foundKeywords.filter(k => tech.includes(k) && required.includes(k)).length;
+    const foundTechCount = foundKeywords.filter(k => 
+      techLower.includes(k.toLowerCase()) && requiredLower.includes(k.toLowerCase())
+    ).length;
     skillAlignment = Math.round((foundTechCount / reqTechCount) * 100);
   } else {
     skillAlignment = keywordMatchPercent;

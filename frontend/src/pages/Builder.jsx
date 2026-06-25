@@ -17,42 +17,9 @@ import { useAuthStore } from '../store/authStore';
 import { isPremiumTemplate, isProUser } from '../utils/planConstants';
 import { motion, AnimatePresence } from 'framer-motion';
 import { pageTransitions, slideUp } from '../animations/pageTransitions';
-import { 
-  ArrowLeft, 
-  Save, 
-  Plus, 
-  Trash2, 
-  ArrowUp, 
-  ArrowDown, 
-  Eye, // eslint-disable-line no-unused-vars
-  ChevronDown, 
-  ChevronUp, 
-  Briefcase, 
-  GraduationCap, 
-  Wrench, 
-  FileText, 
-  Award, 
-  Globe, 
-  FolderGit2, 
-  User, 
-  CheckCircle, 
-  AlertTriangle,
-  Info, // eslint-disable-line no-unused-vars
-  ExternalLink,
-  Laptop,
-  Sparkles,
-  Brain,
-  Check,
-  RotateCcw,
-  X,
-  Target,
-  Loader2,
-  Lightbulb,
-  Palette,
-  Download,
-  Upload,
-  Lock,
-} from 'lucide-react';
+import { ArrowLeft, Save, ArrowUp, ArrowDown, Eye, // eslint-disable-line no-unused-vars
+  ChevronDown, ChevronUp, AlertTriangle, Info, // eslint-disable-line no-unused-vars
+  ExternalLink, Laptop, Sparkles, Brain, Check, RotateCcw, X, Target, Loader2, Palette, Download, Upload, Lock } from 'lucide-react';
 
 const normalizeUrl = (url) => {
   if (!url) return '';
@@ -1170,20 +1137,29 @@ const Builder = () => {
   }, [saving, autoSaveEnabled, hasUnsavedChanges, manualSavePerformed]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  // Unsaved changes beforeunload protection
+  // Unsaved changes beforeunload protection and visibility flush
   useEffect(() => {
     const handleBeforeUnload = (e) => {
-      if (!autoSaveEnabled && hasUnsavedChanges) {
+      if (hasUnsavedChanges) {
         e.preventDefault();
         e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
         return e.returnValue;
       }
     };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden' && hasUnsavedChanges) {
+        useResumeStore.getState().saveResumeImmediately();
+      }
+    };
+
     window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('visibilitychange', handleVisibilityChange);
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [autoSaveEnabled, hasUnsavedChanges]);
+  }, [hasUnsavedChanges]);
 
   if (loading) {
     return (

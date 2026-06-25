@@ -135,17 +135,36 @@ export const useAuthStore = create((set, get) => ({
         },
       });
 
+      // Distinguish specific HTTP auth failures (401 Unauthorized / 403 Forbidden)
+      if (response.status === 401 || response.status === 403) {
+        throw new Error('AUTH_FAILED');
+      }
+
+      // If response is not ok but not an auth failure (e.g. 500/502/503/504), 
+      // preserve auth state and fail silently to retry later.
+      if (!response.ok) {
+        console.warn(`[Check Auth] Temporary server error (${response.status}). Preserving session.`);
+        return;
+      }
+
       const data = await response.json();
 
-      if (!response.ok || !data.success) {
-        throw new Error('Session expired');
+      if (!data.success) {
+        throw new Error('AUTH_FAILED');
       }
 
       localStorage.setItem('cf_user', JSON.stringify(data.data));
       set({ user: data.data, isAuthenticated: true, error: null });
     } catch (error) {
-      console.warn('[Check Auth Error] Session is invalid, logging out:', error.message);
-      get().logout();
+      // Differentiate between intentional auth failures vs network errors
+      if (error.message === 'AUTH_FAILED') {
+        console.warn('[Check Auth] Session is invalid or expired. Logging out.');
+        get().logout();
+      } else {
+        // This catches fetch TypeErrors (offline, DNS fail, ECONNREFUSED)
+        // Do NOT log out. Preserve unsaved user work and session state.
+        console.warn('[Check Auth] Network or unexpected error. Preserving session.', error.message);
+      }
     }
   },
 

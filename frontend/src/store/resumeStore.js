@@ -124,7 +124,8 @@ export const useResumeStore = create((set, get) => ({
       return;
     }
 
-    set({ currentResume: mergedResume, saving: true });
+    // Always track unsaved changes even during debounce
+    set({ currentResume: mergedResume, saving: true, hasUnsavedChanges: true });
 
     // Clear existing save timer and schedule new one
     if (saveTimeout) clearTimeout(saveTimeout);
@@ -166,10 +167,11 @@ export const useResumeStore = create((set, get) => ({
               atsScore: data.data.atsScore !== undefined ? data.data.atsScore : latestResume.atsScore,
             },
             saving: false,
+            hasUnsavedChanges: false,
             error: null,
           });
         } else {
-          set({ saving: false, error: null });
+          set({ saving: false, hasUnsavedChanges: false, error: null });
         }
       } catch (error) {
         console.error('[Auto-save Error] Failed to persist data:', error.message);
@@ -192,6 +194,7 @@ export const useResumeStore = create((set, get) => ({
         method: 'PUT',
         headers: get().getHeaders(),
         body: JSON.stringify(resumeToSave),
+        keepalive: true // Ensure save completes even if page is closing
       });
 
       const data = await response.json();

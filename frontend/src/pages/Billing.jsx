@@ -1,23 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import {
-  ArrowLeft,
-  Loader2,
-  CheckCircle2,
-  AlertCircle,
-  Sparkles,
-  Crown,
-  Check,
-  X,
-  Zap,
-  Shield,
-  FileText,
-  PenTool,
-  Download,
-  Star,
-  Infinity,
-} from 'lucide-react';
+import { ArrowLeft, Loader2, CheckCircle2, AlertCircle, Sparkles, Crown, Check, X, Zap, Shield, FileText, Star, Infinity } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { premiumEase } from '../animations/motionVariants';
 
