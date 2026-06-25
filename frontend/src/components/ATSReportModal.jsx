@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Target, X, CheckCircle, AlertTriangle, Lightbulb } from 'lucide-react';
+import { Target, X, CheckCircle, AlertTriangle, Lightbulb, Info } from 'lucide-react';
+import DeleteModal from './DeleteModal';
 
 const ATSReportModal = ({
   isOpen,
@@ -10,7 +12,11 @@ const ATSReportModal = ({
   setModalKeywordSearch,
   openMagicOptimizer,
 }) => {
+  const [alertModalOpen, setAlertModalOpen] = useState(false);
+  const [alertModalContent, setAlertModalContent] = useState('');
+
   return (
+    <>
     <AnimatePresence>
       {isOpen && (
         <motion.div
@@ -147,7 +153,8 @@ const ATSReportModal = ({
                         .map(k => (
                           <span key={k} className="px-2 py-0.5 bg-amber-100/40 dark:bg-rose-950/20 border border-amber-200/20 dark:border-rose-900/30 text-amber-700 dark:text-rose-400 rounded-lg text-[9px] font-bold flex items-center gap-1 transition-colors cursor-pointer hover:border-indigo-500" title="Click to auto-fix or optimize" onClick={() => {
                             openMagicOptimizer('bullet', '', (newVal) => {
-                              alert(`Suggested optimized sentence to inject:\n\n${newVal}`);
+                              setAlertModalContent(`Suggested optimized sentence to inject:\n\n${newVal}`);
+                              setAlertModalOpen(true);
                             });
                           }}>
                             <span className="w-1 h-1 rounded-full bg-amber-500 animate-pulse" />
@@ -205,6 +212,23 @@ const ATSReportModal = ({
         </motion.div>
       )}
     </AnimatePresence>
+    
+    <DeleteModal
+      isOpen={alertModalOpen}
+      onClose={() => setAlertModalOpen(false)}
+      onConfirm={() => {
+        setAlertModalOpen(false);
+      }}
+      title="Suggestion Ready"
+      description={alertModalContent}
+      confirmText="OK"
+      confirmColorClass="bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/10"
+      iconColorClass="text-indigo-500"
+      iconBgClass="bg-indigo-50 dark:bg-indigo-950/50"
+      hideCancel={true}
+      IconComponent={Info}
+    />
+    </>
   );
 };
 

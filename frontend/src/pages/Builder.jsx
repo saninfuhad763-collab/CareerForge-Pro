@@ -10,6 +10,7 @@ import SummarySection from '../components/SummarySection';
 import UploadResumeModal from '../components/UploadResumeModal';
 import MagicOptimizerModal from '../components/MagicOptimizerModal';
 import ATSReportModal from '../components/ATSReportModal';
+import DeleteModal from '../components/DeleteModal';
 
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useResumeStore } from '../store/resumeStore';
@@ -141,6 +142,10 @@ const JD_PRESETS = {
 const Builder = () => {
   const { id } = useParams();
   const _navigate = useNavigate();
+  
+  const [alertModalOpen, setAlertModalOpen] = useState(false);
+  const [alertModalContent, setAlertModalContent] = useState('');
+  const [alertModalTitle, setAlertModalTitle] = useState('Notice');
   const { user } = useAuthStore();
   const isPro = isProUser(user);
   const [searchParams] = useSearchParams();
@@ -1087,7 +1092,9 @@ const Builder = () => {
         if (log.actionType === 'summary_rewrite') {
           handleSummaryChange(data.originalContent);
         } else {
-          alert(`Original content restored! Copied to clipboard:\n\n${data.originalContent}`);
+          setAlertModalTitle('Original Content Restored');
+          setAlertModalContent(`Original content restored! Copied to clipboard:\n\n${data.originalContent}`);
+          setAlertModalOpen(true);
           navigator.clipboard.writeText(data.originalContent);
         }
         fetchHistoryLogs();
@@ -2007,7 +2014,9 @@ const Builder = () => {
                           onClick={() => {
                             if (!kw.matched) {
                               openMagicOptimizer('bullet', '', (newVal) => {
-                                alert(`Suggested optimized sentence to inject:\n\n${newVal}`);
+                                setAlertModalTitle('Suggestion Ready');
+                                setAlertModalContent(`Suggested optimized sentence to inject:\n\n${newVal}`);
+                                setAlertModalOpen(true);
                               });
                             }
                           }}
@@ -2903,7 +2912,6 @@ const Builder = () => {
 
       </div>
 
-
       {/* Upload Existing Resume Dialog Overlay */}
       <UploadResumeModal
         isOpen={isUploadModalOpen}
@@ -2944,6 +2952,22 @@ const Builder = () => {
         modalKeywordSearch={modalKeywordSearch}
         setModalKeywordSearch={setModalKeywordSearch}
         openMagicOptimizer={openMagicOptimizer}
+      />
+
+      <DeleteModal
+        isOpen={alertModalOpen}
+        onClose={() => setAlertModalOpen(false)}
+        onConfirm={() => {
+          setAlertModalOpen(false);
+        }}
+        title={alertModalTitle}
+        description={alertModalContent}
+        confirmText="OK"
+        confirmColorClass="bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/10"
+        iconColorClass="text-indigo-500"
+        iconBgClass="bg-indigo-50 dark:bg-indigo-950/50"
+        hideCancel={true}
+        IconComponent={Info}
       />
     </motion.div>
   );

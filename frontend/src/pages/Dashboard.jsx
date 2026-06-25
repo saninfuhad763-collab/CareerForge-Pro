@@ -722,10 +722,9 @@ const Dashboard = () => {
               )}
 
               {coverLettersLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="animate-pulse bg-slate-200 dark:bg-slate-800 rounded-2xl h-56 border border-slate-200 dark:border-slate-800" />
-                  ))}
+                <div className="h-64 flex flex-col items-center justify-center text-slate-400">
+                  <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mb-2" />
+                  <p className="text-sm font-semibold">Loading cover letters...</p>
                 </div>
               ) : coverLetters.length === 0 ? (
                 <div className="py-12 md:py-24 flex items-center justify-center">
