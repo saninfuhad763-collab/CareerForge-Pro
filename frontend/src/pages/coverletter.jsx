@@ -22,19 +22,25 @@ import {
   Eye,
   Download,
   FileSignature,
+  Gauge,
 } from 'lucide-react';
 import { isProUser } from '../utils/planConstants';
 
 import { sidebarItemVariant } from '../animations/dashboardAnimations';
 import { premiumEase } from '../animations/motionVariants';
+import { staggerContainer, staggerItem } from '../animations/staggerAnimations';
+import { buttonScale, professionalCardVariant } from '../animations/cardAnimations';
 import DeleteModal from '../components/DeleteModal';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
+
+
 
 const CoverLetter = () => {
   const { user, logout } = useAuthStore();
   const { resumes, loadResumes, loading: resumesLoading } = useResumeStore();
   const navigate = useNavigate();
+  const activeTab = 'cover-letters';
 
   const [selectedResumeId, setSelectedResumeId] = useState('');
   const [companyName, setCompanyName] = useState('');
@@ -55,6 +61,7 @@ const CoverLetter = () => {
   const [exportCoverLetterId, setExportCoverLetterId] = useState('');
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportError, setExportError] = useState('');
+  const [exportSuccess, setExportSuccess] = useState(false);
 
   const fetchSavedCoverLetters = useCallback(async () => {
     setLoadingSaved(true);
@@ -265,6 +272,9 @@ const CoverLetter = () => {
       anchor.click();
       anchor.remove();
       window.URL.revokeObjectURL(url);
+      
+      setExportSuccess(true);
+      setTimeout(() => setExportSuccess(false), 2000);
     } catch (err) {
       setExportError(err.message || 'Failed to export cover letter PDF.');
     } finally {
@@ -284,7 +294,7 @@ const CoverLetter = () => {
       <aside className="w-full md:w-64 bg-white dark:bg-slate-900 border-b md:border-r border-slate-200/50 dark:border-slate-800/50 flex flex-col p-4 py-5 shrink-0 md:sticky md:top-0 md:h-screen z-20">
         <div className="space-y-5 shrink-0">
           {/* Logo brand */}
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/dashboard')}>
+          <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-xl bg-linear-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-bold font-display">
               CF
             </div>
@@ -316,30 +326,52 @@ const CoverLetter = () => {
           {/* Sidebar Menu Links */}
           <nav className="space-y-0.5 text-left mt-6">
             <motion.button 
-              onClick={() => navigate('/dashboard')}
-              className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-lg transition-colors cursor-pointer"
-              whileHover="hover"
-              variants={sidebarItemVariant}
-            >
-              <ArrowLeft className="w-4.5 h-4.5" />
-              <span>Back to Dashboard</span>
-            </motion.button>
-            <motion.button 
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/')}
               className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-lg transition-colors cursor-pointer"
               whileHover="hover"
               variants={sidebarItemVariant}
             >
               <Compass className="w-4.5 h-4.5" />
-              <span>Explore Resumes</span>
+              <span>Back to Home</span>
             </motion.button>
             <motion.button 
-              className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 rounded-lg transition-all cursor-pointer font-semibold shadow-sm shadow-indigo-100 dark:shadow-none"
+              onClick={() => navigate('/dashboard?tab=resumes')}
+              className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${
+                activeTab === 'resumes'
+                  ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 font-semibold shadow-sm shadow-indigo-100 dark:shadow-none'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/40'
+              }`}
+              whileHover="hover"
+              variants={sidebarItemVariant}
+            >
+              <FileText className="w-4.5 h-4.5" />
+              <span>Resumes</span>
+            </motion.button>
+             <motion.button 
+              onClick={() => navigate('/dashboard?tab=ai-scoring')}
+              className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${
+                activeTab === 'ai-scoring'
+                  ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 font-semibold shadow-sm shadow-indigo-100 dark:shadow-none'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/40'
+              }`}
+              whileHover="hover"
+              variants={sidebarItemVariant}
+            >
+              <Gauge className="w-4.5 h-4.5" />
+              <span>AI Scoring</span>
+            </motion.button>
+            <motion.button 
+              onClick={() => navigate('/dashboard?tab=cover-letters')}
+              className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${
+                activeTab === 'cover-letters'
+                  ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 font-semibold shadow-sm shadow-indigo-100 dark:shadow-none'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/40'
+              }`}
               whileHover="hover"
               variants={sidebarItemVariant}
             >
               <FileSignature className="w-4.5 h-4.5" />
-              <span>Cover Letter</span>
+              <span>Cover Letters</span>
             </motion.button>
           </nav>
         </div>
@@ -409,7 +441,9 @@ const CoverLetter = () => {
           </button>
 
           <button
-            onClick={() => setShowSignoutConfirm(true)}
+            onClick={() => {
+              setShowSignoutConfirm(true);
+            }}
             className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors cursor-pointer"
           >
             <LogOut className="w-4.5 h-4.5" />
@@ -419,50 +453,86 @@ const CoverLetter = () => {
       </aside>
 
       {/* Main Panel Content Area */}
-      <main className="flex-1 p-6 md:p-10 space-y-8 overflow-y-auto max-h-screen text-left">
+      <motion.main 
+        key="cover-letter-generator"
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        variants={{
+          hidden: { opacity: 0 },
+          visible: {
+            opacity: 1,
+            transition: {
+              staggerChildren: 0.05,
+              delayChildren: 0.02
+            }
+          },
+          exit: {
+            opacity: 0,
+            y: -15,
+            transition: { duration: 0.3 }
+          }
+        }}
+        className="flex-1 px-4 py-5 md:px-8 md:py-6 overflow-y-auto max-h-screen text-left flex flex-col min-h-0"
+      >
+        {/* Navigation Button */}
+        <motion.div variants={staggerItem} className="mb-4 md:mb-5 shrink-0">
+          <button
+            onClick={() => navigate('/dashboard?tab=cover-letters')}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md transition-all shadow-sm hover:shadow hover:-translate-y-0.5 cursor-pointer"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Cover Letter History</span>
+          </button>
+        </motion.div>
+
         {/* Banner Header */}
-        <div className="space-y-1">
-          <h1 className="text-2xl md:text-3xl font-bold font-display text-slate-800 dark:text-slate-100 flex items-center gap-3">
-            <Sparkles className="w-7 h-7 text-indigo-500 animate-pulse" />
+        <motion.div variants={staggerItem} className="space-y-1.5 shrink-0 mb-6 md:mb-8">
+          <h1 className="text-2xl font-bold font-display text-slate-800 dark:text-slate-100 flex items-center gap-2.5 tracking-tight">
+            <Sparkles className="w-5 h-5 text-indigo-500 animate-pulse" />
             <span>AI Cover Letter Generator</span>
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-[13px] text-slate-500 dark:text-slate-400 max-w-2xl">
             Generate custom professional cover letters that highlight your strengths aligned with the target job.
           </p>
-        </div>
+        </motion.div>
 
         {/* Outer Split Layout Container */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start xl:items-stretch">
+        <motion.div 
+          variants={staggerContainer(0.05)}
+          className="grid grid-cols-1 xl:grid-cols-2 gap-5 md:gap-6 items-stretch h-auto xl:h-[480px] shrink-0 min-h-0"
+        >
           
-          {/* Left panel: input forms + saved list */}
-          <div className="space-y-6">
-            <motion.div 
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 md:p-8 space-y-6 shadow-xs hover:-translate-y-0.5 hover:shadow-md hover:border-indigo-500/30 transition-all duration-300"
-            >
-              <h2 className="text-lg font-bold font-display text-slate-800 dark:text-slate-100">
+          {/* Left panel: input forms */}
+          <motion.div 
+            variants={professionalCardVariant}
+            whileHover={{ y: -2, scale: 1.01, transition: { duration: 0.2 } }}
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-5 md:px-6 md:py-5 flex flex-col gap-3 md:gap-4 shadow-xs hover:shadow-md hover:border-indigo-500/30 transition-colors transition-shadow duration-300 min-h-0"
+          >
+            <div className="pb-3 md:pb-4 border-b border-slate-100 dark:border-slate-800/60 shrink-0">
+              <h2 className="text-base font-bold font-display text-slate-800 dark:text-slate-100">
                 Customize Cover Letter Details
               </h2>
+            </div>
 
               {error && (
-                <div className="p-4 bg-red-50 dark:bg-red-950/20 border border-red-200/50 dark:border-red-800/40 rounded-2xl flex items-center gap-3 text-red-600 dark:text-red-400">
-                  <AlertCircle className="w-5 h-5 shrink-0" />
+                <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200/50 dark:border-red-800/40 rounded-xl flex items-center gap-2 text-red-600 dark:text-red-400 shrink-0">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
                   <p className="text-xs font-semibold leading-normal">{error}</p>
                 </div>
               )}
 
-              <form onSubmit={handleGenerate} className="space-y-5">
+              <form onSubmit={handleGenerate} className="flex-1 flex flex-col min-h-0 gap-3 md:gap-4">
                 {/* Resume Selector */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-indigo-500 uppercase tracking-wider">Select Resume Profile</label>
+                <div className="space-y-1.5 shrink-0">
+                  <label className="text-[11px] font-bold text-indigo-500 uppercase tracking-wider">Select Resume Profile</label>
                   <div className="relative">
                     {resumesLoading ? (
-                      <div className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm text-slate-400">
+                      <div className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm text-slate-400">
                         Loading your resumes...
                       </div>
                     ) : resumes.length === 0 ? (
-                      <div className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-red-200 dark:border-red-900 rounded-xl text-sm text-red-500 flex items-center justify-between">
+                      <div className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-red-200 dark:border-red-900 rounded-lg text-sm text-red-500 flex items-center justify-between">
                         <span>No resumes found. Please create a resume first.</span>
                         <button 
                           type="button" 
@@ -476,7 +546,7 @@ const CoverLetter = () => {
                       <select
                         value={selectedResumeId}
                         onChange={(e) => setSelectedResumeId(e.target.value)}
-                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-xl text-sm text-slate-800 dark:text-slate-100 outline-none transition-all cursor-pointer"
+                        className="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-lg text-sm text-slate-800 dark:text-slate-100 outline-none transition-all duration-300 focus:shadow-md focus:shadow-indigo-500/10 cursor-pointer"
                       >
                         {resumes.map((resume) => (
                           <option key={resume._id} value={resume._id}>
@@ -489,9 +559,9 @@ const CoverLetter = () => {
                 </div>
 
                 {/* Company & Title Row */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 shrink-0">
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                       <Building className="w-3.5 h-3.5" /> Target Company
                     </label>
                     <input
@@ -500,11 +570,11 @@ const CoverLetter = () => {
                       placeholder="e.g. Google"
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-xl text-sm text-slate-800 dark:text-slate-100 outline-none transition-all"
+                      className="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-lg text-sm text-slate-800 dark:text-slate-100 outline-none transition-all duration-300 focus:shadow-md focus:shadow-indigo-500/10"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                       <Briefcase className="w-3.5 h-3.5" /> Target Job Title
                     </label>
                     <input
@@ -513,163 +583,123 @@ const CoverLetter = () => {
                       placeholder="e.g. Senior Frontend Engineer"
                       value={jobTitle}
                       onChange={(e) => setJobTitle(e.target.value)}
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-xl text-sm text-slate-800 dark:text-slate-100 outline-none transition-all"
+                      className="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-lg text-sm text-slate-800 dark:text-slate-100 outline-none transition-all duration-300 focus:shadow-md focus:shadow-indigo-500/10"
                     />
                   </div>
                 </div>
 
                 {/* Job Description Textarea */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Job Description (Recommended)</label>
+                <div className="space-y-1.5 flex-1 flex flex-col min-h-0">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0">Job Description (Recommended)</label>
                   <textarea
-                    rows={6}
                     placeholder="Paste the target job description to match skills and criteria..."
                     value={jobDescription}
                     onChange={(e) => setJobDescription(e.target.value)}
-                    className="w-full px-4 py-3 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-xl text-sm text-slate-800 dark:text-slate-100 outline-none transition-all resize-y"
+                    className="w-full flex-1 px-3 py-2 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-lg text-sm text-slate-800 dark:text-slate-100 outline-none transition-all duration-300 focus:shadow-md focus:shadow-indigo-500/10 resize-none min-h-[50px]"
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={generating || resumes.length === 0}
-                  className="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-600/60 text-white py-3.5 rounded-xl font-semibold text-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg shadow-md shadow-indigo-500/10 cursor-pointer disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-md"
-                >
-                  {generating ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Analyzing & Crafting Cover Letter...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4" />
-                      <span>Generate Cover Letter</span>
-                    </>
-                  )}
-                </button>
+                <div className="mt-auto pt-2 shrink-0">
+                  <motion.button
+                    variants={buttonScale}
+                    whileHover="hover"
+                    whileTap="tap"
+                    type="submit"
+                    disabled={generating || resumes.length === 0}
+                    className="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-linear-to-r hover:from-indigo-600 hover:to-indigo-500 disabled:bg-indigo-600/60 text-white py-2.5 rounded-lg font-semibold text-sm transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/25 cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    {generating ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Analyzing & Crafting Cover Letter...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        <span>Generate Cover Letter</span>
+                      </>
+                    )}
+                  </motion.button>
+                </div>
               </form>
             </motion.div>
 
-            {/* Saved Cover Letters Card */}
-            <motion.div 
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 md:p-8 space-y-6 shadow-xs text-left hover:-translate-y-0.5 hover:shadow-md hover:border-indigo-500/30 transition-all duration-300"
-            >
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold font-display text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                  <History className="w-5 h-5 text-indigo-500" />
-                  <span>Saved Cover Letters History</span>
-                </h2>
-                <span className="text-xs bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-bold px-2.5 py-0.5 rounded-full">
-                  {savedCoverLetters.length}
-                </span>
-              </div>
-
-              {loadingSaved ? (
-                <div className="flex flex-col items-center justify-center py-8 text-slate-400">
-                  <Loader2 className="w-6 h-6 animate-spin mb-2 text-indigo-500" />
-                  <p className="text-xs font-semibold">Loading history...</p>
-                </div>
-              ) : savedCoverLetters.length === 0 ? (
-                <div className="text-center py-8 text-slate-400">
-                  <p className="text-xs font-semibold">No saved cover letters found.</p>
-                  <p className="text-[10px] text-slate-400 mt-1">Generated letters saved to history will appear here.</p>
-                </div>
-              ) : (
-                <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
-                  {savedCoverLetters.map((cl) => (
-                    <div
-                      key={cl._id}
-                      onClick={() => handleViewSaved(cl)}
-                      className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-800/60 cursor-pointer transition-all hover:-translate-y-0.5"
-                    >
-                      <div className="text-left space-y-0.5 min-w-0 flex-1">
-                        <h4 className="text-xs font-bold text-slate-800 dark:text-slate-250 truncate">{cl.jobTitle}</h4>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold truncate">at {cl.companyName}</p>
-                        {cl.resumeId?.title && (
-                          <p className="text-[9px] text-slate-400 truncate">Resume: {cl.resumeId.title}</p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0 ml-4">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewSaved(cl);
-                          }}
-                          className="p-1.5 bg-white dark:bg-slate-850 hover:bg-indigo-50 dark:hover:bg-indigo-950 text-slate-500 hover:text-indigo-600 rounded-lg transition-colors cursor-pointer"
-                          title="View Cover Letter"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => handleDeleteSavedClick(cl._id, e)}
-                          className="p-1.5 bg-white dark:bg-slate-855 hover:bg-red-50 dark:hover:bg-red-950 text-slate-500 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
-                          title="Delete Cover Letter"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </motion.div>
-          </div>
-
           {/* Right panel: preview cover letter */}
           <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 md:p-8 flex flex-col shadow-xs h-full hover:-translate-y-0.5 hover:shadow-md hover:border-indigo-500/30 transition-all duration-300"
+            variants={professionalCardVariant}
+            whileHover={{ y: -2, scale: 1.01, transition: { duration: 0.2 } }}
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-5 md:px-6 md:py-5 flex flex-col shadow-xs hover:shadow-md hover:border-indigo-500/30 transition-colors transition-shadow duration-300 min-h-0"
           >
             {/* Header section with buttons */}
-            <div className="space-y-4 flex-1 flex flex-col">
-              <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-800/60">
-                <h3 className="font-bold font-display text-slate-800 dark:text-slate-100">
+            <div className="flex-1 flex flex-col min-h-0 gap-3 md:gap-4">
+              <div className="flex justify-between items-center pb-3 md:pb-4 border-b border-slate-100 dark:border-slate-800/60 shrink-0">
+                <h3 className="font-bold font-display text-base text-slate-800 dark:text-slate-100">
                   Cover Letter Preview
                 </h3>
                 {coverLetter && (
                   <div className="flex items-center gap-2">
                     {/* Save Button */}
-                    <button
+                    <motion.button
+                      variants={buttonScale}
+                      whileHover="hover"
+                      whileTap="tap"
                       onClick={handleSave}
                       disabled={saving}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 rounded-lg text-xs font-semibold cursor-pointer transition-colors disabled:opacity-50"
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-300 disabled:opacity-50 ${
+                        saveSuccess 
+                          ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400' 
+                          : 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/60'
+                      }`}
                     >
                       {saving ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : saveSuccess ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ duration: 0.2 }}>
+                          <Check className="w-3.5 h-3.5 text-emerald-500" />
+                        </motion.div>
                       ) : (
                         <Save className="w-3.5 h-3.5" />
                       )}
                       <span>{saveSuccess ? 'Saved!' : 'Save to History'}</span>
-                    </button>
+                    </motion.button>
 
-                    <button
+                    <motion.button
+                      variants={buttonScale}
+                      whileHover="hover"
+                      whileTap="tap"
                       onClick={handleExportPdf}
                       disabled={exportingPdf || !exportCoverLetterId}
                       title={exportCoverLetterId ? 'Download PDF' : 'Save to history before exporting PDF'}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-indigo-600/50 disabled:cursor-not-allowed rounded-lg text-xs font-semibold cursor-pointer transition-colors"
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 disabled:cursor-not-allowed rounded-lg text-xs font-semibold cursor-pointer transition-all duration-300 ${
+                        exportSuccess
+                          ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400'
+                          : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:shadow-indigo-500/20 disabled:bg-indigo-600/50'
+                      }`}
                     >
                       {exportingPdf ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : exportSuccess ? (
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ duration: 0.2 }}>
+                          <Check className="w-3.5 h-3.5" />
+                        </motion.div>
                       ) : (
                         <Download className="w-3.5 h-3.5" />
                       )}
-                      <span>{exportingPdf ? 'Exporting...' : 'Export PDF'}</span>
-                    </button>
+                      <span>{exportingPdf ? 'Exporting...' : exportSuccess ? 'Exported' : 'Export PDF'}</span>
+                    </motion.button>
 
-                    <button
+                    <motion.button
+                      variants={buttonScale}
+                      whileHover="hover"
+                      whileTap="tap"
                       onClick={handleCopy}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg text-xs font-semibold cursor-pointer transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-300"
                     >
                       {copied ? (
                         <>
-                          <Check className="w-3.5 h-3.5 text-emerald-500" />
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ duration: 0.2 }}>
+                            <Check className="w-3.5 h-3.5 text-emerald-500" />
+                          </motion.div>
                           <span className="text-emerald-500">Copied!</span>
                         </>
                       ) : (
@@ -678,7 +708,7 @@ const CoverLetter = () => {
                           <span>Copy Letter</span>
                         </>
                       )}
-                    </button>
+                    </motion.button>
                   </div>
                 )}
               </div>
@@ -691,44 +721,66 @@ const CoverLetter = () => {
               )}
 
               {/* Cover Letter Content Body */}
-              <div className="flex-1 flex flex-col justify-center mt-2 min-h-0">
-                {generating ? (
-                  <div className="space-y-4 animate-pulse p-4">
-                    <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-1/4" />
-                    <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-1/3" />
-                    <div className="space-y-2 pt-4">
-                      <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-full" />
-                      <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-full" />
-                      <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-5/6" />
-                    </div>
-                    <div className="space-y-2 pt-4">
-                      <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-full" />
-                      <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-full" />
-                      <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-4/5" />
-                    </div>
-                    <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-1/4 pt-4" />
-                  </div>
-                ) : coverLetter ? (
-                  <div className="p-4 bg-slate-50 dark:bg-slate-950/45 border border-slate-100 dark:border-slate-800/60 rounded-2xl h-full flex-1 overflow-y-auto">
-                    <pre className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300 font-sans leading-relaxed text-left">
-                      {coverLetter}
-                    </pre>
-                  </div>
-                ) : (
-                  <div className="text-center py-12 text-slate-400 space-y-3">
-                    <div className="w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-950 flex items-center justify-center mx-auto">
-                      <FileText className="w-6 h-6 text-slate-300" />
-                    </div>
-                    <p className="text-sm font-semibold max-w-xs mx-auto">
-                      Enter details and generate a cover letter to see your customized preview.
-                    </p>
-                  </div>
-                )}
+              <div className="flex-1 relative min-h-[300px] mt-2">
+                <AnimatePresence mode="wait">
+                  {generating ? (
+                    <motion.div 
+                      key="generating"
+                      initial={{ opacity: 0, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.98 }}
+                      transition={{ duration: 0.3, ease: premiumEase }}
+                      className="space-y-3 animate-pulse p-4 absolute inset-0 bg-white dark:bg-slate-900 z-10"
+                    >
+                      <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-1/4" />
+                      <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-1/3" />
+                      <div className="space-y-2 pt-3">
+                        <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-full" />
+                        <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-full" />
+                        <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-5/6" />
+                      </div>
+                      <div className="space-y-2 pt-3">
+                        <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-full" />
+                        <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-full" />
+                        <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-4/5" />
+                      </div>
+                    </motion.div>
+                  ) : coverLetter ? (
+                    <motion.div 
+                      key="content"
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.4, ease: premiumEase }}
+                      className="absolute inset-0 p-4 bg-slate-50 dark:bg-slate-950/45 border border-slate-100 dark:border-slate-800/60 rounded-xl overflow-y-auto z-10"
+                    >
+                      <pre className="whitespace-pre-wrap text-[13px] text-slate-700 dark:text-slate-300 font-sans leading-relaxed text-left">
+                        {coverLetter}
+                      </pre>
+                    </motion.div>
+                  ) : (
+                    <motion.div 
+                      key="empty"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="absolute inset-0 flex flex-col items-center justify-center text-center py-8 text-slate-400 space-y-2 z-10 bg-white dark:bg-slate-900"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-950 flex items-center justify-center mx-auto">
+                        <FileText className="w-5 h-5 text-slate-300" />
+                      </div>
+                      <p className="text-xs font-semibold max-w-[200px] mx-auto leading-relaxed">
+                        Enter details and generate a cover letter to see your customized preview.
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </motion.div>
-        </div>
-      </main>
+        </motion.div>
+      </motion.main>
 
       {/* Delete Confirmation Modal */}
       <DeleteModal

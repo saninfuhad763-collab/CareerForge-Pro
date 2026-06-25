@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -51,15 +51,22 @@ const Dashboard = () => {
   const [newTitle, setNewTitle] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState('modern');
   const [actionLoading, setActionLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('resumes');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const activeTab = searchParams.get('tab') || 'resumes';
+
+  const setActiveTab = (tab) => {
+    setSearchParams({ tab });
+  };
+
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [deleteCoverLetterConfirmId, setDeleteCoverLetterConfirmId] = useState(null);
   const [showSignoutConfirm, setShowSignoutConfirm] = useState(false);
 
   const [createError, setCreateError] = useState(null);
   const [downloadLoadingId, setDownloadLoadingId] = useState(null);
-
-  const navigate = useNavigate();
 
   const [coverLetters, setCoverLetters] = useState([]);
   const [coverLettersLoading, setCoverLettersLoading] = useState(false);
