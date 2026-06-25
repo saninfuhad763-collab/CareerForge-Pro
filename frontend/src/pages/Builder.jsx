@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import PersonalSection from '../components/PersonalSection';
 import ExperienceSection from '../components/ExperienceSection';
+import SkillsSection from '../components/SkillsSection';
+import ProjectsSection from '../components/ProjectsSection';
 import EducationSection from '../components/EducationSection';
 import SummarySection from '../components/SummarySection';
 import UploadResumeModal from '../components/UploadResumeModal';
@@ -2130,192 +2132,25 @@ const Builder = () => {
             />
 
             {/* 5. TECHNICAL SKILLS */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 rounded-2xl overflow-hidden shadow-sm">
-              <button
-                onClick={() => toggleAccordion('skills')}
-                className="w-full px-5 py-4 flex items-center justify-between font-bold font-display text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950/40 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <Wrench className="w-4 h-4 text-indigo-500" />
-                  <span>Skills ({skills.length})</span>
-                </div>
-                {activeAccordion === 'skills' ? <ChevronUp className="w-4.5 h-4.5" /> : <ChevronDown className="w-4.5 h-4.5" />}
-              </button>
-
-              <AnimatePresence>
-                {activeAccordion === 'skills' && (
-                  <motion.div
-                    initial={{ height: 0 }}
-                    animate={{ height: 'auto' }}
-                    exit={{ height: 0 }}
-                    className="overflow-hidden border-t border-slate-100 dark:border-slate-800/80"
-                  >
-                    <div className="p-5 space-y-6">
-                      {skills.map((skill, idx) => (
-                        <div key={idx} className="space-y-3 p-4 bg-slate-50/50 dark:bg-slate-950/30 rounded-xl relative border border-slate-100 dark:border-slate-800">
-                          <button
-                            onClick={() => handleRemoveSkillCategory(idx)}
-                            className="absolute top-3 right-3 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                          
-                          <h6 className="text-xs font-bold text-indigo-600 dark:text-indigo-400">Skill Group #{idx + 1}</h6>
-
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1">
-                              <label className="text-[9px] font-bold text-slate-400">Group Name</label>
-                              <input
-                                type="text"
-                                placeholder="Languages"
-                                value={skill.name}
-                                onChange={(e) => handleUpdateSkillCategory(idx, 'name', e.target.value)}
-                                className="w-full px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-lg text-xs text-slate-800 dark:text-slate-100 focus:outline-none"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <label className="text-[9px] font-bold text-slate-400">Proficiency Level (Optional)</label>
-                              <input
-                                type="text"
-                                placeholder="Expert"
-                                value={skill.level}
-                                onChange={(e) => handleUpdateSkillCategory(idx, 'level', e.target.value)}
-                                className="w-full px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-lg text-xs text-slate-800 dark:text-slate-100 focus:outline-none"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="space-y-1">
-                            <label className="text-[9px] font-bold text-slate-400">Keywords (Comma Separated)</label>
-                            <input
-                              type="text"
-                              placeholder="React, JavaScript, HTML, CSS"
-                              value={localSkillsText[idx] !== undefined ? localSkillsText[idx] : (skill.keywords ? skill.keywords.join(', ') : '')}
-                              onChange={(e) => handleUpdateSkillCategory(idx, 'keywords', e.target.value)}
-                              className="w-full px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-lg text-xs text-slate-800 dark:text-slate-100 focus:outline-none"
-                            />
-                            <p className="text-[9px] text-slate-400">Separate keywords with commas. Essential for ATS matching filters.</p>
-                          </div>
-                        </div>
-                      ))}
-
-                      <button
-                        type="button"
-                        onClick={handleAddSkillCategory}
-                        className="w-full py-2 border border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-500 rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold text-slate-500 hover:text-indigo-600 transition-all cursor-pointer"
-                      >
-                        <Plus className="w-4 h-4" /> Add Skill Group
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            <SkillsSection
+              activeAccordion={activeAccordion}
+              toggleAccordion={toggleAccordion}
+              skills={skills}
+              localSkillsText={localSkillsText}
+              handleRemoveSkillCategory={handleRemoveSkillCategory}
+              handleUpdateSkillCategory={handleUpdateSkillCategory}
+              handleAddSkillCategory={handleAddSkillCategory}
+            />
 
             {/* 6. PROJECTS */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 rounded-2xl overflow-hidden shadow-sm">
-              <button
-                onClick={() => toggleAccordion('projects')}
-                className="w-full px-5 py-4 flex items-center justify-between font-bold font-display text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950/40 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <FolderGit2 className="w-4 h-4 text-indigo-500" />
-                  <span>Projects ({projects.length})</span>
-                </div>
-                {activeAccordion === 'projects' ? <ChevronUp className="w-4.5 h-4.5" /> : <ChevronDown className="w-4.5 h-4.5" />}
-              </button>
-
-              <AnimatePresence>
-                {activeAccordion === 'projects' && (
-                  <motion.div
-                    initial={{ height: 0 }}
-                    animate={{ height: 'auto' }}
-                    exit={{ height: 0 }}
-                    className="overflow-hidden border-t border-slate-100 dark:border-slate-800/80"
-                  >
-                    <div className="p-5 space-y-6">
-                      {projects.map((proj, idx) => (
-                        <div key={idx} className="space-y-4 p-4 bg-slate-50/50 dark:bg-slate-950/30 rounded-xl relative border border-slate-100 dark:border-slate-800">
-                          <button
-                            onClick={() => handleRemoveProject(idx)}
-                            className="absolute top-3 right-3 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                          
-                          <h6 className="text-xs font-bold text-indigo-600 dark:text-indigo-400">Project #{idx + 1}</h6>
-
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1">
-                              <label className="text-[9px] font-bold text-slate-400">Project Name</label>
-                              <input
-                                type="text"
-                                placeholder="E-Commerce API"
-                                value={proj.title}
-                                onChange={(e) => handleUpdateProject(idx, 'title', e.target.value)}
-                                className="w-full px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-lg text-xs text-slate-800 dark:text-slate-100 focus:outline-none"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <label className="text-[9px] font-bold text-slate-400">Role/Scope</label>
-                              <input
-                                type="text"
-                                placeholder="Solo Creator"
-                                value={proj.role}
-                                onChange={(e) => handleUpdateProject(idx, 'role', e.target.value)}
-                                className="w-full px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-lg text-xs text-slate-800 dark:text-slate-100 focus:outline-none"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-3 gap-2">
-                            <div className="space-y-1 col-span-2">
-                              <label className="text-[9px] font-bold text-slate-400">Project URL</label>
-                              <input
-                                type="text"
-                                placeholder="github.com/my-project"
-                                value={proj.url}
-                                onChange={(e) => handleUpdateProject(idx, 'url', e.target.value)}
-                                className="w-full px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-lg text-xs text-slate-800 dark:text-slate-100 focus:outline-none"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <label className="text-[9px] font-bold text-slate-400">Date</label>
-                              <input
-                                type="text"
-                                placeholder="2025"
-                                value={proj.startDate}
-                                onChange={(e) => handleUpdateProject(idx, 'startDate', e.target.value)}
-                                className="w-full px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-lg text-xs text-slate-800 dark:text-slate-100 focus:outline-none"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="space-y-1">
-                            <label className="text-[9px] font-bold text-slate-400">Project Description</label>
-                            <textarea
-                              rows={2.5}
-                              placeholder="Built scalable auth pipelines utilizing Redis cache layer..."
-                              value={proj.description}
-                              onChange={(e) => handleUpdateProject(idx, 'description', e.target.value)}
-                              className="w-full px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-lg text-xs text-slate-800 dark:text-slate-100 focus:outline-none resize-y"
-                            />
-                          </div>
-                        </div>
-                      ))}
-
-                      <button
-                        type="button"
-                        onClick={handleAddProject}
-                        className="w-full py-2 border border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-500 rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold text-slate-500 hover:text-indigo-600 transition-all cursor-pointer"
-                      >
-                        <Plus className="w-4 h-4" /> Add Project
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            <ProjectsSection
+              activeAccordion={activeAccordion}
+              toggleAccordion={toggleAccordion}
+              projects={projects}
+              handleRemoveProject={handleRemoveProject}
+              handleUpdateProject={handleUpdateProject}
+              handleAddProject={handleAddProject}
+            />
 
             {/* 7. CERTIFICATIONS */}
             <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 rounded-2xl overflow-hidden shadow-sm">
@@ -3112,10 +2947,15 @@ const Builder = () => {
                             if (templateId === 'modern') {
                               return (
                                 <div key={idx} className="flex justify-between items-center text-xs font-sans">
-                                  <div>
+                                  <div className="flex items-center gap-1.5">
                                     <span className="font-bold text-slate-800 dark:text-slate-200">{cert.name || 'Certification Name'}</span>
-                                    <span className="text-slate-400 mx-1.5">—</span>
+                                    <span className="text-slate-400">—</span>
                                     <span className="text-slate-600 dark:text-slate-400">{cert.issuer}</span>
+                                    {cert.url && (
+                                      <span className="text-[10px] text-indigo-500 flex items-center gap-0.5">
+                                        <ExternalLink className="w-2.5 h-2.5" />
+                                      </span>
+                                    )}
                                   </div>
                                   <span className="text-[10px] text-slate-400">{cert.date}</span>
                                 </div>

@@ -257,9 +257,10 @@ const renderCertifications = (resume, templateId) => {
       <div class="entry">
         <div class="entry-row">
           <span class="entry-primary">${escapeHtml(cert.name || 'Certification')}</span>
-          <span class="entry-date">${escapeHtml(cert.date || '')}</span>
+          ${cert.url ? `<span class="entry-meta">${escapeHtml(cert.url)}</span>` : ''}
         </div>
         ${cert.issuer ? `<p class="entry-secondary">${escapeHtml(cert.issuer)}</p>` : ''}
+        ${cert.date ? `<p class="entry-meta" style="margin-top: 2px;">${escapeHtml(cert.date)}</p>` : ''}
       </div>`)
     .join('');
 
