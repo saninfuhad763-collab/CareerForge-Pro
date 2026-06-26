@@ -260,9 +260,13 @@ export async function analyzeJobDescription(jdText) {
     "keywordImportance": {
       "keyword1": 5,
       "keyword2": 4
+    },
+    "aiGeneratedAliases": {
+      "keyword1": ["alias1", "alias2"],
+      "keyword2": ["alias3"]
     }
   }
-  Where keywordImportance rates keywords from 1 to 5 based on priority and occurrences. DO NOT include any markdown code blocks, backticks, or text before/after the JSON. Just return the raw JSON object.`;
+  Where keywordImportance rates keywords from 1 to 5 based on priority and occurrences. Generate standard acronyms and synonyms in aiGeneratedAliases for extracted keywords to improve recognition (e.g. "K8s" for "Kubernetes"). DO NOT include any markdown code blocks, backticks, or text before/after the JSON. Just return the raw JSON object.`;
 
   const userMsg = `Job Description Text:\n"${jdText}"`;
 
@@ -343,7 +347,8 @@ function runHeuristicJdParser(text) {
     softSkills: foundSoft,
     technologies: foundTech,
     certifications: foundCerts,
-    keywordImportance: importance
+    keywordImportance: importance,
+    aiGeneratedAliases: {}
   };
 }
 

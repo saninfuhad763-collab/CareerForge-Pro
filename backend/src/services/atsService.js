@@ -134,7 +134,7 @@ export function calculateAtsScore(resume, jdAnalysis) {
   const missingKeywords = [];
 
   allKeywords.forEach(kw => {
-    if (isKeywordMatched(kw, normalizedResume)) {
+    if (isKeywordMatched(kw, normalizedResume, jdAnalysis.aiGeneratedAliases || {})) {
       foundKeywords.push(kw);
     } else {
       missingKeywords.push(kw);
@@ -352,13 +352,26 @@ const checkSingleTermMatch = (term, text) => {
   }
 };
 
-export const isKeywordMatched = (keyword, text) => {
+export const isKeywordMatched = (keyword, text, aiGeneratedAliases = {}) => {
   const cleanKw = keyword.toLowerCase().trim();
   if (!cleanKw) return false;
 
-  const aliases = ALIAS_MAP[cleanKw] || [cleanKw];
+  const staticAliases = ALIAS_MAP[cleanKw] || [cleanKw];
+  let dynamicAliases = aiGeneratedAliases[cleanKw] || aiGeneratedAliases[keyword];
+  
+  // Safely normalize dynamic aliases
+  if (!Array.isArray(dynamicAliases)) {
+    dynamicAliases = [];
+  } else {
+    dynamicAliases = dynamicAliases
+      .filter(a => typeof a === 'string' && a.trim() !== '')
+      .map(a => a.toLowerCase().trim());
+  }
+  
+  // Merge and deduplicate safely
+  const combinedAliases = Array.from(new Set([...staticAliases, ...dynamicAliases]));
 
-  if (aliases.some(alias => checkSingleTermMatch(alias, text))) {
+  if (combinedAliases.some(alias => checkSingleTermMatch(alias, text))) {
     return true;
   }
 

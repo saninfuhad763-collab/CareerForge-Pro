@@ -27,24 +27,23 @@ import crypto from 'crypto';
  * @param {Object|undefined} importance - Raw keywordImportance from AI analysis
  * @returns {Object} - A new object with safe keys, safe to persist as a Mongoose Map
  */
-const sanitizeKeywordImportanceKeys = (importance) => {
-  if (!importance || typeof importance !== 'object' || Array.isArray(importance)) {
+const sanitizeMapKeys = (obj) => {
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
     return {};
   }
   const safe = {};
-  for (const [key, value] of Object.entries(importance)) {
-    // Replace ALL "." occurrences in the key with a safe token
+  for (const [key, value] of Object.entries(obj)) {
     const safeKey = String(key).replace(/\./g, '___dot___');
     safe[safeKey] = value;
   }
   return safe;
 };
 
-const restoreKeywordImportanceKeys = (importance) => {
-  if (!importance || typeof importance !== 'object') {
+const restoreMapKeys = (obj) => {
+  if (!obj || typeof obj !== 'object') {
     return {};
   }
-  const rawObj = typeof importance.toObject === 'function' ? importance.toObject() : importance;
+  const rawObj = typeof obj.toObject === 'function' ? obj.toObject() : obj;
   const restored = {};
   for (const [key, value] of Object.entries(rawObj)) {
     const normalKey = String(key).replace(/___dot___/g, '.');
@@ -111,7 +110,8 @@ export const analyzeJdAndScoreResume = async (req, res, next) => {
         softSkills: existingJd.analysis?.softSkills || [],
         technologies: existingJd.analysis?.technologies || [],
         certifications: existingJd.analysis?.certifications || [],
-        keywordImportance: restoreKeywordImportanceKeys(existingJd.analysis?.keywordImportance)
+        keywordImportance: restoreMapKeys(existingJd.analysis?.keywordImportance),
+        aiGeneratedAliases: restoreMapKeys(existingJd.analysis?.aiGeneratedAliases)
       };
       jobDescriptionId = existingJd._id;
     } else {
@@ -127,7 +127,8 @@ export const analyzeJdAndScoreResume = async (req, res, next) => {
       const jdVector = getEmbeddingVector(jdText);
       const persistableAnalysis = {
         ...analysis,
-        keywordImportance: sanitizeKeywordImportanceKeys(analysis.keywordImportance),
+        keywordImportance: sanitizeMapKeys(analysis.keywordImportance),
+        aiGeneratedAliases: sanitizeMapKeys(analysis.aiGeneratedAliases),
       };
       const newJd = await JobDescription.create({
         userId: req.user._id,
