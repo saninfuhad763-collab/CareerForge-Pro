@@ -120,13 +120,13 @@ dist/
 
 ---
 
-## 🔒 Security Auditing & Protections
+## 🔒 Security Auditing & Production Stability
 
-CareerForge Pro incorporates production-grade safety layers directly within its REST controllers and middleware:
-- **BCrypt Hashing**: Automatic user pre-save hook that hashes passwords before storing them in MongoDB.
-- **Express Rate Limiting**: Restricts high-speed bruteforce requests, permitting a maximum of **100 calls per 15 minutes** per individual IP address.
-- **Helmet Headers**: Automatically configures secure HTTP response headers to block cross-site scripting (XSS), sniff attacks, and frame hijacking.
-- **JWT Protection Gates**: Custom auth middleware that parses authorization headers to extract user credentials and safeguard endpoints.
+CareerForge Pro has successfully passed an internal security audit and production validation process. The repository has been cleaned and stabilized for production readiness with the following enhancements:
+- **Authentication Improvements:** Enhanced **JWT Protection Gates** inside custom middleware securely parse authorization headers to safeguard protected API endpoints.
+- **Security Enhancements:** Verified robust data protection leveraging **BCrypt Hashing** for passwords, **Helmet Headers** for XSS mitigation, and **Express Rate Limiting** to prevent brute-force attacks (100 calls/15min).
+- **AutoSave Reliability:** Hardened debounced Zustand local store updates ensure that user input is seamlessly and safely synced to MongoDB, protecting against data loss.
+- **Production Stabilization:** Repository structure has been refactored for strict separation of concerns, providing a highly scalable API architecture ready for deployment.
 
 ---
 
@@ -139,16 +139,15 @@ CareerForge Pro compiles resumes dynamically into three selectable templates:
 
 ---
 
-## 📊 Real-time ATS Parsing Estimation Rules
-The baseline ATS Optimization engine dynamically analyzes resume completeness on save:
-*   **Education completeness**: `+15%`
-*   **Work experience lists**: `+20%`
-*   **Summary completeness**: `+15%`
-*   **Keywords list details**: `+25%`
-*   **Certifications & Projects**: `+15%`
-*   **Social & Portfolio Links**: `+10%`
+## 📊 ATS Engine V2.1: Advanced Parsing & Scoring
+CareerForge Pro utilizes a highly deterministic ATS engine capable of performing comprehensive AI-driven Job Description analysis paired with precise resume matching.
 
-*Missing components trigger interactive optimization warnings inside the left panel editor sidebar instantly.*
+*   **Deterministic Scoring:** Evaluates resumes using strict, predictable mathematical weights: Keyword Match (40%), Semantic Match (30%), Skill Alignment (20%), and Experience Presence (10%).
+*   **Explainable ATS Reporting:** Candidate scoring provides fully transparent point attributions, raw score breakdowns, and explicit recommendations directly aligned with missing requirements.
+*   **Dynamic AI Keyword Aliasing:** Enhances keyword recognition by leveraging the AI parsing pipeline to dynamically generate standard synonyms and acronyms (e.g., matching "Kubernetes" against "K8s") while strictly protecting the underlying mathematical integrity.
+*   **Backward-Compatible APIs:** Enhancements dynamically inject advanced scoring metrics and keyword visualizations seamlessly into existing endpoints without disrupting the frontend architecture.
+
+*Missing components and keyword gaps trigger actionable ATS optimization warnings, empowering candidates to tailor their resume effortlessly.*
 
 ---
 
