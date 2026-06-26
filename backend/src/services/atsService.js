@@ -109,7 +109,22 @@ export function calculateAtsScore(resume, jdAnalysis) {
         keywordMatch: 70,
         semanticMatch: 70,
         missingKeywords: [],
-        recommendations: ['Provide a detailed Job Description to obtain highly tailored ATS suggestions.']
+        recommendations: ['Provide a detailed Job Description to obtain highly tailored ATS suggestions.'],
+        matchedKeywords: [],
+        matchedAliases: {},
+        totalKeywordsEvaluated: 0,
+        pointAttributions: {
+          keywordMatch: { rawScore: 70, weightMultiplier: 0.4, finalContribution: 28 },
+          semanticMatch: { rawScore: 70, weightMultiplier: 0.3, finalContribution: 21 },
+          skillAlignment: { rawScore: 70, weightMultiplier: 0.2, finalContribution: 14 },
+          experience: { rawScore: 70, weightMultiplier: 0.1, finalContribution: 7 }
+        },
+        categoryBreakdown: {
+          keywordMatch: 40,
+          semanticMatch: 30,
+          skillAlignment: 20,
+          experience: 10
+        }
       }
     };
   }
@@ -232,7 +247,38 @@ export function calculateAtsScore(resume, jdAnalysis) {
       skillAlignment: skillAlignment,
       experienceContribution: experienceContribution,
       missingKeywords,
-      recommendations
+      recommendations,
+      matchedKeywords: foundKeywords,
+      matchedAliases: {},
+      totalKeywordsEvaluated: allKeywords.length,
+      pointAttributions: {
+        keywordMatch: {
+          rawScore: keywordMatchPercent,
+          weightMultiplier: 0.4,
+          finalContribution: keywordMatchPercent * 0.4
+        },
+        semanticMatch: {
+          rawScore: normalizedSemantic,
+          weightMultiplier: 0.3,
+          finalContribution: normalizedSemantic * 0.3
+        },
+        skillAlignment: {
+          rawScore: skillAlignment,
+          weightMultiplier: 0.2,
+          finalContribution: skillAlignment * 0.2
+        },
+        experience: {
+          rawScore: hasExperience ? 100 : 0,
+          weightMultiplier: 0.1,
+          finalContribution: experienceContribution
+        }
+      },
+      categoryBreakdown: {
+        keywordMatch: 40,
+        semanticMatch: 30,
+        skillAlignment: 20,
+        experience: 10
+      }
     }
   };
 }
