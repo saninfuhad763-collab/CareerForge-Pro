@@ -110,6 +110,7 @@ export function calculateAtsScore(resume, jdAnalysis) {
         semanticMatch: 70,
         missingKeywords: [],
         recommendations: ['Provide a detailed Job Description to obtain highly tailored ATS suggestions.'],
+        structuredRecommendations: [],
         matchedKeywords: [],
         matchedAliases: {},
         totalKeywordsEvaluated: 0,
@@ -181,6 +182,7 @@ export function calculateAtsScore(resume, jdAnalysis) {
 
   // 4. Recommendations compiling (incorporating ATS Transparency Details)
   const recommendations = [];
+  const structuredRecommendations = [];
 
   // ATS Transparency Breakdown
   recommendations.push(
@@ -214,14 +216,90 @@ export function calculateAtsScore(resume, jdAnalysis) {
   if (missingKeywords.length > 0) {
     recommendations.push(`Action Plan (Keywords): Integrate target terms [${missingKeywords.slice(0, 4).join(', ')}] in your skills or experience fields.`);
   }
+
+  missingKeywords.forEach(kw => {
+    let priority = 'Medium';
+    let targetSection = 'General';
+    let impact = 'Low';
+
+    const kwLower = kw.toLowerCase();
+    const isRequired = required.map(r => r.toLowerCase()).includes(kwLower);
+    const isTech = tech.map(t => t.toLowerCase()).includes(kwLower);
+    const isSoft = soft.map(s => s.toLowerCase()).includes(kwLower);
+    const isPreferred = preferred.map(p => p.toLowerCase()).includes(kwLower);
+
+    if (isRequired && isTech) {
+      priority = 'Critical';
+      targetSection = 'Skills or Experience';
+      impact = 'High';
+    } else if (isRequired && isSoft) {
+      priority = 'High';
+      targetSection = 'Professional Summary';
+      impact = 'High';
+    } else if (isPreferred && isTech) {
+      priority = 'Medium';
+      targetSection = 'Skills or Experience';
+      impact = 'Medium';
+    } else if (isPreferred && isSoft) {
+      priority = 'Medium';
+      targetSection = 'Professional Summary';
+      impact = 'Medium';
+    } else if (isTech) {
+      priority = 'High';
+      targetSection = 'Skills or Experience';
+      impact = 'Medium';
+    } else if (isSoft) {
+      priority = 'Medium';
+      targetSection = 'Professional Summary';
+      impact = 'Medium';
+    } else if (isPreferred) {
+      priority = 'Medium';
+      targetSection = 'General';
+      impact = 'Medium';
+    }
+
+    structuredRecommendations.push({
+      type: 'Missing Keyword',
+      priority,
+      targetSection,
+      message: `The keyword "${kw}" is missing from your resume.`,
+      impact,
+      confidence: 'High'
+    });
+  });
+
   if (normalizedSemantic < 80) {
     recommendations.push('Action Plan (Semantic): Incorporate professional metrics and active industry terminology to lift contextual density.');
+    structuredRecommendations.push({
+      type: 'Formatting Advice',
+      priority: 'Low',
+      targetSection: 'Experience',
+      message: 'Incorporate professional metrics and active industry terminology to lift contextual density.',
+      impact: 'Medium',
+      confidence: 'High'
+    });
   }
   if (!resume.summary || resume.summary.length < 50) {
     recommendations.push('Action Plan (Summary): Craft a strong Professional Summary containing target role keywords.');
+    structuredRecommendations.push({
+      type: 'Formatting Advice',
+      priority: 'Low',
+      targetSection: 'Professional Summary',
+      message: 'Craft a strong Professional Summary containing target role keywords.',
+      impact: 'Medium',
+      confidence: 'High'
+    });
   }
   if (!hasExperience) {
     recommendations.push('Action Plan (Experience): Add professional experience entries to satisfy resume structure parsing requirements.');
+    structuredRecommendations.push({
+      type: 'Formatting Advice',
+      priority: 'Low',
+      targetSection: 'Experience',
+      message: 'Add professional experience entries to satisfy resume structure parsing requirements.',
+      impact: 'High',
+      confidence: 'High'
+    });
   }
 
   // Final Weighted ATS Score formulation
@@ -248,6 +326,7 @@ export function calculateAtsScore(resume, jdAnalysis) {
       experienceContribution: experienceContribution,
       missingKeywords,
       recommendations,
+      structuredRecommendations,
       matchedKeywords: foundKeywords,
       matchedAliases: {},
       totalKeywordsEvaluated: allKeywords.length,

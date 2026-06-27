@@ -327,8 +327,18 @@ function runHeuristicJdParser(text) {
     if (normalized.includes(kw)) foundCerts.push(kw.toUpperCase());
   });
 
-  const allReq = [...foundTech.slice(0, 5), ...foundCerts];
-  const allPref = [...foundTech.slice(5, 10)];
+  const reqTechCount = Math.ceil(foundTech.length * 0.6);
+  const reqSoftCount = Math.ceil(foundSoft.length * 0.6);
+
+  const allReq = [
+    ...foundTech.slice(0, reqTechCount),
+    ...foundCerts,
+    ...foundSoft.slice(0, reqSoftCount)
+  ];
+  const allPref = [
+    ...foundTech.slice(reqTechCount),
+    ...foundSoft.slice(reqSoftCount)
+  ];
   
   const importance = {};
   allReq.forEach((kw, index) => { importance[kw] = 5 - Math.min(index, 2); });
