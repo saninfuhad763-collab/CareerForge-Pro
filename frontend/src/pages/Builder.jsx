@@ -2782,6 +2782,7 @@ const Builder = () => {
         onClose={() => setShowAtsReportModal(false)}
         safeAtsMetadata={safeAtsMetadata}
         dynamicAtsData={dynamicAtsData}
+        _atsBreakdown={_atsBreakdown}
         modalKeywordSearch={modalKeywordSearch}
         setModalKeywordSearch={setModalKeywordSearch}
         openMagicOptimizer={openMagicOptimizer}

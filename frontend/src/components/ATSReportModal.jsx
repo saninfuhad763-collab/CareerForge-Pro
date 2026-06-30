@@ -8,6 +8,7 @@ const ATSReportModal = ({
   onClose,
   safeAtsMetadata,
   dynamicAtsData,
+  _atsBreakdown,
   modalKeywordSearch,
   setModalKeywordSearch,
   openMagicOptimizer,
@@ -63,15 +64,15 @@ const ATSReportModal = ({
                   <div>
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Keyword Match</div>
                     <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 mt-1">
-                      {safeAtsMetadata.score}%
+                      {_atsBreakdown?.keywordMatch ?? dynamicAtsData.keywordMatchPercent}%
                     </div>
                   </div>
                   <div className="w-full bg-slate-200 dark:bg-slate-800 h-1 rounded-full overflow-hidden mt-3">
                     <div 
                       className={`h-full rounded-full transition-all duration-500 ${
-                        safeAtsMetadata.score >= 80 ? 'bg-emerald-500' : safeAtsMetadata.score >= 60 ? 'bg-amber-500' : 'bg-red-500'
+                        (_atsBreakdown?.keywordMatch ?? dynamicAtsData.keywordMatchPercent) >= 80 ? 'bg-emerald-500' : (_atsBreakdown?.keywordMatch ?? dynamicAtsData.keywordMatchPercent) >= 60 ? 'bg-amber-500' : 'bg-red-500'
                       }`}
-                      style={{ width: `${safeAtsMetadata.score}%` }}
+                      style={{ width: `${_atsBreakdown?.keywordMatch ?? dynamicAtsData.keywordMatchPercent}%` }}
                     />
                   </div>
                 </div>
@@ -133,6 +134,11 @@ const ATSReportModal = ({
                           <span key={k} className="px-2 py-0.5 bg-emerald-100/40 dark:bg-emerald-900/30 border border-emerald-200/20 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-lg text-[9px] font-bold flex items-center gap-1">
                             <span className="w-1 h-1 rounded-full bg-emerald-500" />
                             {k}
+                            {_atsBreakdown?.matchedAliases?.[k] && (
+                              <span className="text-[8px] opacity-75 ml-0.5 font-medium italic">
+                                (Alias for {_atsBreakdown.matchedAliases[k]})
+                              </span>
+                            )}
                           </span>
                         ))}
                       {dynamicAtsData.matchedKeywords.filter(k => k.toLowerCase().includes(modalKeywordSearch.toLowerCase())).length === 0 && (
@@ -176,7 +182,28 @@ const ATSReportModal = ({
                   <span>AI Strategic Advice</span>
                 </h4>
                 <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800/80 rounded-2xl p-4 space-y-3">
-                  {safeAtsMetadata.feedback && safeAtsMetadata.feedback.length > 0 ? (
+                  {_atsBreakdown?.structuredRecommendations && _atsBreakdown.structuredRecommendations.length > 0 ? (
+                    _atsBreakdown.structuredRecommendations.map((item, idx) => (
+                      <div key={idx} className="flex gap-2.5 text-xs">
+                        <span className={`font-bold ${
+                          item.priority === 'Critical' ? 'text-rose-500' :
+                          item.priority === 'High' ? 'text-orange-500' :
+                          item.priority === 'Medium' ? 'text-amber-500' :
+                          'text-indigo-500'
+                        }`}>0{idx + 1}.</span>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                            {item.message}
+                          </span>
+                          {item.targetSection && item.targetSection !== 'General' && (
+                            <span className="text-[9px] font-semibold text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded w-fit inline-block">
+                              Section: {item.targetSection}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : safeAtsMetadata.feedback && safeAtsMetadata.feedback.length > 0 ? (
                     safeAtsMetadata.feedback.map((item, idx) => (
                       <div key={idx} className="flex gap-2.5 text-xs">
                         <span className="text-indigo-500 font-bold">0{idx + 1}.</span>
