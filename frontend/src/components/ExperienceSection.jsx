@@ -124,7 +124,9 @@ const ExperienceSection = ({
                       <button
                         type="button"
                         onClick={() => openMagicOptimizer('bullet', exp.description, (newVal) => handleUpdateExperience(idx, 'description', newVal))}
-                        className="inline-flex items-center gap-1 bg-linear-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-[9px] font-bold px-2.5 py-1.5 rounded-md shadow-sm shadow-indigo-500/25 cursor-pointer hover:-translate-y-0.5 active:scale-95 active:translate-y-0 transition-all duration-150"
+                        disabled={!exp.description.trim()}
+                        title={!exp.description.trim() ? "Please write a draft bullet first to enable AI optimization." : undefined}
+                        className="inline-flex items-center gap-1 bg-linear-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-[9px] font-bold px-2.5 py-1.5 rounded-md shadow-sm shadow-indigo-500/25 cursor-pointer hover:-translate-y-0.5 active:scale-95 active:translate-y-0 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100"
                       >
                         <Sparkles className="w-2.5 h-2.5" />
                         <span>Optimize Bullets</span>
