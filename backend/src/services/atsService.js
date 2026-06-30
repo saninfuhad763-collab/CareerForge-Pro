@@ -133,10 +133,15 @@ export function calculateAtsScore(resume, jdAnalysis) {
   // 1. Keyword Matching
   const foundKeywords = [];
   const missingKeywords = [];
+  const aliasMatchedKeywords = [];
 
   allKeywords.forEach(kw => {
-    if (isKeywordMatched(kw, normalizedResume, jdAnalysis.aiGeneratedAliases || {})) {
+    const evalResult = evaluateKeywordMatch(kw, normalizedResume, jdAnalysis.aiGeneratedAliases || {});
+    if (evalResult.matched) {
       foundKeywords.push(kw);
+      if (evalResult.matchType === 'ALIAS') {
+        aliasMatchedKeywords.push(kw);
+      }
     } else {
       missingKeywords.push(kw);
     }
@@ -258,12 +263,36 @@ export function calculateAtsScore(resume, jdAnalysis) {
       impact = 'Medium';
     }
 
+    let dictCat = null;
+    if (TECH_DICTIONARY[kwLower]) dictCat = TECH_DICTIONARY[kwLower];
+    else if (SOFT_SKILL_DICTIONARY[kwLower]) dictCat = SOFT_SKILL_DICTIONARY[kwLower];
+    else if (isTech) dictCat = 'Tech Fallback';
+    else if (isSoft) dictCat = 'Soft Fallback';
+
     structuredRecommendations.push({
       type: 'Missing Keyword',
       priority,
       targetSection,
-      message: `The keyword "${kw}" is missing from your resume.`,
+      message: getRecommendationMessage(kw, targetSection, dictCat, false),
       impact,
+      confidence: 'High'
+    });
+  });
+
+  aliasMatchedKeywords.forEach(kw => {
+    let targetSection = 'General';
+    const kwLower = kw.toLowerCase();
+    const isTech = tech.map(t => t.toLowerCase()).includes(kwLower);
+    const isSoft = soft.map(s => s.toLowerCase()).includes(kwLower);
+    if (isTech) targetSection = 'Skills or Experience';
+    else if (isSoft) targetSection = 'Professional Summary';
+
+    structuredRecommendations.push({
+      type: 'Strengthen Existing Phrase',
+      priority: 'Medium',
+      targetSection,
+      message: getRecommendationMessage(kw, targetSection, null, true),
+      impact: 'Medium',
       confidence: 'High'
     });
   });
@@ -398,6 +427,75 @@ const ALIAS_MAP = {
   "looker": ["looker", "business intelligence", "bi dashboard"]
 };
 
+const TECH_DICTIONARY = {
+  "react": "Framework",
+  "node.js": "Framework",
+  "nodejs": "Framework",
+  "express": "Framework",
+  "express.js": "Framework",
+  "python": "Programming Language",
+  "java": "Programming Language",
+  "javascript": "Programming Language",
+  "typescript": "Programming Language",
+  "c#": "Programming Language",
+  "c++": "Programming Language",
+  "go": "Programming Language",
+  "aws": "Cloud",
+  "docker": "DevOps",
+  "kubernetes": "DevOps",
+  "ci/cd": "DevOps",
+  "mongodb": "Database",
+  "sql": "Database",
+  "graphql": "Database",
+  "rest api": "Framework",
+  "testing": "Testing",
+  "jest": "Testing",
+  "cypress": "Testing"
+};
+
+const SOFT_SKILL_DICTIONARY = {
+  "communication": "Communication",
+  "leadership": "Leadership",
+  "teamwork": "Teamwork",
+  "collaboration": "Teamwork",
+  "problem solving": "Problem Solving",
+  "agile": "Teamwork"
+};
+
+const getRecommendationMessage = (keyword, targetSection, dictionaryCategory, isAlias = false) => {
+  if (isAlias) {
+    return `You mentioned a related concept to '${keyword}'. Consider updating your wording to the exact ATS terminology to ensure maximum parser compatibility.`;
+  }
+  
+  switch (dictionaryCategory) {
+    case 'Programming Language':
+      return `Demonstrate your proficiency in ${keyword} within your ${targetSection} by mentioning a specific module or feature you developed.`;
+    case 'Framework':
+      return `Add ${keyword} to your ${targetSection} and briefly mention the architecture or component you built with it.`;
+    case 'Database':
+      return `If you have experience, mention designing, querying, or scaling ${keyword} inside your ${targetSection}.`;
+    case 'Cloud':
+    case 'DevOps':
+      return `Highlight deployment or infrastructure experience by adding ${keyword} to your ${targetSection}.`;
+    case 'Testing':
+      return `Showcase software quality assurance by adding ${keyword} to your ${targetSection}.`;
+    case 'Communication':
+      return `Strengthen your ${targetSection} by mentioning cross-functional collaboration or stakeholder management to satisfy the '${keyword}' requirement.`;
+    case 'Leadership':
+      return `Highlight '${keyword}' in your ${targetSection} by describing team growth, project spearheading, or direct reports.`;
+    case 'Problem Solving':
+      return `Demonstrate '${keyword}' in your ${targetSection} by outlining a complex challenge you successfully resolved.`;
+    case 'Teamwork':
+      return `Showcase your '${keyword}' capability inside your ${targetSection} by mentioning your role within collaborative deliveries.`;
+    case 'Tech Fallback':
+      return `Integrate the target technology '${keyword}' into your ${targetSection} to align with the job's technical requirements.`;
+    case 'Soft Fallback':
+      return `Highlight '${keyword}' through measurable examples in your ${targetSection}.`;
+    default:
+      return `The keyword "${keyword}" is missing from your resume. Add it to your ${targetSection}.`;
+  }
+};
+
 const checkSingleTermMatch = (term, text) => {
   const cleanTerm = term.toLowerCase().trim();
   const cleanText = text.toLowerCase();
@@ -431,14 +529,29 @@ const checkSingleTermMatch = (term, text) => {
   }
 };
 
-export const isKeywordMatched = (keyword, text, aiGeneratedAliases = {}) => {
+const evaluateKeywordMatch = (keyword, text, aiGeneratedAliases = {}) => {
   const cleanKw = keyword.toLowerCase().trim();
-  if (!cleanKw) return false;
+  if (!cleanKw) return { matched: false };
 
-  const staticAliases = ALIAS_MAP[cleanKw] || [cleanKw];
+  // Exact match check first
+  if (checkSingleTermMatch(cleanKw, text)) {
+    return { matched: true, matchType: 'EXACT' };
+  }
+
+  // Multi-word exact match
+  if (cleanKw.includes(' ') || cleanKw.includes('-')) {
+    const words = cleanKw.split(/[\s\-._]+/).filter(w => w.length > 3);
+    if (words.length > 1) {
+      if (words.every(word => checkSingleTermMatch(word, text))) {
+        return { matched: true, matchType: 'EXACT' };
+      }
+    }
+  }
+
+  // Alias checks
+  const staticAliases = ALIAS_MAP[cleanKw] || [];
   let dynamicAliases = aiGeneratedAliases[cleanKw] || aiGeneratedAliases[keyword];
   
-  // Safely normalize dynamic aliases
   if (!Array.isArray(dynamicAliases)) {
     dynamicAliases = [];
   } else {
@@ -447,19 +560,17 @@ export const isKeywordMatched = (keyword, text, aiGeneratedAliases = {}) => {
       .map(a => a.toLowerCase().trim());
   }
   
-  // Merge and deduplicate safely
-  const combinedAliases = Array.from(new Set([...staticAliases, ...dynamicAliases]));
+  // Combine all aliases and exclude the exact keyword
+  const combinedAliases = Array.from(new Set([...staticAliases, ...dynamicAliases]))
+    .filter(a => a !== cleanKw);
 
   if (combinedAliases.some(alias => checkSingleTermMatch(alias, text))) {
-    return true;
+    return { matched: true, matchType: 'ALIAS' };
   }
 
-  if (cleanKw.includes(' ') || cleanKw.includes('-')) {
-    const words = cleanKw.split(/[\s\-._]+/).filter(w => w.length > 3);
-    if (words.length > 1) {
-      return words.every(word => checkSingleTermMatch(word, text));
-    }
-  }
+  return { matched: false };
+};
 
-  return false;
+export const isKeywordMatched = (keyword, text, aiGeneratedAliases = {}) => {
+  return evaluateKeywordMatch(keyword, text, aiGeneratedAliases).matched;
 };
