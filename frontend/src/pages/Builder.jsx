@@ -244,151 +244,6 @@ const Builder = () => {
     }
   };
 
-  // Reusable keyword matching engine utilities
-  const ALIAS_MAP = {
-    "mongodb": ["mongodb", "mongo", "nosql", "document database"],
-    "mongo": ["mongodb", "mongo", "nosql", "document database"],
-    "express.js": ["express.js", "expressjs", "express"],
-    "expressjs": ["express.js", "expressjs", "express"],
-    "express": ["express.js", "expressjs", "express"],
-    "node.js": ["node.js", "nodejs", "node"],
-    "nodejs": ["node.js", "nodejs", "node"],
-    "node": ["node.js", "nodejs", "node"],
-    "ci/cd": ["ci/cd", "cicd", "continuous integration", "continuous delivery", "github actions", "pipelines"],
-    "cicd": ["ci/cd", "cicd", "continuous integration", "continuous delivery", "github actions", "pipelines"],
-    "restful apis": ["restful apis", "rest api", "restful", "restapis", "rest apis"],
-    "rest apis": ["restful apis", "rest api", "restful", "restapis", "rest apis"],
-    "rest api": ["restful apis", "rest api", "restful", "restapis", "rest apis"],
-    "jwt": ["jwt", "json web token"],
-    "react": ["react", "reactjs", "react.js"],
-    "reactjs": ["react", "reactjs", "react.js"],
-    "react.js": ["react", "reactjs", "react.js"],
-    "redux": ["redux", "reduxtoolkit", "rtk"],
-    "aws": ["aws", "amazon web services", "s3", "ec2"],
-    "docker": ["docker", "containerization", "kubernetes", "containers"],
-    "typescript": ["typescript", "ts"],
-    "ts": ["typescript", "ts"],
-    "javascript": ["javascript", "js", "es6"],
-    "js": ["javascript", "js", "es6"],
-    "next.js": ["next.js", "nextjs"],
-    "nextjs": ["next.js", "nextjs"],
-    "jest": ["jest", "unit testing", "testing"],
-    "cypress": ["cypress", "e2e testing", "integration testing"],
-    "tailwind-css": ["tailwind-css", "tailwindcss", "tailwind"],
-    "tailwindcss": ["tailwind-css", "tailwindcss", "tailwind"],
-    "tailwind": ["tailwind-css", "tailwindcss", "tailwind"],
-    "tableau": ["tableau", "business intelligence", "bi dashboard"],
-    "looker": ["looker", "business intelligence", "bi dashboard"]
-  };
-
-  const checkSingleTermMatch = (term, text) => {
-    const cleanTerm = term.toLowerCase().trim();
-    const cleanText = text.toLowerCase();
-
-    if (!cleanTerm || !cleanText) return false;
-
-    const isAlphaNumeric = /^[a-z0-9\s]+$/i.test(cleanTerm);
-
-    if (isAlphaNumeric) {
-      const escaped = cleanTerm.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
-      const regex = new RegExp(`\\b${escaped}\\b`, 'i');
-      return regex.test(cleanText);
-    } else {
-      let idx = cleanText.indexOf(cleanTerm);
-      while (idx !== -1) {
-        const charBefore = idx > 0 ? cleanText[idx - 1] : ' ';
-        const charAfter = idx + cleanTerm.length < cleanText.length ? cleanText[idx + cleanTerm.length] : ' ';
-
-        const startsWithAlpha = /[a-z0-9]/i.test(cleanTerm[0]);
-        const endsWithAlpha = /[a-z0-9]/i.test(cleanTerm[cleanTerm.length - 1]);
-
-        const isBeforeBoundary = !startsWithAlpha || !/[a-z0-9]/i.test(charBefore);
-        const isAfterBoundary = !endsWithAlpha || !/[a-z0-9]/i.test(charAfter);
-
-        if (isBeforeBoundary && isAfterBoundary) {
-          return true;
-        }
-        idx = cleanText.indexOf(cleanTerm, idx + 1);
-      }
-      return false;
-    }
-  };
-
-  const isKeywordMatched = (keyword, compiledResumeText) => {
-    const cleanKw = keyword.toLowerCase().trim();
-    if (!cleanKw) return false;
-
-    const aliases = ALIAS_MAP[cleanKw] || [cleanKw];
-
-    if (aliases.some(alias => checkSingleTermMatch(alias, compiledResumeText))) {
-      return true;
-    }
-
-    if (cleanKw.includes(' ') || cleanKw.includes('-')) {
-      const words = cleanKw.split(/[\s\-._]+/).filter(w => w.length > 3);
-      if (words.length > 1) {
-        return words.every(word => checkSingleTermMatch(word, compiledResumeText));
-      }
-    }
-
-    return false;
-  };
-
-  const compileResumeText = (res) => {
-    if (!res) return '';
-    const parts = [];
-    if (res.title) parts.push(res.title);
-    if (res.summary) parts.push(res.summary);
-    if (res.personalInfo) {
-      const p = res.personalInfo;
-      parts.push(p.fullName || '', p.location || '');
-    }
-    if (res.experience && Array.isArray(res.experience)) {
-      res.experience.forEach(exp => {
-        parts.push(exp.company || '', exp.position || '', exp.description || '');
-      });
-    }
-    if (res.education && Array.isArray(res.education)) {
-      res.education.forEach(edu => {
-        parts.push(edu.school || '', edu.degree || '', edu.fieldOfStudy || '', edu.description || '');
-      });
-    }
-    if (res.skills && Array.isArray(res.skills)) {
-      res.skills.forEach(s => {
-        parts.push(s.name || '');
-        if (s.keywords && Array.isArray(s.keywords)) {
-          parts.push(...s.keywords);
-        }
-      });
-    }
-    if (res.projects && Array.isArray(res.projects)) {
-      res.projects.forEach(p => {
-        parts.push(p.title || '', p.role || '', p.description || '');
-      });
-    }
-    if (res.certifications && Array.isArray(res.certifications)) {
-      res.certifications.forEach(c => {
-        parts.push(c.name || '', c.issuer || '');
-      });
-    }
-    if (res.languages && Array.isArray(res.languages)) {
-      res.languages.forEach(l => {
-        parts.push(l.language || '', l.proficiency || '');
-      });
-    }
-    return parts.join(' ');
-  };
-
-  const getTargetKeywords = () => {
-    const meta = currentResume?.atsMetadata;
-    if (meta?.lastJdHash) {
-      const found = meta.keywordsFound || [];
-      const missing = meta.keywordsMissing || [];
-      return [...new Set([...found, ...missing])];
-    }
-    return [];
-  };
-
   const dynamicAtsData = useMemo(() => {
     const meta = currentResume?.atsMetadata;
     if (!currentResume || !meta?.lastJdHash) {
@@ -402,40 +257,18 @@ const Builder = () => {
       };
     }
 
-    const compiledResumeText = compileResumeText(currentResume);
-    const targetKeywords = getTargetKeywords();
-
-    const matched = [];
-    const missing = [];
-
-    targetKeywords.forEach(kw => {
-      if (isKeywordMatched(kw, compiledResumeText)) {
-        matched.push(kw);
-      } else {
-        missing.push(kw);
-      }
-    });
-
-    const uniqueMatched = [...new Set(matched)];
-    const uniqueMissing = [...new Set(missing)].filter(k => !uniqueMatched.includes(k));
+    const uniqueMatched = [...new Set(meta.keywordsFound || [])];
+    const uniqueMissing = [...new Set(meta.keywordsMissing || [])];
 
     const totalCount = uniqueMatched.length + uniqueMissing.length;
     const keywordMatchPercent = totalCount > 0 ? Math.round((uniqueMatched.length / totalCount) * 100) : 0;
-
-    const density = {};
-    const normalizedResume = compiledResumeText.toLowerCase();
-    uniqueMatched.forEach(kw => {
-      const regex = new RegExp(kw.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi');
-      const matches = normalizedResume.match(regex);
-      density[kw] = matches ? matches.length : 1;
-    });
 
     return {
       matchedKeywords: uniqueMatched,
       missingKeywords: uniqueMissing,
       keywordMatchPercent,
       score: meta.score || 0,
-      density,
+      density: {},
       feedback: meta.feedback || []
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps

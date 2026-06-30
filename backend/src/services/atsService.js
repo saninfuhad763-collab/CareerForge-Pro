@@ -392,32 +392,60 @@ export function calculateAtsScore(resume, jdAnalysis) {
 }
 
 const ALIAS_MAP = {
-  "mongodb": ["mongodb", "mongo", "nosql", "document database"],
-  "mongo": ["mongodb", "mongo", "nosql", "document database"],
-  "express.js": ["express.js", "expressjs", "express"],
-  "expressjs": ["express.js", "expressjs", "express"],
-  "express": ["express.js", "expressjs", "express"],
-  "node.js": ["node.js", "nodejs", "node"],
-  "nodejs": ["node.js", "nodejs", "node"],
-  "node": ["node.js", "nodejs", "node"],
-  "ci/cd": ["ci/cd", "cicd", "continuous integration", "continuous delivery", "github actions", "pipelines"],
-  "cicd": ["ci/cd", "cicd", "continuous integration", "continuous delivery", "github actions", "pipelines"],
-  "restful apis": ["restful apis", "rest api", "restful", "restapis", "rest apis"],
-  "rest apis": ["restful apis", "rest api", "restful", "restapis", "rest apis"],
-  "rest api": ["restful apis", "rest api", "restful", "restapis", "rest apis"],
-  "jwt": ["jwt", "json web token"],
-  "react": ["react", "reactjs", "react.js"],
-  "reactjs": ["react", "reactjs", "react.js"],
-  "react.js": ["react", "reactjs", "react.js"],
-  "redux": ["redux", "reduxtoolkit", "rtk"],
-  "aws": ["aws", "amazon web services", "s3", "ec2"],
-  "docker": ["docker", "containerization", "kubernetes", "containers"],
+  // Programming Languages
+  "javascript": ["javascript", "js"],
+  "js": ["javascript", "js"],
   "typescript": ["typescript", "ts"],
   "ts": ["typescript", "ts"],
-  "javascript": ["javascript", "js", "es6"],
-  "js": ["javascript", "js", "es6"],
-  "next.js": ["next.js", "nextjs"],
-  "nextjs": ["next.js", "nextjs"],
+  "python": ["python", "python3"],
+  "python3": ["python", "python3"],
+
+  // Frameworks
+  "express": ["express", "express.js", "expressjs"],
+  "express.js": ["express", "express.js", "expressjs"],
+  "expressjs": ["express", "express.js", "expressjs"],
+  "node": ["node", "node.js", "nodejs"],
+  "node.js": ["node", "node.js", "nodejs"],
+  "nodejs": ["node", "node.js", "nodejs"],
+  "react": ["react", "react.js", "reactjs"],
+  "react.js": ["react", "react.js", "reactjs"],
+  "reactjs": ["react", "react.js", "reactjs"],
+  "next": ["next", "next.js", "nextjs"],
+  "next.js": ["next", "next.js", "nextjs"],
+  "nextjs": ["next", "next.js", "nextjs"],
+
+  // Databases
+  "postgresql": ["postgresql", "postgres"],
+  "postgres": ["postgresql", "postgres"],
+  "mongodb": ["mongodb", "mongo"],
+  "mongo": ["mongodb", "mongo"],
+
+  // Cloud
+  "amazon web services": ["amazon web services", "aws"],
+  "aws": ["amazon web services", "aws"],
+  "google cloud platform": ["google cloud platform", "gcp"],
+  "gcp": ["google cloud platform", "gcp"],
+  "microsoft azure": ["microsoft azure", "azure"],
+  "azure": ["microsoft azure", "azure"],
+
+  // DevOps
+  "kubernetes": ["kubernetes", "k8s"],
+  "k8s": ["kubernetes", "k8s"],
+  "docker compose": ["docker compose", "compose"],
+  "compose": ["docker compose", "compose"],
+  "docker": ["docker", "containerization", "containers"],
+  "ci/cd": ["ci/cd", "cicd", "continuous integration", "continuous delivery", "github actions", "pipelines"],
+  "cicd": ["ci/cd", "cicd", "continuous integration", "continuous delivery", "github actions", "pipelines"],
+
+  // APIs
+  "rest api": ["rest api", "rest apis", "restful api", "restful apis"],
+  "rest apis": ["rest api", "rest apis", "restful api", "restful apis"],
+  "restful api": ["rest api", "rest apis", "restful api", "restful apis"],
+  "restful apis": ["rest api", "rest apis", "restful api", "restful apis"],
+
+  // Other preserved aliases
+  "jwt": ["jwt", "json web token"],
+  "redux": ["redux", "reduxtoolkit", "rtk"],
   "jest": ["jest", "unit testing", "testing"],
   "cypress": ["cypress", "e2e testing", "integration testing"],
   "tailwind-css": ["tailwind-css", "tailwindcss", "tailwind"],
@@ -441,8 +469,10 @@ const TECH_DICTIONARY = {
   "c++": "Programming Language",
   "go": "Programming Language",
   "aws": "Cloud",
+  "amazon web services": "Cloud",
   "docker": "DevOps",
   "kubernetes": "DevOps",
+  "k8s": "DevOps",
   "ci/cd": "DevOps",
   "mongodb": "Database",
   "sql": "Database",
@@ -538,16 +568,6 @@ const evaluateKeywordMatch = (keyword, text, aiGeneratedAliases = {}) => {
     return { matched: true, matchType: 'EXACT' };
   }
 
-  // Multi-word exact match
-  if (cleanKw.includes(' ') || cleanKw.includes('-')) {
-    const words = cleanKw.split(/[\s\-._]+/).filter(w => w.length > 3);
-    if (words.length > 1) {
-      if (words.every(word => checkSingleTermMatch(word, text))) {
-        return { matched: true, matchType: 'EXACT' };
-      }
-    }
-  }
-
   // Alias checks
   const staticAliases = ALIAS_MAP[cleanKw] || [];
   let dynamicAliases = aiGeneratedAliases[cleanKw] || aiGeneratedAliases[keyword];
@@ -566,6 +586,16 @@ const evaluateKeywordMatch = (keyword, text, aiGeneratedAliases = {}) => {
 
   if (combinedAliases.some(alias => checkSingleTermMatch(alias, text))) {
     return { matched: true, matchType: 'ALIAS' };
+  }
+
+  // Multi-word exact match
+  if (cleanKw.includes(' ') || cleanKw.includes('-')) {
+    const words = cleanKw.split(/[\s\-._]+/).filter(w => w.length > 3);
+    if (words.length > 1) {
+      if (words.every(word => checkSingleTermMatch(word, text))) {
+        return { matched: true, matchType: 'EXACT' };
+      }
+    }
   }
 
   return { matched: false };

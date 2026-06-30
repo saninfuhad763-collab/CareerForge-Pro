@@ -307,7 +307,7 @@ function runHeuristicJdParser(text) {
   const normalized = text.toLowerCase();
   
   // Custom dictionary for highly accurate local extraction
-  const skillKeywords = ['react', 'node', 'express', 'mongodb', 'javascript', 'typescript', 'aws', 'docker', 'python', 'java', 'sql', 'css', 'html', 'ci/cd', 'git', 'rest api', 'kubernetes', 'graphql', 'c#', 'c++', 'go', 'testing'];
+  const skillKeywords = ['react', 'node', 'express', 'mongodb', 'javascript', 'typescript', 'aws', 'docker', 'python', 'java', 'sql', 'css', 'html', 'ci/cd', 'git', 'rest api', 'kubernetes', 'k8s', 'graphql', 'c#', 'c++', 'go', 'testing'];
   const softKeywords = ['leadership', 'communication', 'teamwork', 'problem solving', 'agile', 'collaboration', 'analytical', 'mentoring', 'organization', 'time management'];
   const certKeywords = ['aws certified', 'pmp', 'scrum master', 'csm', 'comptia', 'cisco', 'ccna', 'cissp', 'itil'];
 
