@@ -143,9 +143,10 @@ CareerForge Pro compiles resumes dynamically into three selectable templates:
 CareerForge Pro utilizes a highly deterministic ATS engine capable of performing comprehensive AI-driven Job Description analysis paired with precise resume matching.
 
 *   **Deterministic Scoring:** Evaluates resumes using strict, predictable mathematical weights: Keyword Match (40%), Semantic Match (30%), Skill Alignment (20%), and Experience Presence (10%).
-*   **Explainable ATS Reporting:** Candidate scoring provides fully transparent point attributions, raw score breakdowns, and explicit recommendations directly aligned with missing requirements.
-*   **Dynamic AI Keyword Aliasing:** Enhances keyword recognition by leveraging the AI parsing pipeline to dynamically generate standard synonyms and acronyms (e.g., matching "Kubernetes" against "K8s") while strictly protecting the underlying mathematical integrity.
-*   **Backward-Compatible APIs:** Enhancements dynamically inject advanced scoring metrics and keyword visualizations seamlessly into existing endpoints without disrupting the frontend architecture.
+*   **Server-Authoritative ATS Pipeline:** The backend acts as the single source of truth for all parsing and scoring logic. The frontend dynamically renders ATS metadata without local recalculations, ensuring total data synchronization.
+*   **Structured Recommendations:** Provides deterministic, actionable advice categorized by priority levels (Critical, High, Medium, Low) and assigns specific guidance to target resume sections.
+*   **Expanded Alias Library:** Supplements dynamic AI-generated aliases with a robust static fallback library of industry-standard terms (e.g., `JavaScript ↔ JS`, `TypeScript ↔ TS`, `Express ↔ Express.js`, `Kubernetes ↔ K8s`, `Amazon Web Services ↔ AWS`).
+*   **ATS Report UI V2:** The realtime compliance report correctly exposes point attributions, visualizing true keyword match percentages, structured priority indicators, target section badges, and inline alias context badges, supported by backward-compatible fallback rendering.
 
 *Missing components and keyword gaps trigger actionable ATS optimization warnings, empowering candidates to tailor their resume effortlessly.*
 

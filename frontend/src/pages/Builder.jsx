@@ -791,7 +791,8 @@ const Builder = () => {
     if (manualKeyword) return manualKeyword;
 
     if (magicPromptType === 'summary_rewrite') {
-      return getTargetKeywords().slice(0, 8).join(', ');
+      const allTarget = [...dynamicAtsData.matchedKeywords, ...dynamicAtsData.missingKeywords];
+      return allTarget.slice(0, 8).join(', ');
     }
 
     if (magicPromptType === 'bullet_rewrite') {
