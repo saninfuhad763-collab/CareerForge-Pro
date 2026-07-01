@@ -7,6 +7,7 @@ import Builder from './pages/Builder';
 import Billing from './pages/Billing';
 import BillingDetails from './pages/BillingDetails';
 import CoverLetter from './pages/CoverLetter';
+import Contact from './pages/Contact';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/contact" element={<Contact />} />
 
         {/* Protected SaaS Core Routes */}
         <Route

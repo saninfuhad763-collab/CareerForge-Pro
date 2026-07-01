@@ -92,6 +92,7 @@ const Landing = () => {
             <a href="#features" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Features</a>
             <a href="#workflow" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Workflow</a>
             <a href="#stats" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Why CareerForge</a>
+            <Link to="/contact" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Contact</Link>
           </div>
           <div className="flex items-center gap-4 relative">
             <AnimatePresence>
@@ -470,7 +471,10 @@ const Landing = () => {
             </div>
             <span className="font-bold text-slate-800 dark:text-slate-100 font-display">CareerForge Pro</span>
           </div>
-          <p>© 2026 CareerForge Pro. Developed with Enterprise Standards.</p>
+          <div className="flex items-center gap-6">
+            <Link to="/contact" className="hover:text-indigo-500 transition-colors">Contact</Link>
+            <p>© 2026 CareerForge Pro. Developed with Enterprise Standards.</p>
+          </div>
         </div>
       </footer>
     </div>
