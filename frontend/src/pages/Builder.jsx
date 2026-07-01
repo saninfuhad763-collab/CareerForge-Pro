@@ -171,6 +171,7 @@ const Builder = () => {
   const [showProBanner, setShowProBanner] = useState(false);
   const [activeTheme, setActiveTheme] = useState('modern');
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isExportSuccess, setIsExportSuccess] = useState(false);
   const [manualSavePerformed, setManualSavePerformed] = useState(false);
 
   useEffect(() => {
@@ -1501,12 +1502,14 @@ const Builder = () => {
               setIsExportingPdf(true);
               await exportResumePdf(id, currentResume?.title || 'resume');
               setIsExportingPdf(false);
+              setIsExportSuccess(true);
+              setTimeout(() => setIsExportSuccess(false), 2000);
             }}
             disabled={isExportingPdf}
             className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-500/20 hover:shadow-indigo-500/35 hover:-translate-y-0.5 cursor-pointer active:scale-95"
           >
             <Download className="w-4 h-4" />
-            <span>{isExportingPdf ? 'Generating PDF...' : 'Export PDF'}</span>
+            <span>{isExportingPdf ? 'Generating PDF...' : isExportSuccess ? 'Exported' : 'Export PDF'}</span>
           </button>
         </div>
       </header>
