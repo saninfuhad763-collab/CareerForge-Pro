@@ -926,9 +926,15 @@ const Builder = () => {
         const log = data.log;
         if (log.actionType === 'summary_rewrite') {
           handleSummaryChange(data.originalContent);
+          setAlertModalTitle('Original Content Restored');
+          setAlertModalContent('Original summary successfully restored.');
+          setAlertModalOpen(true);
         } else if (log.actionType === 'bullet_rewrite' && experience.findIndex(exp => exp.description.trim() === log.generatedContent.trim()) !== -1) {
           const matchIndex = experience.findIndex(exp => exp.description.trim() === log.generatedContent.trim());
           handleUpdateExperience(matchIndex, 'description', data.originalContent);
+          setAlertModalTitle('Original Content Restored');
+          setAlertModalContent('Original experience bullet successfully restored.');
+          setAlertModalOpen(true);
         } else {
           setAlertModalTitle('Original Content Restored');
           setAlertModalContent(`Original content restored! Copied to clipboard:\n\n${data.originalContent}`);
