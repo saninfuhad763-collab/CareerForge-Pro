@@ -1831,6 +1831,14 @@ const Builder = () => {
                   </div>
                 </div>
 
+                <button
+                  type="button"
+                  onClick={() => setShowAtsReportModal(true)}
+                  className="w-full py-2 bg-linear-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-indigo-500/25 transition-all active:scale-95 cursor-pointer"
+                >
+                  View Detailed ATS Report
+                </button>
+
                 {/* Keyword gaps list (Searchable, fully responsive) */}
                 <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-800/80">
                   <div className="flex items-center justify-between">
