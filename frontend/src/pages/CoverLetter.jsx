@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, Sparkles, Copy, Check, Briefcase, Building, AlertCircle, ArrowLeft, LogOut, Compass, CreditCard, Save, Loader2, Download, FileSignature, Gauge } from 'lucide-react';
+import { FileText, Sparkles, Copy, Check, Briefcase, Building, AlertCircle, ArrowLeft, LogOut, Compass, CreditCard, Save, Loader2, Download, FileSignature, Gauge, Settings } from 'lucide-react';
 import { isProUser } from '../utils/planConstants';
 
 import { sidebarItemVariant } from '../animations/dashboardAnimations';
@@ -352,6 +352,19 @@ const CoverLetter = () => {
             >
               <FileSignature className="w-4.5 h-4.5" />
               <span>Cover Letters</span>
+            </motion.button>
+            <motion.button 
+              onClick={() => navigate('/dashboard?tab=settings')}
+              className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${
+                activeTab === 'settings'
+                  ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 font-semibold shadow-sm shadow-indigo-100 dark:shadow-none'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/40'
+              }`}
+              whileHover="hover"
+              variants={sidebarItemVariant}
+            >
+              <Settings className="w-4.5 h-4.5" />
+              <span>Settings</span>
             </motion.button>
           </nav>
         </div>
