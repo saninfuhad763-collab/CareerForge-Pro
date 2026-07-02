@@ -32,3 +32,20 @@ export const validateResume = (req, res, next) => {
   }
   next();
 };
+
+export const validateContactMessage = (req, res, next) => {
+  const { name, email, subject, message } = req.body;
+  if (!name || name.trim() === '') {
+    return res.status(400).json({ success: false, message: 'Name is required' });
+  }
+  if (!email || email.trim() === '') {
+    return res.status(400).json({ success: false, message: 'Email is required' });
+  }
+  if (!subject || subject.trim() === '') {
+    return res.status(400).json({ success: false, message: 'Subject is required' });
+  }
+  if (!message || message.trim() === '') {
+    return res.status(400).json({ success: false, message: 'Message is required' });
+  }
+  next();
+};
