@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Github, Linkedin, Globe, Send, ArrowRight, Loader2, CheckCircle2, XCircle, X } from 'lucide-react';
+import { Mail, Github, Linkedin, Globe, Send, ArrowRight, Loader2, CheckCircle2, XCircle, X, ArrowLeft, Home } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuthStore } from '../store/authStore';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const Contact = () => {
+  const { user } = useAuthStore();
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalState, setModalState] = useState({ isOpen: false, type: 'success', message: '' });
@@ -67,9 +69,20 @@ const Contact = () => {
               CareerForge <span className="text-indigo-600 dark:text-indigo-400">Pro</span>
             </span>
           </Link>
-          <Link to="/" className="text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-            Back to Home
-          </Link>
+          {user ? (
+            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 text-right md:text-left">
+              <Link to="/dashboard?tab=settings" className="flex items-center justify-end md:justify-start gap-1.5 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+              </Link>
+              <Link to="/" className="flex items-center justify-end md:justify-start gap-1.5 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                <Home className="w-4 h-4" /> Home
+              </Link>
+            </div>
+          ) : (
+            <Link to="/" className="flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+              <ArrowLeft className="w-4 h-4" /> Back to Home
+            </Link>
+          )}
         </div>
       </header>
 
