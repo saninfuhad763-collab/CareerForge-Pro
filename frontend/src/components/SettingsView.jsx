@@ -14,19 +14,18 @@ import {
   Monitor
 } from 'lucide-react';
 import { staggerContainer, staggerItem } from '../animations/staggerAnimations';
+import { professionalCardVariant } from '../animations/cardAnimations';
 
 const SettingsView = () => {
   const { user } = useAuthStore();
   const navigate = useNavigate();
 
   return (
-    <motion.section 
-      variants={staggerContainer(0.05)}
-      initial="initial"
-      animate="animate"
-      className="max-w-4xl mx-auto space-y-8"
-    >
-      <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+    <section className="max-w-4xl mx-auto space-y-8">
+      <motion.div 
+        variants={professionalCardVariant}
+        className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800"
+      >
         <div>
           <h2 className="text-2xl font-bold font-display text-slate-800 dark:text-slate-100">
             Account Settings
@@ -35,11 +34,11 @@ const SettingsView = () => {
             Manage your application preferences and account details.
           </p>
         </div>
-      </div>
+      </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Appearance */}
-        <motion.div variants={staggerItem} className="glass-card bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col shadow-sm">
+        <motion.div variants={professionalCardVariant} whileHover="hover" className="glass-card bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col shadow-sm">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-indigo-50 dark:bg-indigo-950/50 rounded-xl text-indigo-600 dark:text-indigo-400">
               <Palette className="w-5 h-5" />
@@ -62,7 +61,7 @@ const SettingsView = () => {
         </motion.div>
 
         {/* Account Info */}
-        <motion.div variants={staggerItem} className="glass-card bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col shadow-sm">
+        <motion.div variants={professionalCardVariant} whileHover="hover" className="glass-card bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col shadow-sm">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-emerald-50 dark:bg-emerald-950/50 rounded-xl text-emerald-600 dark:text-emerald-400">
               <User className="w-5 h-5" />
@@ -87,7 +86,7 @@ const SettingsView = () => {
         </motion.div>
 
         {/* Subscription */}
-        <motion.div variants={staggerItem} className="glass-card bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col shadow-sm">
+        <motion.div variants={professionalCardVariant} whileHover="hover" className="glass-card bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col shadow-sm">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-amber-50 dark:bg-amber-950/50 rounded-xl text-amber-600 dark:text-amber-400">
               <CreditCard className="w-5 h-5" />
@@ -118,7 +117,7 @@ const SettingsView = () => {
         </motion.div>
 
         {/* Support */}
-        <motion.div variants={staggerItem} className="glass-card bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col shadow-sm">
+        <motion.div variants={professionalCardVariant} whileHover="hover" className="glass-card bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col shadow-sm">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-rose-50 dark:bg-rose-950/50 rounded-xl text-rose-600 dark:text-rose-400">
               <LifeBuoy className="w-5 h-5" />
@@ -152,7 +151,7 @@ const SettingsView = () => {
         </motion.div>
 
         {/* About */}
-        <motion.div variants={staggerItem} className="md:col-span-2 glass-card bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col shadow-sm">
+        <motion.div variants={professionalCardVariant} whileHover="hover" className="md:col-span-2 glass-card bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col shadow-sm">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-400">
               <Info className="w-5 h-5" />
@@ -175,7 +174,7 @@ const SettingsView = () => {
           </div>
         </motion.div>
       </div>
-    </motion.section>
+    </section>
   );
 };
 

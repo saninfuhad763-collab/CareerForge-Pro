@@ -1067,7 +1067,30 @@ const Dashboard = () => {
 
           {/* Settings Sub-View */}
           {activeTab === 'settings' && (
-            <SettingsView />
+            <motion.div
+              key="settings"
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              variants={{
+                hidden: { opacity: 0 },
+                visible: {
+                  opacity: 1,
+                  transition: {
+                    staggerChildren: 0.1,
+                    delayChildren: 0.05
+                  }
+                },
+                exit: {
+                  opacity: 0,
+                  y: -15,
+                  transition: { duration: 0.3 }
+                }
+              }}
+              className="space-y-8"
+            >
+              <SettingsView />
+            </motion.div>
           )}
         </AnimatePresence>
       </main>
