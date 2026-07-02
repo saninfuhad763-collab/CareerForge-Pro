@@ -1316,7 +1316,7 @@ const Builder = () => {
       initial="initial"
       animate="animate"
       variants={pageTransitions}
-      className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col"
+      className="min-h-screen md:h-screen md:overflow-hidden bg-slate-50 dark:bg-slate-950 flex flex-col"
     >
       {/* Top action header banner */}
       <header id="builder-header-banner" className="sticky top-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200/50 dark:border-slate-800/50 px-6 py-4 flex items-center justify-between shadow-sm">
