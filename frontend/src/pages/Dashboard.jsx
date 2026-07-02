@@ -26,6 +26,7 @@ import {
   Copy,
   Check,
   FileSignature,
+  Settings,
 } from 'lucide-react';
 import { isPremiumTemplate, isProUser } from '../utils/planConstants';
 import { staggerContainer, staggerItem, staggerItemScale } from '../animations/staggerAnimations';
@@ -33,6 +34,7 @@ import { premiumCardHover as _premiumCardHover, buttonScale, professionalCardVar
 import { sidebarItemVariant } from '../animations/dashboardAnimations';
 import { premiumEase } from '../animations/motionVariants';
 import DeleteModal from '../components/DeleteModal';
+import SettingsView from '../components/SettingsView';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -320,6 +322,19 @@ const Dashboard = () => {
             >
               <FileSignature className="w-4.5 h-4.5" />
               <span>Cover Letters</span>
+            </motion.button>
+            <motion.button 
+              onClick={() => setActiveTab('settings')}
+              className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${
+                activeTab === 'settings'
+                  ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 font-semibold shadow-sm shadow-indigo-100 dark:shadow-none'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/40'
+              }`}
+              whileHover="hover"
+              variants={sidebarItemVariant}
+            >
+              <Settings className="w-4.5 h-4.5" />
+              <span>Settings</span>
             </motion.button>
           </nav>
         </div>
@@ -1048,6 +1063,11 @@ const Dashboard = () => {
                 </div>
               </div>
             </motion.div>
+          )}
+
+          {/* Settings Sub-View */}
+          {activeTab === 'settings' && (
+            <SettingsView />
           )}
         </AnimatePresence>
       </main>
