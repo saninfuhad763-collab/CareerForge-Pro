@@ -376,7 +376,6 @@ const Builder = () => {
   const [targetKeyword, setTargetKeyword] = useState('');
   const [magicPromptType, setMagicPromptType] = useState('summary_rewrite');
   const [isOptimizing, setIsOptimizing] = useState(false);
-  const [isAutoFixing, setIsAutoFixing] = useState(false);
   const [currentLogId, setCurrentLogId] = useState(null);
   const [onApplyCallback, setOnApplyCallback] = useState(null);
   const [activeAbortController, setActiveAbortController] = useState(null);
@@ -597,79 +596,6 @@ const Builder = () => {
   };
 
   // Instant full stack optimization for MERN Stack developer demo
-  const handleQuickOptimize = async () => {
-    if ((selectedJdPreset !== 'mern') && (analyzedJdPreset !== 'mern')) {
-      setAtsError({ type: 'validation', message: 'Please select the MERN Stack Developer job description preset first to use Auto-Fix.' });
-      return;
-    }
-    setIsAutoFixing(true);
-    await new Promise(resolve => setTimeout(resolve, 250));
-
-    const optimizedExperience = [
-      {
-        company: "TechNova Solutions",
-        position: "Senior Frontend Engineer",
-        location: "San Francisco, CA",
-        startDate: "Jan 2023",
-        endDate: "Present",
-        current: true,
-        description: "- Engineered the core full-stack web dashboard using React, Node.js, Express.js, and MongoDB, boosting system data throughput by 42%.\n- Led migration of state management from a legacy framework to modern Redux Toolkit, decreasing codebase complexity by 25%.\n- Mentored 4 junior frontend developers on custom React hooks and component testing patterns."
-      },
-      {
-        company: "Innovate Interactive",
-        position: "Frontend Developer",
-        location: "Remote",
-        startDate: "Mar 2021",
-        endDate: "Dec 2022",
-        current: false,
-        description: "- Developed scalable Single Page Applications using HTML5, CSS3, and JavaScript (ES6+).\n- Integrated third-party RESTful APIs, GraphQL endpoints, and Redis caching layers, improving data synchronization accuracy.\n- Designed component library using TailwindCSS, reducing CSS bundle size by 35% across 3 distinct sub-projects."
-      }
-    ];
-
-    const optimizedSkills = [
-      {
-        name: "Full-Stack Technologies",
-        level: "Expert",
-        keywords: ["MongoDB", "Express.js", "React", "Node.js", "JavaScript", "TypeScript", "Next.js"]
-      },
-      {
-        name: "DevOps & Cloud Networks",
-        level: "Advanced",
-        keywords: ["AWS", "Docker", "CI/CD", "Redis", "JWT", "Kubernetes", "Git"]
-      },
-      {
-        name: "Testing & Architecture",
-        level: "Proficient",
-        keywords: ["Jest", "Webpack", "Vite", "TailwindCSS"]
-      }
-    ];
-
-    updateResumeLocal({
-      experience: optimizedExperience,
-      skills: optimizedSkills,
-      atsMetadata: {
-        score: 94,
-        feedback: ["Outstanding ATS optimization! Your resume includes all primary tech-stack requirements, cloud indicators, and quantifiable business values."]
-      }
-    });
-
-    setAtsBreakdown({
-      missingKeywords: [],
-      matchedKeywords: ["React", "Redux", "Zustand", "JavaScript", "HTML5", "CSS3", "AWS", "Git", "MongoDB", "Express.js", "Node.js", "Docker", "CI/CD", "Redis", "JWT"],
-      recommendations: ["Excellent match! Your resume contains all keywords and meets high formatting standards."],
-      metrics: {
-        keywordMatch: 95,
-        skillsCoverage: 96,
-        experienceRelevance: 92,
-        formattingScore: 95
-      }
-    });
-
-    setLocalSkillsText({});
-    setIsAutoFixing(false);
-    setShowConfetti(true);
-    setSaveStatus('ATS optimization complete!');
-  };
 
   const handleJdAnalysis = async () => {
     if (!jdText.trim()) return;
@@ -1721,20 +1647,6 @@ const Builder = () => {
                       <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200">
                         {animatedScore >= 80 ? 'Excellent Match!' : animatedScore >= 60 ? 'Good Potential' : 'Needs Optimization'}
                       </h5>
-                      {analyzedJdPreset === 'mern' && dynamicAtsData.missingKeywords.length > 0 && (
-                        <button
-                          onClick={handleQuickOptimize}
-                          disabled={isAutoFixing}
-                          className="px-2 py-0.5 bg-linear-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-[9px] font-extrabold text-white rounded-lg flex items-center gap-0.5 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
-                        >
-                          {isAutoFixing ? (
-                            <Loader2 className="w-2.5 h-2.5 animate-spin" />
-                          ) : (
-                            <Sparkles className="w-2.5 h-2.5" />
-                          )}
-                          <span>{isAutoFixing ? 'Fixing...' : 'Auto-Fix'}</span>
-                        </button>
-                      )}
                     </div>
                     <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed truncate">
                       {atsMetadata.feedback && atsMetadata.feedback.length > 0
