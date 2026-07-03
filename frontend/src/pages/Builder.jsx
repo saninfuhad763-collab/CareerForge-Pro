@@ -173,6 +173,8 @@ const Builder = () => {
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [isExportSuccess, setIsExportSuccess] = useState(false);
   const [manualSavePerformed, setManualSavePerformed] = useState(false);
+  const [showAutoSaveModal, setShowAutoSaveModal] = useState(false);
+  const [dontShowAutoSaveWarning, setDontShowAutoSaveWarning] = useState(false);
 
   useEffect(() => {
     const handleBeforePrint = () => setIsExportingPdf(true);
@@ -1237,6 +1239,19 @@ const Builder = () => {
     }
   };
 
+  const handleToggleAutoSave = () => {
+    if (!autoSaveEnabled) {
+      setAutoSaveEnabled(true);
+      return;
+    }
+    const hideWarning = localStorage.getItem('cf_hide_autosave_warning') === 'true';
+    if (hideWarning) {
+      setAutoSaveEnabled(false);
+    } else {
+      setShowAutoSaveModal(true);
+    }
+  };
+
   return (
     <motion.div 
       initial="initial"
@@ -1310,7 +1325,7 @@ const Builder = () => {
               {autoSaveEnabled ? 'ON' : 'OFF'}
             </span>
             <button
-              onClick={() => setAutoSaveEnabled(!autoSaveEnabled)}
+              onClick={handleToggleAutoSave}
               className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                 autoSaveEnabled ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
               }`}
@@ -2737,6 +2752,82 @@ const Builder = () => {
         hideCancel={true}
         IconComponent={Info}
       />
+
+      {/* Auto Save Confirmation Modal */}
+      <AnimatePresence>
+        {showAutoSaveModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowAutoSaveModal(false)}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800"
+            >
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
+                    <Save className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
+                    Turn Off Auto Save?
+                  </h3>
+                </div>
+                
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">
+                  Auto Save continuously saves your changes while you edit. If you turn it off, your edits will no longer be saved in real time.
+                </p>
+
+                <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-4 mb-6 border border-indigo-100 dark:border-indigo-800/30">
+                  <p className="text-xs text-indigo-800 dark:text-indigo-300 font-medium leading-relaxed">
+                    <strong className="block mb-1 font-bold">Your work is protected.</strong>
+                    Even with Auto Save turned off, CareerForge Pro automatically saves your latest changes when you leave the Resume Builder to help prevent accidental data loss.
+                  </p>
+                </div>
+
+                <label className="flex items-center gap-2 mb-6 cursor-pointer group select-none">
+                  <input
+                    type="checkbox"
+                    checked={dontShowAutoSaveWarning}
+                    onChange={(e) => setDontShowAutoSaveWarning(e.target.checked)}
+                    className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 dark:border-slate-700 dark:bg-slate-800 cursor-pointer"
+                  />
+                  <span className="text-sm font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 transition-colors">
+                    Don't show this again
+                  </span>
+                </label>
+
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() => setShowAutoSaveModal(false)}
+                    className="px-4 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all cursor-pointer"
+                  >
+                    Keep Auto Save On
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (dontShowAutoSaveWarning) {
+                        localStorage.setItem('cf_hide_autosave_warning', 'true');
+                      }
+                      setAutoSaveEnabled(false);
+                      setShowAutoSaveModal(false);
+                    }}
+                    className="px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md shadow-indigo-500/20 transition-all cursor-pointer"
+                  >
+                    Turn Off Auto Save
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
