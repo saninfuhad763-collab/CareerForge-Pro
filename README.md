@@ -1,6 +1,106 @@
 # 🚀 CareerForge Pro: ATS-Proof Resume Generator & Job Matcher
 
-CareerForge Pro is a production-grade, secure, full-stack AI-ready SaaS platform built for professional candidates to create, optimize, and manage ATS-proof resumes. Designed with high-performance state-management, security protocols, and real-time reactive design, CareerForge Pro features an instant split-screen builder, multi-theme template rendering engines, and real-time layout sorting.
+CareerForge Pro is a full-stack SaaS platform built for candidates to create, optimize, and manage resumes. Designed with robust state-management, security protocols, and reactive design, CareerForge Pro features a split-screen builder, template rendering engines, layout sorting, and AI integrations including ATS Optimization, Resume Rewrites, and Cover Letter Generation.
+
+---
+
+## 📑 Table of Contents
+
+- [Core Features](#-core-features)
+- [Screenshots](#-screenshots)
+- [Tech Stack](#-tech-stack)
+- [System Architecture & Data Flow](#️-system-architecture--data-flow)
+- [ATS Engine V2.1: Advanced Parsing & Scoring](#-ats-engine-v21-advanced-parsing--scoring)
+- [Creative Theme Customizer Compilers](#-creative-theme-customizer-compilers)
+- [Project Structure](#-project-structure)
+- [Prerequisites & Local Environment](#️-prerequisites--local-environment)
+- [Installation & Development](#-installation--development)
+- [Environment Variables Reference](#-environment-variables-reference)
+- [Deployment](#-deployment)
+- [Security Auditing & Production Stability](#-security-auditing--production-stability)
+- [Known Limitations](#️-known-limitations)
+- [Future Improvements](#-future-improvements)
+- [Development Team](#-development-team)
+
+---
+
+## ✨ Core Features
+
+*   **Authentication**: Secure JWT-based user authentication and protected routes.
+*   **Resume Builder**: Split-screen editor with live preview and drag-and-drop layout sorting.
+*   **Resume Preview**: Live rendering of the resume template.
+*   **Upload Resume**: Seamlessly import existing resumes to update your profile.
+*   **Auto Save & Save Now**: Robust persistence architecture featuring a 1.5s debounced Auto Save, a manual Save Now button, and a guaranteed save-on-unload fallback.
+*   **ATS Optimize Shortcut**: Quick access to the ATS intelligence suite directly from the Builder.
+*   **ATS Analyzer Intelligence**: Deep inspection of Job Descriptions against your resume.
+*   **ATS Matcher**: Deterministic ATS scoring engine evaluating Keyword Match, Semantic Match, Skill Alignment, and Experience.
+*   **ATS Reports**: Highly detailed, actionable compliance reports highlighting keyword gaps and alias matches.
+*   **AI Rewrite**: Powerful Llama-3 driven rewriting tools for professional summaries and experience bullets.
+*   **Undo**: Revert AI optimizations with built-in history tracking.
+*   **Cover Letter Generator**: Generate tailored cover letters matching a target Job Description.
+*   **Contact Page**: Dedicated support and inquiry interface.
+*   **Settings Page**: Account management and plan statistics.
+*   **Theme Switching**: Swap between Modern, Classic, and Minimalist templates.
+*   **PDF Export**: Server-side Puppeteer-driven PDF generation.
+*   **Responsive UI**: Optimized for all screen sizes using Tailwind CSS v4.
+
+---
+
+## 📸 Screenshots
+
+### Landing Page
+
+![Landing Page](README-assets/screenshots/landing-page.png)
+
+### Dashboard
+
+![Dashboard](README-assets/screenshots/dashboard.png)
+
+### Resume Builder
+
+![Resume Builder](README-assets/screenshots/resume-builder.png)
+
+### ATS Analyzer
+
+![ATS Analyzer](README-assets/screenshots/ats-analyzer.png)
+
+### AI Rewrite
+
+![AI Rewrite](README-assets/screenshots/ai-rewrite-modal.png)
+
+### Cover Letter Generator
+
+![Cover Letter Generator](README-assets/screenshots/cover-letter-generator.png)
+
+### Settings
+
+![Settings](README-assets/screenshots/settings.png)
+
+---
+
+## 💻 Tech Stack
+
+### Frontend
+*   **React 19**
+*   **Vite**
+*   **Tailwind CSS v4**
+*   **Zustand** (Global State Management)
+*   **Framer Motion** (Animations)
+
+### Backend
+*   **Express.js** (REST API)
+*   **Node.js**
+
+### AI & Services
+*   **Groq API** (Llama-3 LLM for AI Rewrites & Cover Letters)
+*   **Puppeteer** (Server-side PDF Export)
+
+### Database
+*   **MongoDB** (Atlas / Local Community Server)
+*   **Mongoose** (ODM & Strict Schemas)
+
+### Payments
+*   **Stripe** (Subscription Billing)
 
 ---
 
@@ -28,26 +128,51 @@ graph TD
 
 ---
 
-## 📂 Repository Layout & Clean Directory Tree
+## 📊 ATS Engine V2.1: Advanced Parsing & Scoring
+
+CareerForge Pro utilizes a highly deterministic ATS engine capable of performing comprehensive AI-driven Job Description analysis paired with precise resume matching.
+
+*   **Deterministic Scoring:** Evaluates resumes using strict, predictable mathematical weights: Keyword Match (40%), Semantic Match (30%), Skill Alignment (20%), and Experience Presence (10%).
+*   **Server-Authoritative ATS Pipeline:** The backend acts as the single source of truth for all parsing and scoring logic. The frontend dynamically renders ATS metadata without local recalculations, ensuring total data synchronization.
+*   **Structured Recommendations:** Provides deterministic, actionable advice categorized by priority levels (Critical, High, Medium, Low) and assigns specific guidance to target resume sections.
+*   **Expanded Alias Library:** Supplements dynamic AI-generated aliases with a robust static fallback library of industry-standard terms (e.g., `JavaScript ↔ JS`, `TypeScript ↔ TS`, `Express ↔ Express.js`, `Kubernetes ↔ K8s`, `Amazon Web Services ↔ AWS`).
+*   **ATS Report UI V2:** The realtime compliance report correctly exposes point attributions, visualizing true keyword match percentages, structured priority indicators, target section badges, and inline alias context badges, supported by backward-compatible fallback rendering.
+
+*Missing components and keyword gaps trigger actionable ATS optimization warnings, empowering candidates to tailor their resume effortlessly.*
+
+---
+
+## 🎨 Creative Theme Customizer Compilers
+
+CareerForge Pro compiles resumes dynamically into three selectable templates:
+*   **Modern**: Uses clean geometric titles with custom accent color dividers, perfect for product and marketing managers.
+*   **Classic**: Incorporates traditional serif layouts with centered titles and formal borders, perfect for law, finance, and consulting.
+*   **Minimalist**: High line height ratios with ultra-tight spacing and clean structural dividers, designed for creative and technology fields.
+
+---
+
+## 📂 Project Structure
 
 ```bash
 CareerForge-Pro/
 ├── backend/
 │   ├── src/
-│   │   ├── config/          # Mongoose Lifecycle hooks
-│   │   ├── controllers/     # Controller handlers (Auth, Resumes, ATS feedback)
+│   │   ├── config/          # Mongoose Lifecycle hooks & DB config
+│   │   ├── controllers/     # Controller handlers (Auth, Resumes, ATS)
 │   │   ├── middleware/      # JWT gates, Rate limits, Body validator pipelines
 │   │   ├── models/          # Strict User & Resume schemas
 │   │   ├── routes/          # Clean endpoint routes maps
+│   │   ├── services/        # AI, PDF, and Stripe integration services
+│   │   ├── utils/           # Helper functions and JWT generators
 │   │   └── server.js        # Main Express server entry point
 │   ├── .env                 # API Secrets & database credentials
 │   └── package.json         # Backend dependency scripts
 ├── frontend/
 │   ├── src/
 │   │   ├── assets/          # Static media assets
-│   │   ├── components/      # Shared elements (Protected routes)
-│   │   ├── pages/           # High-fidelity interfaces (Landing, Dashboard, Builder)
-│   │   ├── store/           # Zustand Auth & Resume stores (Autosave loop)
+│   │   ├── components/      # Shared elements (Protected routes, Modals)
+│   │   ├── pages/           # High-fidelity interfaces (Dashboard, Builder, Cover Letter)
+│   │   ├── store/           # Zustand Auth & Resume stores
 │   │   ├── index.css        # Tailwind v4 import + Premium theme styles
 │   │   ├── main.jsx         # React DOM renderer
 │   │   └── App.jsx          # Route controller
@@ -67,7 +192,7 @@ Ensure you have the following installed on your developer workspace:
 
 ---
 
-## ⚡ Setup & Launch Instructions
+## ⚡ Installation & Development
 
 Follow these step-by-step instructions to boot up the backend and frontend dev instances locally.
 
@@ -90,13 +215,7 @@ dist/
    ```bash
    npm install
    ```
-3. Initialize the environment configuration. Create a file named `.env` inside `backend/` and configure:
-   ```env
-   PORT=5000
-   MONGODB_URI=mongodb://127.0.0.1:27017/careerforge-pro
-   JWT_SECRET=cf_pro_super_secret_session_key_2026_xYz
-   NODE_ENV=development
-   ```
+3. Initialize the environment configuration. Create a file named `.env` inside `backend/` and configure it according to the Environment Variables reference below.
 4. Start the backend development server using Nodemon (which automatically hot-reloads on file edits):
    ```bash
    npm run dev
@@ -120,9 +239,51 @@ dist/
 
 ---
 
+## 🔑 Environment Variables Reference
+
+To successfully run the application with full capabilities, ensure the following environment variables are securely configured. **Never commit actual secret values to version control.**
+
+### Backend (`backend/.env`)
+| Variable | Description |
+|----------|-------------|
+| `PORT` | The port the Express server will listen on (default: `5000`). |
+| `NODE_ENV` | Application environment (`development` or `production`). |
+| `MONGODB_URI` | MongoDB connection string. |
+| `JWT_SECRET` | Secure string for signing JWT authentication tokens. |
+| `CLIENT_URL` | The URL of the frontend application (e.g., `http://localhost:5173`). |
+| `GROQ_API_KEY` | API Key for Groq (powers Llama-3 AI Rewrite and Generation features). |
+| `GROQ_MODEL` | The specific model string for the Groq API (e.g., `llama-3.3-70b-versatile`). |
+| `PUPPETEER_EXECUTABLE_PATH` | (Optional) Path to Chromium executable for PDF Export if Puppeteer fails to download it automatically. |
+| `STRIPE_SECRET_KEY` | Secret key for Stripe payment processing. |
+| `STRIPE_PRICE_ID` | The specific Stripe product price identifier. |
+| `STRIPE_WEBHOOK_SECRET` | Secret to verify webhook signatures from Stripe. |
+
+### Frontend (`frontend/.env`)
+| Variable | Description |
+|----------|-------------|
+| `VITE_API_URL` | The URL of the backend REST API (e.g., `http://localhost:5000/api`). |
+
+---
+
+## 🚀 Deployment
+
+To prepare the application for deployment, execute the build process:
+
+### Frontend Build
+Navigate to the `frontend` directory and run:
+```bash
+npm run build
+```
+This will compile the React application into static assets within the `frontend/dist` directory. The frontend build output is suitable for deployment to static hosting providers such as Vercel or Netlify.
+
+### Backend Hosting
+The backend runs as a standard Node.js Express server. Ensure the `NODE_ENV` is set to `production` and provide the required environment variables. The backend can be deployed to a Node.js-compatible hosting provider.
+
+---
+
 ## 🔒 Security Auditing & Production Stability
 
-CareerForge Pro has successfully passed an internal security audit and production validation process. The repository has been cleaned and stabilized for production readiness with the following enhancements:
+CareerForge Pro has undergone internal code reviews and production readiness validation focused on authentication, data protection, and application stability. The repository incorporates the following practices:
 - **Authentication Improvements:** Enhanced **JWT Protection Gates** inside custom middleware securely parse authorization headers to safeguard protected API endpoints.
 - **Security Enhancements:** Verified robust data protection leveraging **BCrypt Hashing** for passwords, **Helmet Headers** for XSS mitigation, and **Express Rate Limiting** to prevent brute-force attacks (100 calls/15min).
 - **AutoSave Reliability:** Hardened debounced Zustand local store updates ensure that user input is seamlessly and safely synced to MongoDB, protecting against data loss.
@@ -130,27 +291,28 @@ CareerForge Pro has successfully passed an internal security audit and productio
 
 ---
 
-## 🎨 Creative Theme Customizer Compilers
+## ⚠️ Known Limitations
 
-CareerForge Pro compiles resumes dynamically into three selectable templates:
-*   **Modern**: Uses clean geometric titles with custom accent color dividers, perfect for product and marketing managers.
-*   **Classic**: Incorporates traditional serif layouts with centered titles and formal borders, perfect for law, finance, and consulting.
-*   **Minimalist**: High line height ratios with ultra-tight spacing and clean structural dividers, designed for creative and technology fields.
-
----
-
-## 📊 ATS Engine V2.1: Advanced Parsing & Scoring
-CareerForge Pro utilizes a highly deterministic ATS engine capable of performing comprehensive AI-driven Job Description analysis paired with precise resume matching.
-
-*   **Deterministic Scoring:** Evaluates resumes using strict, predictable mathematical weights: Keyword Match (40%), Semantic Match (30%), Skill Alignment (20%), and Experience Presence (10%).
-*   **Server-Authoritative ATS Pipeline:** The backend acts as the single source of truth for all parsing and scoring logic. The frontend dynamically renders ATS metadata without local recalculations, ensuring total data synchronization.
-*   **Structured Recommendations:** Provides deterministic, actionable advice categorized by priority levels (Critical, High, Medium, Low) and assigns specific guidance to target resume sections.
-*   **Expanded Alias Library:** Supplements dynamic AI-generated aliases with a robust static fallback library of industry-standard terms (e.g., `JavaScript ↔ JS`, `TypeScript ↔ TS`, `Express ↔ Express.js`, `Kubernetes ↔ K8s`, `Amazon Web Services ↔ AWS`).
-*   **ATS Report UI V2:** The realtime compliance report correctly exposes point attributions, visualizing true keyword match percentages, structured priority indicators, target section badges, and inline alias context badges, supported by backward-compatible fallback rendering.
-
-*Missing components and keyword gaps trigger actionable ATS optimization warnings, empowering candidates to tailor their resume effortlessly.*
+### Payment Gateway
+Stripe integration is implemented in the application.
+End-to-end payment verification could not be completed because Stripe account creation is unavailable in the developer's region.
+A request to use Razorpay as an alternative payment gateway has been submitted and is awaiting company confirmation.
 
 ---
 
-## 🧑‍💻 Pair Programming Team
-Designed and constructed with 💙 by **Antigravity** and the **Google DeepMind developer team**.
+## 🔮 Future Improvements
+
+- **Razorpay Support:** Support Razorpay as an alternative payment gateway if approved.
+- **Template Gallery Expansion:** Add additional specialized resume templates (e.g., Academic CVs, Engineering specific formats).
+- **OAuth Integration:** Add Google and LinkedIn Single Sign-On (SSO) for faster onboarding.
+
+---
+
+## 👥 Development Team
+
+CareerForge Pro is a collaborative team project.
+
+*   **Fuhad Saneen T**
+*   **Vaaneesh Prabhakar**
+
+*Modern AI development tools were utilized throughout the lifecycle of this project to assist with architecture reviews, implementation planning, documentation generation, debugging, and overall productivity.*
