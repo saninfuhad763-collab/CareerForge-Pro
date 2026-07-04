@@ -47,8 +47,8 @@ const comparisonRows = [
   { label: 'ATS Analysis',            free: true,          pro: true,         freeAvail: true,  proAvail: true  },
   { label: 'Resume Upload',           free: true,          pro: true,         freeAvail: true,  proAvail: true  },
   { label: 'Resume PDF Export',       free: true,          pro: true,         freeAvail: true,  proAvail: true  },
-  { label: 'Cover Letter Generator',  free: true,          pro: true,         freeAvail: true,  proAvail: true  },
-  { label: 'Cover Letter PDF Export', free: true,          pro: true,         freeAvail: true,  proAvail: true  },
+  { label: 'Cover Letter Generator',  free: false,         pro: true,         freeAvail: false, proAvail: true  },
+  { label: 'Cover Letter PDF Export', free: false,         pro: true,         freeAvail: false, proAvail: true  },
   { label: 'Premium Templates',       free: false,         pro: true,         freeAvail: false, proAvail: true  },
 ];
 

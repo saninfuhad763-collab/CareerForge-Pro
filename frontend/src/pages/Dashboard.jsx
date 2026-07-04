@@ -20,6 +20,7 @@ import {
   CreditCard,
   Lock,
   Building,
+  Briefcase,
   History,
   Eye,
   Loader2,
@@ -78,6 +79,7 @@ const Dashboard = () => {
   const [modalCopied, setModalCopied] = useState(false);
 
   const loadCoverLetters = useCallback(async () => {
+    if (!isProUser(user)) return;
     setCoverLettersLoading(true);
     try {
       const token = localStorage.getItem('cf_token');
@@ -95,7 +97,7 @@ const Dashboard = () => {
     } finally {
       setCoverLettersLoading(false);
     }
-  }, []);
+  }, [user]);
 
   const handleDeleteCoverLetterClick = (id, e) => {
     if (e) e.stopPropagation();
@@ -182,11 +184,13 @@ const Dashboard = () => {
   // Load user data on mount
   useEffect(() => {
     loadResumes();
-    const timer = setTimeout(() => {
-      loadCoverLetters();
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [loadResumes, loadCoverLetters]);
+    if (isProUser(user)) {
+      const timer = setTimeout(() => {
+        loadCoverLetters();
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [loadResumes, loadCoverLetters, user]);
 
   const openCreateModal = () => {
     setCreateError(null);
@@ -673,181 +677,204 @@ const Dashboard = () => {
           )}
 
           {activeTab === 'cover-letters' && (
-            <motion.div
-              key="cover-letters"
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              variants={{
-                hidden: { opacity: 0 },
-                visible: {
-                  opacity: 1,
-                  transition: {
-                    staggerChildren: 0.05,
-                    delayChildren: 0.02
-                  }
-                },
-                exit: {
-                  opacity: 0,
-                  y: -15,
-                  transition: { duration: 0.3 }
-                }
-              }}
-              className="space-y-8 text-left"
-            >
-              {/* Header */}
-              <motion.div variants={staggerItem} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <h1 className="text-2xl md:text-3xl font-bold font-display text-slate-800 dark:text-slate-100 flex items-center gap-3">
-                    <History className="w-8 h-8 text-violet-500" />
-                    <span>Saved Cover Letters</span>
-                  </h1>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Manage and view your generated cover letters history.
-                  </p>
-                </div>
-                {coverLetters.length > 0 && (
-                  <motion.button
-                    onClick={() => navigate('/cover-letter')}
-                    variants={buttonScale}
-                    initial="initial"
-                    whileHover="hover"
-                    whileTap="tap"
-                    className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl font-semibold text-sm transition-all shadow-md shadow-indigo-500/10 cursor-pointer self-start sm:self-center"
-                  >
-                    <Plus className="w-4.5 h-4.5" />
-                    <span>Generate Cover Letter</span>
-                  </motion.button>
-                )}
-              </motion.div>
-
-              {coverLetterExportError && (
-                <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 rounded-xl flex items-center justify-between gap-2 text-amber-700 dark:text-amber-300">
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <p className="text-xs font-semibold">{coverLetterExportError}</p>
+            !isPro ? (
+              <div className="py-12 md:py-24 flex items-center justify-center">
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-3xl p-12 border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center space-y-5 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 hover:-translate-y-0.5 transition-all duration-300 shadow-sm"
+                >
+                  <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400">
+                    <Sparkles className="w-8 h-8 text-indigo-500" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 font-display">Cover Letters is a Pro Feature</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                      Upgrade to CareerForge Pro to unlock unlimited resume generation, premium templates, and the AI Cover Letter Generator.
+                    </p>
                   </div>
                   <button
-                    onClick={() => setCoverLetterExportError('')}
-                    className="text-xs font-bold text-amber-600 hover:text-amber-800 cursor-pointer shrink-0"
+                    onClick={handleUpgrade}
+                    className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-md shadow-indigo-500/10 cursor-pointer"
                   >
-                    Dismiss
+                    <span>Upgrade to Pro Plan</span>
                   </button>
-                </div>
-              )}
+                </motion.div>
+              </div>
+            ) : (
+              <motion.div
+                key="cover-letters"
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                variants={{
+                  hidden: { opacity: 0 },
+                  visible: {
+                    opacity: 1,
+                    transition: {
+                      staggerChildren: 0.05,
+                      delayChildren: 0.02
+                    }
+                  },
+                  exit: {
+                    opacity: 0,
+                    y: -15,
+                    transition: { duration: 0.3 }
+                  }
+                }}
+                className="space-y-8 text-left"
+              >
+                {/* Header */}
+                <motion.div variants={staggerItem} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <h1 className="text-2xl md:text-3xl font-bold font-display text-slate-800 dark:text-slate-100 flex items-center gap-3">
+                      <History className="w-8 h-8 text-violet-500" />
+                      <span>Saved Cover Letters</span>
+                    </h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      Manage and view your generated cover letters history.
+                    </p>
+                  </div>
+                  {coverLetters.length > 0 && (
+                    <motion.button
+                      onClick={() => navigate('/cover-letter')}
+                      variants={buttonScale}
+                      initial="initial"
+                      whileHover="hover"
+                      whileTap="tap"
+                      className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl font-semibold text-sm transition-all shadow-md shadow-indigo-500/10 cursor-pointer self-start sm:self-center"
+                    >
+                      <Plus className="w-4.5 h-4.5" />
+                      <span>Generate Cover Letter</span>
+                    </motion.button>
+                  )}
+                </motion.div>
 
-              {coverLettersLoading ? (
-                <div className="h-64 flex flex-col items-center justify-center text-slate-400">
-                  <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mb-2" />
-                  <p className="text-sm font-semibold">Loading cover letters...</p>
-                </div>
-              ) : coverLetters.length === 0 ? (
-                <div className="py-12 md:py-24 flex items-center justify-center">
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.96 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-3xl p-12 border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center space-y-5 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 hover:-translate-y-0.5 transition-all duration-300 shadow-sm"
-                  >
-                    <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400">
-                      <History className="w-8 h-8" />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 font-display">No cover letters saved yet</h3>
-                      <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-                        Generate a professional, AI-tailored cover letter and save it to your history.
-                      </p>
+                {coverLetterExportError && (
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 rounded-xl flex items-center justify-between gap-2 text-amber-700 dark:text-amber-300">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <p className="text-xs font-semibold">{coverLetterExportError}</p>
                     </div>
                     <button
-                      onClick={() => navigate('/cover-letter')}
-                      className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-md shadow-indigo-500/10 cursor-pointer"
+                      onClick={() => setCoverLetterExportError('')}
+                      className="text-xs font-bold text-amber-600 hover:text-amber-800 cursor-pointer shrink-0"
                     >
-                      <Plus className="w-4 h-4" />
-                      <span>Generate Cover Letter</span>
+                      Dismiss
                     </button>
-                  </motion.div>
-                </div>
-              ) : (
-                <motion.div 
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                  variants={staggerContainer(0.05)}
-                >
-                  {coverLetters.map((letter) => {
-                    const linkedResume = resumes.find(r => r._id === letter.resumeId);
-                    return (
-                      <motion.div
-                        key={letter._id}
-                        variants={professionalCardVariant}
-                        whileHover="hover"
-                        whileTap="tap"
-                        className="group bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 text-left flex flex-col justify-between h-56 cursor-pointer relative shadow-sm hover:border-indigo-500/50 hover:bg-slate-50 dark:hover:bg-slate-950/40 hover:shadow-lg transition-all duration-300"
-                        onClick={() => setViewingCoverLetter(letter)}
-                      >
-                        <div className="space-y-2 z-10">
-                          <div className="flex justify-between items-start gap-4">
-                            <h3 className="font-bold font-display text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300 truncate">
-                              {letter.jobTitle}
-                            </h3>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 font-semibold">
-                            <Building className="w-3.5 h-3.5" />
-                            <span className="truncate">{letter.companyName}</span>
-                          </div>
-                          {linkedResume && (
-                            <p className="text-[10px] text-slate-400 font-medium truncate">
-                              Linked to: <span className="underline">{linkedResume.title}</span>
-                            </p>
-                          )}
-                          <p className="text-xs text-slate-400 line-clamp-3 mt-2">
-                            {letter.coverLetter}
-                          </p>
-                        </div>
+                  </div>
+                )}
 
-                        <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800/80 z-10 mt-3">
-                          <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                            <Clock className="w-3.5 h-3.5" />
-                            <span>{new Date(letter.createdAt).toLocaleDateString()}</span>
+                {coverLettersLoading ? (
+                  <div className="h-64 flex flex-col items-center justify-center text-slate-400">
+                    <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mb-2" />
+                    <p className="text-sm font-semibold">Loading cover letters...</p>
+                  </div>
+                ) : coverLetters.length === 0 ? (
+                  <div className="py-12 md:py-24 flex items-center justify-center">
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.96 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-3xl p-12 border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center space-y-5 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 hover:-translate-y-0.5 transition-all duration-300 shadow-sm"
+                    >
+                      <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400">
+                        <History className="w-8 h-8" />
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 font-display">No cover letters saved yet</h3>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                          Generate a professional, AI-tailored cover letter and save it to your history.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => navigate('/cover-letter')}
+                        className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-md shadow-indigo-500/10 cursor-pointer"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Generate Cover Letter</span>
+                      </button>
+                    </motion.div>
+                  </div>
+                ) : (
+                  <motion.div 
+                    variants={staggerContainer(0.05)}
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                  >
+                    {coverLetters.map((letter) => {
+                      const dateString = new Date(letter.createdAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      });
+                      return (
+                        <motion.div
+                          key={letter._id}
+                          variants={professionalCardVariant}
+                          whileHover={{ y: -4, scale: 1.015, transition: { duration: 0.25 } }}
+                          onClick={() => setViewingCoverLetter(letter)}
+                          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-5 flex flex-col justify-between h-48 cursor-pointer shadow-xs hover:shadow-lg hover:border-indigo-500/30 transition-all duration-300 group relative overflow-hidden"
+                        >
+                          <div className="space-y-3 text-left">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{dateString}</span>
+                              <FileSignature className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-slate-800 dark:text-slate-100 line-clamp-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{letter.jobTitle}</h3>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1 mt-0.5">
+                                <Briefcase className="w-3.5 h-3.5" />
+                                <span>{letter.companyName}</span>
+                              </p>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setViewingCoverLetter(letter);
-                              }}
-                              className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-50 dark:bg-slate-900 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/20 opacity-30 group-hover:opacity-100 focus:opacity-100 transition-all duration-300 cursor-pointer"
-                              title="View Cover Letter"
-                            >
-                              <Eye className="w-4.5 h-4.5" />
-                            </button>
-                            <button
-                              onClick={(e) => handleExportCoverLetterPdf(letter, e)}
-                              disabled={exportingCoverLetterId === letter._id}
-                              className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-50 dark:bg-slate-900 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/20 opacity-30 group-hover:opacity-100 focus:opacity-100 transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                              title="Export PDF"
-                            >
-                              {exportingCoverLetterId === letter._id ? (
-                                <Loader2 className="w-4.5 h-4.5 animate-spin" />
-                              ) : (
-                                <Download className="w-4.5 h-4.5" />
-                              )}
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteCoverLetterClick(letter._id, e);
-                              }}
-                              className="p-2 text-slate-400 hover:text-red-500 dark:hover:text-red-400 bg-slate-50 dark:bg-slate-900 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 opacity-30 group-hover:opacity-100 focus:opacity-100 translate-x-1 group-hover:translate-x-0 transition-all duration-300 cursor-pointer"
-                              title="Delete Cover Letter"
-                            >
-                              <Trash2 className="w-4.5 h-4.5" />
-                            </button>
+
+                          <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800/40 mt-4">
+                            <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                              <span>View Letter</span>
+                              <Plus className="w-3 h-3 rotate-45" />
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setViewingCoverLetter(letter);
+                                }}
+                                className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 bg-slate-50 dark:bg-slate-900 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 opacity-30 group-hover:opacity-100 focus:opacity-100 transition-all duration-300 cursor-pointer"
+                                title="Open / Preview"
+                              >
+                                <Eye className="w-4.5 h-4.5" />
+                              </button>
+                              <button
+                                onClick={(e) => handleExportCoverLetterPdf(letter, e)}
+                                disabled={exportingCoverLetterId === letter._id}
+                                className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-50 dark:bg-slate-900 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/20 opacity-30 group-hover:opacity-100 focus:opacity-100 transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Export PDF"
+                              >
+                                {exportingCoverLetterId === letter._id ? (
+                                  <Loader2 className="w-4.5 h-4.5 animate-spin" />
+                                ) : (
+                                  <Download className="w-4.5 h-4.5" />
+                                )}
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteCoverLetterClick(letter._id, e);
+                                }}
+                                className="p-2 text-slate-400 hover:text-red-500 dark:hover:text-red-400 bg-slate-50 dark:bg-slate-900 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 opacity-30 group-hover:opacity-100 focus:opacity-100 translate-x-1 group-hover:translate-x-0 transition-all duration-300 cursor-pointer"
+                                title="Delete Cover Letter"
+                              >
+                                <Trash2 className="w-4.5 h-4.5" />
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </motion.div>
-              )}
-            </motion.div>
+                        </motion.div>
+                      );
+                    })}
+                  </motion.div>
+                )}
+              </motion.div>
+            )
           )}
 
           {activeTab === 'ai-scoring' && (

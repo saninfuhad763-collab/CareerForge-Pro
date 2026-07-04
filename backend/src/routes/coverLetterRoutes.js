@@ -6,16 +6,21 @@ import {
   exportCoverLetterPdf,
 } from '../controllers/coverLetterPersistenceController.js';
 import { protect } from '../middleware/authMiddleware.js';
+import { checkCoverLetterAccess } from '../middleware/planMiddleware.js';
 
 const router = express.Router();
 
-router.route('/')
-  .post(protect, saveCoverLetter)
-  .get(protect, getCoverLetters);
+// Enforce authentication and Pro-tier access for all cover letter persistence endpoints
+router.use(protect);
+router.use(checkCoverLetterAccess);
 
-router.post('/:id/export-pdf', protect, exportCoverLetterPdf);
+router.route('/')
+  .post(saveCoverLetter)
+  .get(getCoverLetters);
+
+router.post('/:id/export-pdf', exportCoverLetterPdf);
 
 router.route('/:id')
-  .delete(protect, deleteCoverLetter);
+  .delete(deleteCoverLetter);
 
 export default router;

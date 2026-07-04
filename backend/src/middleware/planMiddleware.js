@@ -68,3 +68,18 @@ export const checkPremiumTemplate = (req, res, next) => {
 
   return next();
 };
+
+/**
+ * Reject cover letter access for free-tier users
+ */
+export const checkCoverLetterAccess = (req, res, next) => {
+  if (!isProPlan(req.user)) {
+    return res.status(403).json({
+      success: false,
+      message: 'Cover Letter features are Pro-only. Upgrade to Pro to unlock cover letter generation, premium templates, and unlimited resumes!',
+      requiresUpgrade: true,
+    });
+  }
+  next();
+};
+

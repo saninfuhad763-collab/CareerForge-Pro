@@ -9,7 +9,7 @@ import {
 } from '../controllers/aiController.js';
 import { generateCoverLetter } from '../controllers/coverLetterController.js';
 import { protect } from '../middleware/authMiddleware.js';
-import { checkAiRewriteLimit } from '../middleware/planMiddleware.js';
+import { checkAiRewriteLimit, checkCoverLetterAccess } from '../middleware/planMiddleware.js';
 
 const router = express.Router();
 
@@ -24,7 +24,7 @@ router.post('/accept', protect, acceptRewrite);
 router.post('/rollback', protect, rollbackRewrite);
 
 // Cover Letter generation
-router.post('/generate-cover-letter', protect, generateCoverLetter);
+router.post('/generate-cover-letter', protect, checkCoverLetterAccess, generateCoverLetter);
 
 // Logging and plans configuration
 router.get('/history/:resumeId', protect, getHistoryLogs);

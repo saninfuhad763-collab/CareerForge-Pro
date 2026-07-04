@@ -268,6 +268,42 @@ const CoverLetter = () => {
 
   const isPro = isProUser(user);
 
+  if (user && !isPro) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-3xl p-12 border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center space-y-5 shadow-sm"
+        >
+          <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-450">
+            <Sparkles className="w-8 h-8 text-indigo-500" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 font-display">Upgrade to Pro</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+              AI Cover Letter Generation is a CareerForge Pro exclusive feature. Upgrade today to unlock cover letter tools, premium templates, and unlimited resumes!
+            </p>
+          </div>
+          <div className="flex gap-4">
+            <button
+              onClick={() => navigate('/')}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+            >
+              Back to Home
+            </button>
+            <button
+              onClick={handleUpgrade}
+              className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-md shadow-indigo-500/10 cursor-pointer"
+            >
+              Upgrade Now
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col md:flex-row text-slate-800 dark:text-slate-100">
       {/* Sidebar Navigation */}
