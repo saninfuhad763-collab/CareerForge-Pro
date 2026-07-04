@@ -16,6 +16,7 @@ export const useResumeStore = create((set, get) => ({
   error: null,
   autoSaveEnabled: true,
   hasUnsavedChanges: false,
+  localVersion: 0,
 
   // Get authorization headers helper
   getHeaders: () => {
@@ -70,7 +71,7 @@ export const useResumeStore = create((set, get) => ({
         throw new Error(data.message || 'Failed to load resume details');
       }
 
-      set({ currentResume: data.data, loading: false });
+      set({ currentResume: data.data, localVersion: 0, loading: false });
       return data.data;
     } catch (error) {
       if (requestSeq !== loadResumeRequestSeq) {
@@ -99,6 +100,7 @@ export const useResumeStore = create((set, get) => ({
       set((state) => ({
         resumes: [data.data, ...state.resumes],
         currentResume: data.data,
+        localVersion: 0,
         loading: false,
       }));
       return data.data;
@@ -110,8 +112,11 @@ export const useResumeStore = create((set, get) => ({
 
   // Optimistically update the UI and queue a debounced save to the backend
   updateResumeLocal: (updatedFields) => {
-    const { currentResume, autoSaveEnabled } = get();
+    const { currentResume, autoSaveEnabled, localVersion } = get();
     if (!currentResume) return;
+
+    // Increment localVersion immediately on edit
+    const nextVersion = localVersion + 1;
 
     // Create a new merged state structure optimistically
     const mergedResume = {
@@ -120,15 +125,18 @@ export const useResumeStore = create((set, get) => ({
     };
 
     if (!autoSaveEnabled) {
-      set({ currentResume: mergedResume, hasUnsavedChanges: true });
+      set({ currentResume: mergedResume, localVersion: nextVersion, hasUnsavedChanges: true });
       return;
     }
 
     // Always track unsaved changes even during debounce
-    set({ currentResume: mergedResume, saving: true, hasUnsavedChanges: true });
+    set({ currentResume: mergedResume, localVersion: nextVersion, saving: true, hasUnsavedChanges: true });
 
     // Clear existing save timer and schedule new one
     if (saveTimeout) clearTimeout(saveTimeout);
+
+    // Capture the current localVersion for this save request
+    const savedVersion = nextVersion;
 
     saveTimeout = setTimeout(async () => {
       try {
@@ -145,6 +153,8 @@ export const useResumeStore = create((set, get) => ({
         }
 
         const latestResume = get().currentResume;
+        const latestVersion = get().localVersion;
+
         if (latestResume && latestResume._id === data.data._id) {
           // Backend atsMetadata always wins — merge explicitly to protect all ATS history fields
           const backendAts = data.data.atsMetadata || {};
@@ -159,19 +169,39 @@ export const useResumeStore = create((set, get) => ({
             scoreImprovement: backendAts.scoreImprovement !== undefined ? backendAts.scoreImprovement : localAts.scoreImprovement,
             lastJdHash:       backendAts.lastJdHash       !== undefined ? backendAts.lastJdHash       : localAts.lastJdHash,
           };
-          set({
-            currentResume: {
-              ...latestResume,
-              ...data.data,
-              atsMetadata: mergedAts,
-              atsScore: data.data.atsScore !== undefined ? data.data.atsScore : latestResume.atsScore,
-            },
-            saving: false,
-            hasUnsavedChanges: false,
-            error: null,
-          });
+
+          if (savedVersion === latestVersion) {
+            // Normal sync: no newer edits since save started
+            set({
+              currentResume: {
+                ...latestResume,
+                ...data.data,
+                atsMetadata: mergedAts,
+                atsScore: data.data.atsScore !== undefined ? data.data.atsScore : latestResume.atsScore,
+              },
+              saving: false,
+              hasUnsavedChanges: false,
+              error: null,
+            });
+          } else {
+            // Stale sync: keep newer local edits, only merge atsMetadata
+            set({
+              currentResume: {
+                ...latestResume,
+                atsMetadata: mergedAts,
+                atsScore: data.data.atsScore !== undefined ? data.data.atsScore : latestResume.atsScore,
+              },
+              saving: false,
+              // Keep hasUnsavedChanges: true
+              error: null,
+            });
+          }
         } else {
-          set({ saving: false, hasUnsavedChanges: false, error: null });
+          if (savedVersion === latestVersion) {
+            set({ saving: false, hasUnsavedChanges: false, error: null });
+          } else {
+            set({ saving: false, error: null });
+          }
         }
       } catch (error) {
         console.error('[Auto-save Error] Failed to persist data:', error.message);
@@ -186,6 +216,9 @@ export const useResumeStore = create((set, get) => ({
 
     const resumeToSave = get().currentResume;
     if (!resumeToSave) return false;
+
+    // Capture the current localVersion for this immediate save request
+    const savedVersion = get().localVersion;
 
     set({ saving: true });
 
@@ -204,6 +237,8 @@ export const useResumeStore = create((set, get) => ({
       }
 
       const latestResume = get().currentResume;
+      const latestVersion = get().localVersion;
+
       if (latestResume && latestResume._id === data.data._id) {
         // Backend atsMetadata always wins — merge explicitly to protect all ATS history fields
         const backendAts = data.data.atsMetadata || {};
@@ -218,19 +253,39 @@ export const useResumeStore = create((set, get) => ({
           scoreImprovement: backendAts.scoreImprovement !== undefined ? backendAts.scoreImprovement : localAts.scoreImprovement,
           lastJdHash:       backendAts.lastJdHash       !== undefined ? backendAts.lastJdHash       : localAts.lastJdHash,
         };
-        set({
-          currentResume: {
-            ...latestResume,
-            ...data.data,
-            atsMetadata: mergedAts,
-            atsScore: data.data.atsScore !== undefined ? data.data.atsScore : latestResume.atsScore,
-          },
-          saving: false,
-          hasUnsavedChanges: false,
-          error: null,
-        });
+
+        if (savedVersion === latestVersion) {
+          // Normal sync
+          set({
+            currentResume: {
+              ...latestResume,
+              ...data.data,
+              atsMetadata: mergedAts,
+              atsScore: data.data.atsScore !== undefined ? data.data.atsScore : latestResume.atsScore,
+            },
+            saving: false,
+            hasUnsavedChanges: false,
+            error: null,
+          });
+        } else {
+          // Stale sync: keep newer local edits, only merge atsMetadata
+          set({
+            currentResume: {
+              ...latestResume,
+              atsMetadata: mergedAts,
+              atsScore: data.data.atsScore !== undefined ? data.data.atsScore : latestResume.atsScore,
+            },
+            saving: false,
+            // Keep hasUnsavedChanges: true
+            error: null,
+          });
+        }
       } else {
-        set({ saving: false, hasUnsavedChanges: false, error: null });
+        if (savedVersion === latestVersion) {
+          set({ saving: false, hasUnsavedChanges: false, error: null });
+        } else {
+          set({ saving: false, error: null });
+        }
       }
       return true;
     } catch (error) {
