@@ -66,7 +66,7 @@ const proFeatures = [
   { icon: Zap,      text: 'Unlimited AI Rewrites' },
   { icon: Shield,   text: 'ATS Analysis' },
   { icon: Crown,    text: 'Premium Templates' },
-  { icon: Sparkles, text: 'Priority Features' },
+  { icon: Sparkles, text: 'Cover Letter Suite' },
 ];
 
 /* ════════════════════════════════════════════════════════════════ */
