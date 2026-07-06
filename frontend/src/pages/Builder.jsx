@@ -2512,7 +2512,17 @@ const Builder = () => {
                                     </div>
                                     <span className="text-[10px] text-slate-400">{proj.startDate}</span>
                                   </div>
-                                  {proj.description && <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-sans wrap-break-word">{proj.description}</p>}
+                                  {proj.description && (
+                                    <ul className="list-disc pl-4 text-xs text-slate-600 dark:text-slate-400 space-y-1 pt-1 font-sans wrap-break-word">
+                                      {proj.description
+                                        .split('\n')
+                                        .map((bullet) => bullet.trim())
+                                        .filter((bullet) => bullet.length > 0)
+                                        .map((bullet, bIdx) => (
+                                          <li key={bIdx} className="wrap-break-word">{bullet.replace(/^- /, '')}</li>
+                                        ))}
+                                    </ul>
+                                  )}
                                 </div>
                               );
                             } else if (templateId === 'minimalist') {
@@ -2525,7 +2535,17 @@ const Builder = () => {
                                     </div>
                                     <span className="text-[10px] text-slate-450 dark:text-slate-500 font-normal">{proj.startDate}</span>
                                   </div>
-                                  {proj.description && <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-sans wrap-break-word">{proj.description}</p>}
+                                  {proj.description && (
+                                    <ul className="list-disc pl-4 text-xs text-slate-600 dark:text-slate-400 space-y-0.5 pt-0.5 font-sans wrap-break-word">
+                                      {proj.description
+                                        .split('\n')
+                                        .map((bullet) => bullet.trim())
+                                        .filter((bullet) => bullet.length > 0)
+                                        .map((bullet, bIdx) => (
+                                          <li key={bIdx} className="wrap-break-word">{bullet.replace(/^- /, '')}</li>
+                                        ))}
+                                    </ul>
+                                  )}
                                 </div>
                               );
                             } else {
@@ -2539,7 +2559,17 @@ const Builder = () => {
                                     </div>
                                     <span className="text-[10px] text-slate-600 dark:text-slate-450 italic">{proj.startDate}</span>
                                   </div>
-                                  {proj.description && <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-serif wrap-break-word">{proj.description}</p>}
+                                  {proj.description && (
+                                    <ul className="list-disc pl-4 text-[11px] text-slate-700 dark:text-slate-300 space-y-0.5 pt-0.5 font-serif wrap-break-word">
+                                      {proj.description
+                                        .split('\n')
+                                        .map((bullet) => bullet.trim())
+                                        .filter((bullet) => bullet.length > 0)
+                                        .map((bullet, bIdx) => (
+                                          <li key={bIdx} className="wrap-break-word">{bullet.replace(/^- /, '')}</li>
+                                        ))}
+                                    </ul>
+                                  )}
                                 </div>
                               );
                             }

@@ -230,15 +230,29 @@ const renderProjects = (resume, templateId) => {
   if (items.length === 0) return '';
 
   const rows = items
-    .map((project) => `
-      <div class="entry">
-        <div class="entry-row">
-          <span class="entry-primary">${escapeHtml(project.title || 'Project')}</span>
-          ${project.url ? `<span class="entry-meta">${escapeHtml(project.url)}</span>` : ''}
-        </div>
-        ${project.role ? `<p class="entry-secondary">${escapeHtml(project.role)}</p>` : ''}
-        ${project.description ? `<p class="summary-text">${escapeHtml(project.description)}</p>` : ''}
-      </div>`)
+    .map((project) => {
+      const cleanedDescription = project.description
+        ? project.description
+            .split('\n')
+            .map((line) => line.trim())
+            .filter((line) => line.length > 0)
+            .join('\n')
+        : '';
+
+      return `
+        <div class="entry">
+          <div class="entry-row">
+            <span class="entry-primary">${escapeHtml(project.title || 'Project')}</span>
+            <span class="entry-date">${escapeHtml(project.startDate || '')}</span>
+          </div>
+          ${(project.role || project.url) ? `
+          <div class="entry-row">
+            <span class="entry-secondary">${escapeHtml(project.role || '')}</span>
+            ${project.url ? `<span class="entry-meta">${escapeHtml(project.url)}</span>` : ''}
+          </div>` : ''}
+          ${cleanedDescription ? renderBullets(cleanedDescription) : ''}
+        </div>`;
+    })
     .join('');
 
   return `
