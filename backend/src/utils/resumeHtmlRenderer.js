@@ -294,6 +294,26 @@ const renderCertifications = (resume, templateId) => {
   const items = resume.certifications || [];
   if (items.length === 0) return '';
 
+  const formatCertLink = (url) => {
+    if (!url) return '';
+    const trimmed = url.trim();
+    const href = trimmed.startsWith('http') ? trimmed : `https://${trimmed}`;
+
+    let domain = 'link';
+    try {
+      const parsed = new URL(href);
+      domain = parsed.hostname.replace(/^www\./i, '');
+    } catch (e) {
+      const match = trimmed.match(/^(?:https?:\/\/)?(?:www\.)?([^:\/\s]+)/i);
+      if (match && match[1]) {
+        domain = match[1];
+      }
+    }
+
+    const label = `Verify Credential (${domain})`;
+    return `<a href="${escapeHtml(href)}" style="text-decoration: none; color: inherit;">${escapeHtml(label)}</a>`;
+  };
+
   const rows = items
     .map((cert) => `
       <div class="entry">
@@ -304,7 +324,7 @@ const renderCertifications = (resume, templateId) => {
         ${(cert.issuer || cert.url) ? `
         <div class="entry-row">
           <span class="entry-secondary">${escapeHtml(cert.issuer || '')}</span>
-          ${cert.url ? `<span class="entry-meta">${escapeHtml(cert.url)}</span>` : ''}
+          ${cert.url ? `<span class="entry-meta">${formatCertLink(cert.url)}</span>` : ''}
         </div>` : ''}
       </div>`)
     .join('');
