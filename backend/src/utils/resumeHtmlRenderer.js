@@ -229,6 +229,34 @@ const renderProjects = (resume, templateId) => {
   const items = resume.projects || [];
   if (items.length === 0) return '';
 
+  const formatProjectLink = (url) => {
+    if (!url) return '';
+    const trimmed = url.trim();
+    const href = trimmed.startsWith('http') ? trimmed : `https://${trimmed}`;
+
+    let domain = 'link';
+    try {
+      const parsed = new URL(href);
+      domain = parsed.hostname.replace(/^www\./i, '');
+    } catch (e) {
+      const match = trimmed.match(/^(?:https?:\/\/)?(?:www\.)?([^:\/\s]+)/i);
+      if (match && match[1]) {
+        domain = match[1];
+      }
+    }
+
+    let categoryLabel = 'View Project';
+    const lowercaseUrl = href.toLowerCase();
+    if (lowercaseUrl.includes('github.com')) {
+      categoryLabel = 'GitHub Repository';
+    } else if (lowercaseUrl.includes('gitlab.com')) {
+      categoryLabel = 'Git Repository';
+    }
+
+    const label = `${categoryLabel} (${domain})`;
+    return `<a href="${escapeHtml(href)}" style="text-decoration: none; color: inherit;">${escapeHtml(label)}</a>`;
+  };
+
   const rows = items
     .map((project) => {
       const cleanedDescription = project.description
@@ -248,7 +276,7 @@ const renderProjects = (resume, templateId) => {
           ${(project.role || project.url) ? `
           <div class="entry-row">
             <span class="entry-secondary">${escapeHtml(project.role || '')}</span>
-            ${project.url ? `<span class="entry-meta">${escapeHtml(project.url)}</span>` : ''}
+            ${project.url ? `<span class="entry-meta">${formatProjectLink(project.url)}</span>` : ''}
           </div>` : ''}
           ${cleanedDescription ? renderBullets(cleanedDescription) : ''}
         </div>`;
