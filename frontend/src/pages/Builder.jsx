@@ -2039,7 +2039,7 @@ const Builder = () => {
                     <h1 className="font-display font-extrabold tracking-tight text-slate-900 dark:text-slate-100 text-2xl sm:text-3xl">
                       {personalInfo.fullName || 'YOUR FULL NAME'}
                     </h1>
-                    <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 mt-1 uppercase tracking-wide">
+                    <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 mt-1 tracking-wide">
                       {personalInfo.title || experience[0]?.position || 'Target Professional Role'}
                     </p>
                   </div>
@@ -2092,7 +2092,7 @@ const Builder = () => {
                   <h1 className="text-2xl font-bold tracking-wider text-slate-900 dark:text-slate-100 uppercase font-sans">
                     {personalInfo.fullName || 'YOUR FULL NAME'}
                   </h1>
-                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-450 uppercase tracking-[0.2em] font-sans mt-0.5">
+                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-450 tracking-[0.2em] font-sans mt-0.5">
                     {personalInfo.title || experience[0]?.position || 'Target Professional Role'}
                   </p>
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-450 dark:text-slate-500 font-normal tracking-wide pt-2.5 font-sans">
@@ -2151,7 +2151,7 @@ const Builder = () => {
                   <h1 className="font-serif font-bold text-3xl text-slate-950 dark:text-slate-50 tracking-tight leading-tight">
                     {personalInfo.fullName || 'YOUR FULL NAME'}
                   </h1>
-                  <p className="text-xs italic font-serif text-slate-700 dark:text-slate-400 mt-1 uppercase tracking-wider">
+                  <p className="text-xs italic font-serif text-slate-700 dark:text-slate-400 mt-1 tracking-wider">
                     {personalInfo.title || experience[0]?.position || 'Target Professional Role'}
                   </p>
                   <div className="flex flex-wrap items-center justify-center gap-x-2.5 mt-2.5 text-[11px] text-slate-600 dark:text-slate-400 font-serif">
