@@ -254,5 +254,60 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  createRazorpaySubscription: async () => {
+    const { token } = get();
+    if (!token) return { success: false, error: 'Not authenticated' };
+
+    try {
+      const response = await fetch(`${API_URL}/billing/razorpay/create-subscription`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Failed to create Razorpay subscription');
+      }
+
+      return { success: true, data: data.data };
+    } catch (error) {
+      return { success: false, error: refineError(error) };
+    }
+  },
+
+  verifyRazorpayPayment: async ({ razorpay_payment_id, razorpay_subscription_id, razorpay_signature }) => {
+    const { token } = get();
+    if (!token) return { success: false, error: 'Not authenticated' };
+
+    try {
+      const response = await fetch(`${API_URL}/billing/razorpay/verify-payment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          razorpay_payment_id,
+          razorpay_subscription_id,
+          razorpay_signature,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Payment verification failed');
+      }
+
+      return { success: true, message: data.message, data: data.data };
+    } catch (error) {
+      return { success: false, error: refineError(error) };
+    }
+  },
+
   clearError: () => set({ error: null }),
 }));

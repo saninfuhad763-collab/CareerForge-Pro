@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2, CheckCircle2, AlertCircle, Sparkles, Crown, Check, X, Zap, Shield, FileText, Star, Infinity } from 'lucide-react';
+import { ArrowLeft, Loader2, CheckCircle2, AlertCircle, Sparkles, Crown, Check, X, Zap, Shield, FileText, Star, Infinity as InfinityIcon } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { premiumEase } from '../animations/motionVariants';
 
@@ -62,21 +62,55 @@ const freeFeatures = [
 
 /* ─── Pro Plan Features ─── */
 const proFeatures = [
-  { icon: Infinity, text: 'Unlimited Resumes' },
-  { icon: Zap,      text: 'Unlimited AI Rewrites' },
-  { icon: Shield,   text: 'ATS Analysis' },
-  { icon: Crown,    text: 'Premium Templates' },
-  { icon: Sparkles, text: 'Cover Letter Suite' },
+  { icon: InfinityIcon, text: 'Unlimited Resumes' },
+  { icon: Zap,          text: 'Unlimited AI Rewrites' },
+  { icon: Shield,       text: 'ATS Analysis' },
+  { icon: Crown,        text: 'Premium Templates' },
+  { icon: Sparkles,     text: 'Cover Letter Suite' },
 ];
+
+/* ─── Razorpay Dynamic Script Loader ─── */
+let razorpayScriptPromise = null;
+
+const loadRazorpayScript = () => {
+  if (typeof window !== 'undefined' && window.Razorpay) {
+    return Promise.resolve(true);
+  }
+
+  if (razorpayScriptPromise) {
+    return razorpayScriptPromise;
+  }
+
+  razorpayScriptPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => {
+      razorpayScriptPromise = null;
+      reject(new Error('Failed to load Razorpay SDK. Please check your internet connection.'));
+    };
+    document.body.appendChild(script);
+  });
+
+  return razorpayScriptPromise;
+};
 
 /* ════════════════════════════════════════════════════════════════ */
 const Billing = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, checkAuth, getBillingStatus } = useAuthStore();
+  const {
+    user,
+    checkAuth,
+    getBillingStatus,
+    createRazorpaySubscription,
+    verifyRazorpayPayment,
+  } = useAuthStore();
 
   const [billing, setBilling] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isUpgrading, setIsUpgrading] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
 
@@ -98,7 +132,7 @@ const Billing = () => {
     load();
   }, [getBillingStatus]);
 
-  /* ── Handle checkout redirects ── */
+  /* ── Handle checkout redirects (legacy Stripe fallback) ── */
   useEffect(() => {
     if (checkoutResult === 'success') {
       setTimeout(() => {
@@ -116,6 +150,91 @@ const Billing = () => {
   }, [checkoutResult, checkAuth, getBillingStatus]);
 
   const isPro = billing?.hasActiveSubscription || user?.plan === 'PRO';
+
+  /* ── Handle Razorpay Subscription Checkout ── */
+  const handleUpgrade = async () => {
+    if (isPro || isUpgrading) return;
+
+    setIsUpgrading(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      // 1. Ensure Razorpay Checkout SDK is loaded
+      await loadRazorpayScript();
+
+      // 2. Initialize subscription on backend
+      const subResult = await createRazorpaySubscription();
+      if (!subResult.success || !subResult.data) {
+        throw new Error(subResult.error || 'Failed to initialize subscription.');
+      }
+
+      const { subscriptionId, keyId } = subResult.data;
+      if (!subscriptionId || !keyId) {
+        throw new Error('Incomplete subscription configuration received from server.');
+      }
+
+      // 3. Configure and open Razorpay Checkout Modal
+      let isPaymentCompleted = false;
+
+      const options = {
+        key: keyId,
+        subscription_id: subscriptionId,
+        name: 'CareerForge Pro',
+        description: 'Monthly Pro Subscription',
+        prefill: {
+          name: user?.name || '',
+          email: user?.email || '',
+        },
+        theme: {
+          color: '#4f46e5',
+        },
+        handler: async (response) => {
+          isPaymentCompleted = true;
+          try {
+            // 4. Verify payment signature on backend
+            const verifyResult = await verifyRazorpayPayment({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_subscription_id: response.razorpay_subscription_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+
+            if (!verifyResult.success) {
+              throw new Error(verifyResult.error || 'Payment verification failed.');
+            }
+
+            setSuccessMessage('Payment verified successfully. Your Pro subscription is active.');
+            await checkAuth();
+            const statusResult = await getBillingStatus();
+            if (statusResult.success) {
+              setBilling(statusResult.data);
+            }
+          } catch (err) {
+            setError(err.message || 'Payment verification failed. Please contact support.');
+          } finally {
+            setIsUpgrading(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            if (!isPaymentCompleted) {
+              setIsUpgrading(false);
+            }
+          },
+        },
+      };
+
+      const razorpayInstance = new window.Razorpay(options);
+      razorpayInstance.on('payment.failed', (response) => {
+        setError(response.error?.description || 'Payment failed. Please try again.');
+        setIsUpgrading(false);
+      });
+      razorpayInstance.open();
+    } catch (err) {
+      setError(err.message || 'Failed to start checkout. Please try again.');
+      setIsUpgrading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 relative overflow-hidden">
@@ -326,11 +445,21 @@ const Billing = () => {
                       </div>
                     ) : (
                       <button
-                        onClick={() => navigate('/billing')}
-                        className="w-full py-3.5 rounded-xl bg-white hover:bg-slate-50 text-indigo-600 font-extrabold text-sm transition-all duration-300 shadow-lg shadow-indigo-950/20 cursor-pointer flex items-center justify-center gap-2 group hover:-translate-y-0.5"
+                        onClick={handleUpgrade}
+                        disabled={isUpgrading}
+                        className="w-full py-3.5 rounded-xl bg-white hover:bg-slate-50 disabled:opacity-75 disabled:cursor-not-allowed text-indigo-600 font-extrabold text-sm transition-all duration-300 shadow-lg shadow-indigo-950/20 cursor-pointer flex items-center justify-center gap-2 group hover:-translate-y-0.5"
                       >
-                        <Sparkles className="w-4 h-4 text-indigo-500 group-hover:scale-110 transition-transform" />
-                        Upgrade to Pro
+                        {isUpgrading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
+                            <span>Processing...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4 text-indigo-500 group-hover:scale-110 transition-transform" />
+                            <span>Upgrade to Pro</span>
+                          </>
+                        )}
                       </button>
                     )}
                   </div>
@@ -409,11 +538,21 @@ const Billing = () => {
                       Ready to unlock the full suite?
                     </p>
                     <button
-                      onClick={() => navigate('/billing')}
-                      className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md shadow-indigo-500/15 cursor-pointer shrink-0"
+                      onClick={handleUpgrade}
+                      disabled={isUpgrading}
+                      className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-75 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md shadow-indigo-500/15 cursor-pointer shrink-0"
                     >
-                      <Sparkles className="w-4 h-4" />
-                      Upgrade to Pro
+                      {isUpgrading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Processing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4" />
+                          <span>Upgrade to Pro</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 )}
