@@ -49,6 +49,23 @@ const userSchema = new mongoose.Schema(
     subscriptionExpiresAt: {
       type: Date,
     },
+    subscriptionProvider: {
+      type: String,
+      enum: ['none', 'razorpay', 'stripe'],
+      default: 'none',
+    },
+    razorpayCustomerId: {
+      type: String,
+      default: null,
+    },
+    razorpaySubscriptionId: {
+      type: String,
+      default: null,
+    },
+    razorpayPaymentId: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,
