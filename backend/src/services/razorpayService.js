@@ -40,7 +40,7 @@ export const createSubscription = async (user) => {
   // Create subscription with user ID tagged in notes for webhook reconciliation
   const subscription = await razorpay.subscriptions.create({
     plan_id: planId,
-    total_count: 120, // 10 years of monthly billing cycles
+    total_count: 1200, // 100 years of monthly billing cycles; practical recurring-until-cancellation behavior
     quantity: 1,
     customer_notify: 1,
     notes: {
