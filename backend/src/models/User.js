@@ -43,7 +43,7 @@ const userSchema = new mongoose.Schema(
     },
     subscriptionStatus: {
       type: String,
-      enum: ['none', 'active', 'trialing', 'past_due', 'canceled', 'unpaid', 'incomplete', 'incomplete_expired'],
+      enum: ['none', 'active', 'trialing', 'past_due', 'canceled', 'unpaid', 'incomplete', 'incomplete_expired', 'paused'],
       default: 'none',
     },
     subscriptionExpiresAt: {

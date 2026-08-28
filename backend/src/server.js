@@ -13,7 +13,7 @@ import uploadRoutes from './routes/uploadRoutes.js';
 import billingRoutes from './routes/billingRoutes.js';
 import coverLetterRoutes from './routes/coverLetterRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
-import { stripeWebhook } from './controllers/billingController.js';
+import { stripeWebhook, razorpayWebhook } from './controllers/billingController.js';
 import { execSync } from 'child_process';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
@@ -56,11 +56,17 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// Stripe webhook requires raw body — must be registered before express.json()
+// Stripe and Razorpay webhooks require raw body — must be registered before express.json()
 app.post(
   '/api/billing/webhook',
   express.raw({ type: 'application/json' }),
   stripeWebhook
+);
+
+app.post(
+  '/api/billing/razorpay-webhook',
+  express.raw({ type: 'application/json' }),
+  razorpayWebhook
 );
 
 // HTTP Request Logging
