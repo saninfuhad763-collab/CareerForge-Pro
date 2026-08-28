@@ -415,7 +415,6 @@ const getStyles = (templateId) => `
     margin-top: 6px;
     font-size: 12px;
     font-weight: 600;
-    text-transform: uppercase;
     letter-spacing: 0.08em;
     color: #4f46e5;
   }
@@ -430,7 +429,6 @@ const getStyles = (templateId) => `
     margin-top: 4px;
     font-size: 11px;
     color: #64748b;
-    text-transform: uppercase;
     letter-spacing: 0.18em;
   }
   .contact-line { margin-top: 10px; font-size: 10px; color: #64748b; }
@@ -440,7 +438,6 @@ const getStyles = (templateId) => `
     margin-top: 6px;
     font-size: 11px;
     font-style: italic;
-    text-transform: uppercase;
     letter-spacing: 0.08em;
     color: #475569;
   }
