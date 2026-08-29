@@ -233,6 +233,33 @@ export const handleRazorpayWebhookEvent = async (event) => {
       return { handled: true, event: eventType, plan: user.plan };
     }
 
+    case 'subscription.pending': {
+      // Grace-period policy: recurring payment failed, Razorpay is retrying automatically.
+      // Keep Pro access intact during the retry window; set subscriptionStatus to 'past_due'
+      // so the UI can warn the user to update their payment method.
+
+      // Stale-event guard: do not resurrect a subscription from a terminal cancelled state
+      if (user.subscriptionStatus === 'canceled' || subEntity.status === 'cancelled') {
+        return { ignored: true, reason: 'Ignored pending event for cancelled subscription' };
+      }
+
+      // Subscription ID guard: reject any pending event whose subscription ID does not match
+      // the ID currently stored on the user (already enforced universally above, repeated
+      // here for defence-in-depth within the handler body)
+      if (user.razorpaySubscriptionId && user.razorpaySubscriptionId !== subscriptionId) {
+        return { ignored: true, reason: 'Ignored pending event for mismatched subscription ID' };
+      }
+
+      user.subscriptionProvider = 'razorpay';
+      user.razorpaySubscriptionId = subscriptionId;
+      // Do NOT change user.plan — Pro access is preserved during the grace/retry period
+      user.subscriptionStatus = 'past_due';
+      // current_end is already synced above the switch block from subEntity.current_end;
+      // do NOT invent or guess subscriptionExpiresAt here
+      await user.save();
+      return { handled: true, event: eventType, plan: user.plan };
+    }
+
     case 'subscription.cancelled': {
       user.plan = 'FREE';
       user.subscriptionStatus = 'canceled';
