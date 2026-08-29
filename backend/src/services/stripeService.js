@@ -116,6 +116,13 @@ export const getBillingStatus = async (user) => {
     subscriptionStatus: user.subscriptionStatus || 'none',
     subscriptionExpiresAt: user.subscriptionExpiresAt || null,
     stripeCustomerId: user.stripeCustomerId || null,
+    // Expose payment provider so the frontend can render the correct label.
+    // Falls back to inference from stored subscription IDs for legacy records
+    // that were created before the subscriptionProvider field was introduced.
+    subscriptionProvider:
+      user.subscriptionProvider ||
+      (user.razorpaySubscriptionId ? 'razorpay' : user.stripeSubscriptionId ? 'stripe' : 'none'),
+    razorpaySubscriptionId: user.razorpaySubscriptionId || null,
     hasActiveSubscription: ['active', 'trialing'].includes(user.subscriptionStatus),
     subscription: subscription
       ? {

@@ -219,7 +219,15 @@ const BillingDetails = () => {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">Payment Method</h3>
-                  <p className="text-xs text-slate-500 mt-1">Managed via Stripe checkout</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {billing?.subscriptionProvider === 'razorpay'
+                      ? 'Managed via Razorpay Subscriptions'
+                      : billing?.subscriptionProvider === 'stripe'
+                      ? 'Managed via Stripe checkout'
+                      : isPro
+                      ? 'Active Subscription'
+                      : 'No active payment method'}
+                  </p>
                 </div>
               </div>
 
