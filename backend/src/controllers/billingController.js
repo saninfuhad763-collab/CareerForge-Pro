@@ -1,6 +1,6 @@
 import {
   createCheckoutSession,
-  cancelSubscription,
+  cancelSubscription as cancelStripeSubscriptionService,
   getBillingStatus,
   handleStripeWebhookEvent,
   constructWebhookEvent,
@@ -10,6 +10,7 @@ import {
   verifySubscriptionPayment as verifyRazorpaySubscriptionPaymentService,
   validateWebhookSignature as validateRazorpayWebhookSignatureService,
   handleRazorpayWebhookEvent,
+  cancelSubscription as cancelRazorpaySubscriptionService,
 } from '../services/razorpayService.js';
 
 export const createCheckout = async (req, res, next) => {
@@ -41,18 +42,49 @@ export const getStatus = async (req, res, next) => {
 
 export const cancelUserSubscription = async (req, res, next) => {
   try {
-    const subscription = await cancelSubscription(req.user);
+    const user = req.user;
+    const { cancelAtPeriodEnd = true } = req.body || {};
 
-    res.status(200).json({
-      success: true,
-      message: 'Subscription will cancel at the end of the current billing period.',
-      data: {
-        status: subscription.status,
-        cancelAtPeriodEnd: subscription.cancel_at_period_end,
-        currentPeriodEnd: subscription.current_period_end
-          ? new Date(subscription.current_period_end * 1000).toISOString()
-          : null,
-      },
+    const isRazorpay =
+      user.subscriptionProvider === 'razorpay' ||
+      (!user.subscriptionProvider && Boolean(user.razorpaySubscriptionId));
+    const isStripe =
+      user.subscriptionProvider === 'stripe' ||
+      (!user.subscriptionProvider && Boolean(user.stripeSubscriptionId));
+
+    if (isRazorpay && user.razorpaySubscriptionId) {
+      const result = await cancelRazorpaySubscriptionService(user, {
+        cancelAtPeriodEnd: cancelAtPeriodEnd !== false,
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: result.cancelAtPeriodEnd
+          ? 'Subscription will cancel at the end of the current billing period.'
+          : 'Subscription has been cancelled immediately.',
+        data: result,
+      });
+    }
+
+    if (isStripe && user.stripeSubscriptionId) {
+      const subscription = await cancelStripeSubscriptionService(user);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Subscription will cancel at the end of the current billing period.',
+        data: {
+          status: subscription.status,
+          cancelAtPeriodEnd: subscription.cancel_at_period_end,
+          currentPeriodEnd: subscription.current_period_end
+            ? new Date(subscription.current_period_end * 1000).toISOString()
+            : null,
+        },
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      message: 'No active subscription found for this account.',
     });
   } catch (error) {
     next(error);

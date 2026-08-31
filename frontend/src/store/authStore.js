@@ -225,7 +225,7 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  cancelSubscription: async () => {
+  cancelSubscription: async (options = { cancelAtPeriodEnd: true }) => {
     const { token } = get();
     if (!token) return { success: false, error: 'Not authenticated' };
 
@@ -237,6 +237,7 @@ export const useAuthStore = create((set, get) => ({
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
+        body: JSON.stringify(options),
       });
 
       const data = await response.json();

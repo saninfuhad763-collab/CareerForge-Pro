@@ -63,6 +63,47 @@ export const createSubscription = async (user) => {
 };
 
 /**
+ * Cancels a user's Razorpay Subscription.
+ * Supports cancelAtPeriodEnd (default: true for cycle-end cancellation, false for immediate cancellation).
+ * Uses strictly the authenticated user's stored razorpaySubscriptionId.
+ */
+export const cancelSubscription = async (user, { cancelAtPeriodEnd = true } = {}) => {
+  const razorpay = getRazorpay();
+
+  if (!user || !user.razorpaySubscriptionId) {
+    throw new Error('No active Razorpay subscription found for this account.');
+  }
+
+  if (user.subscriptionStatus === 'canceled') {
+    throw new Error('Subscription is already cancelled.');
+  }
+
+  const cancelAtCycleEnd = Boolean(cancelAtPeriodEnd);
+  const subscription = await razorpay.subscriptions.cancel(
+    user.razorpaySubscriptionId,
+    cancelAtCycleEnd
+  );
+
+  // For immediate cancellation, sync user status immediately if Razorpay reports cancelled
+  if (!cancelAtCycleEnd && subscription.status === 'cancelled') {
+    user.plan = 'FREE';
+    user.subscriptionStatus = 'canceled';
+    await user.save();
+  }
+
+  return {
+    id: subscription.id,
+    status: subscription.status,
+    cancelAtPeriodEnd: cancelAtCycleEnd,
+    currentPeriodEnd: subscription.current_end
+      ? new Date(subscription.current_end * 1000).toISOString()
+      : user.subscriptionExpiresAt
+      ? user.subscriptionExpiresAt.toISOString()
+      : null,
+  };
+};
+
+/**
  * Constant-time safe string comparison to prevent timing attacks
  */
 const safeCompare = (a, b) => {
