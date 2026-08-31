@@ -121,6 +121,7 @@ const Billing = () => {
     const load = async () => {
       setLoading(true);
       setError(null);
+      await checkAuth();
       const result = await getBillingStatus();
       if (result.success) {
         setBilling(result.data);
@@ -130,7 +131,7 @@ const Billing = () => {
       setLoading(false);
     };
     load();
-  }, [getBillingStatus]);
+  }, [checkAuth, getBillingStatus]);
 
   /* ── Handle checkout redirects (legacy Stripe fallback) ── */
   useEffect(() => {

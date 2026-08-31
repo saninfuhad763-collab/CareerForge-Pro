@@ -32,7 +32,7 @@ const itemVariants = {
 
 const BillingDetails = () => {
   const navigate = useNavigate();
-  const { user, getBillingStatus } = useAuthStore();
+  const { user, checkAuth, getBillingStatus } = useAuthStore();
 
   const [billing, setBilling] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -42,6 +42,7 @@ const BillingDetails = () => {
     const load = async () => {
       setLoading(true);
       setError(null);
+      await checkAuth();
       const result = await getBillingStatus();
       if (result.success) {
         setBilling(result.data);
@@ -51,7 +52,7 @@ const BillingDetails = () => {
       setLoading(false);
     };
     load();
-  }, [getBillingStatus]);
+  }, [checkAuth, getBillingStatus]);
 
   const isPro = billing?.hasActiveSubscription || user?.plan === 'PRO';
 
