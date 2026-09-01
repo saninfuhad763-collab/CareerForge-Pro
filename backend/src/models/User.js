@@ -61,6 +61,7 @@ const userSchema = new mongoose.Schema(
     razorpaySubscriptionId: {
       type: String,
       default: null,
+      index: true,
     },
     razorpayPaymentId: {
       type: String,
