@@ -16,11 +16,14 @@ CareerForge Pro is a full-stack SaaS platform built for candidates to create, op
 - [Prerequisites & Local Environment](#️-prerequisites--local-environment)
 - [Installation & Development](#-installation--development)
 - [Environment Variables Reference](#-environment-variables-reference)
+- [Billing & Subscriptions](#-billing--subscriptions)
+- [Local Webhook Testing](#-local-webhook-testing)
 - [Deployment](#-deployment)
 - [Security Auditing & Production Stability](#-security-auditing--production-stability)
 - [Known Limitations](#️-known-limitations)
 - [Future Improvements](#-future-improvements)
 - [Development Team](#-development-team)
+
 
 ---
 
@@ -100,7 +103,8 @@ CareerForge Pro is a full-stack SaaS platform built for candidates to create, op
 *   **Mongoose** (ODM & Strict Schemas)
 
 ### Payments
-*   **Stripe** (Subscription Billing)
+*   **Razorpay** (Primary subscription billing — Test Mode operational)
+*   **Stripe** (Alternative subscription billing — also integrated)
 
 ---
 
@@ -162,7 +166,7 @@ CareerForge-Pro/
 │   │   ├── middleware/      # JWT gates, Rate limits, Body validator pipelines
 │   │   ├── models/          # Strict User & Resume schemas
 │   │   ├── routes/          # Clean endpoint routes maps
-│   │   ├── services/        # AI, PDF, and Stripe integration services
+│   │   ├── services/        # AI, PDF, Stripe, and Razorpay integration services
 │   │   ├── utils/           # Helper functions and JWT generators
 │   │   └── server.js        # Main Express server entry point
 │   ├── .env                 # API Secrets & database credentials
@@ -220,7 +224,7 @@ dist/
    ```bash
    npm run dev
    ```
-   *The backend should print: `Server running on port 5000` and `MongoDB Connected successfully`.*
+   *The backend will print startup messages such as `[MongoDB] Attempting to connect to database...` and `[MongoDB] Connected successfully to host: <hostname>` on successful connection.*
 
 ### Step 3: Configure and Run Frontend Service
 1. Open a new terminal tab and navigate into the frontend directory:
@@ -257,29 +261,187 @@ To successfully run the application with full capabilities, ensure the following
 | `STRIPE_SECRET_KEY` | Secret key for Stripe payment processing. |
 | `STRIPE_PRICE_ID` | The specific Stripe product price identifier. |
 | `STRIPE_WEBHOOK_SECRET` | Secret to verify webhook signatures from Stripe. |
+| `RAZORPAY_KEY_ID` | Public Razorpay API key used by the Checkout integration. Supplied to the frontend by the backend at checkout time — do not expose via a frontend environment variable. |
+| `RAZORPAY_KEY_SECRET` | Private Razorpay API secret. **Backend-only. Never expose to the frontend or commit to version control.** |
+| `RAZORPAY_WEBHOOK_SECRET` | Private secret used to verify Razorpay webhook HMAC-SHA256 signatures against the `X-Razorpay-Signature` header. |
+| `RAZORPAY_PLAN_ID` | Razorpay subscription Plan ID configured for the application in the Razorpay Dashboard. Use a Test Plan ID for development and a Live Plan ID for production. |
 
 ### Frontend (`frontend/.env`)
+
+`frontend/.env` does not exist by default. Create it if you need to point the frontend at a custom backend URL (e.g., in production or when using a remote development server):
+
+```env
+VITE_API_URL=https://your-api-domain.example/api
+```
+
+For local development, the frontend falls back to `/api` (Vite proxy) or `http://localhost:5000/api` depending on the page. The Razorpay Key ID is **not** configured in the frontend environment — it is returned by the backend at checkout time.
+
 | Variable | Description |
 |----------|-------------|
-| `VITE_API_URL` | The URL of the backend REST API (e.g., `http://localhost:5000/api`). |
+| `VITE_API_URL` | The URL of the backend REST API. Required in production. Falls back to `/api` in local development. |
+
+---
+
+## 💳 Billing & Subscriptions
+
+CareerForge Pro supports subscription-based Pro plan billing through Razorpay (primary) and Stripe (alternative).
+
+### Providers
+
+| Provider | Status | Role |
+|----------|--------|------|
+| **Razorpay** | ✅ Operational (Test Mode) | Primary subscription provider |
+| **Stripe** | ✅ Integrated | Alternative subscription provider |
+
+Provider-specific subscription IDs are stored separately in the user record. The active provider is tracked via `subscriptionProvider` (`razorpay` \| `stripe` \| `none`).
+
+### Razorpay Checkout Flow
+
+```
+FREE user clicks "Upgrade to Pro"
+  → Frontend calls backend: POST /api/billing/create-razorpay-subscription
+  → Backend creates a Razorpay subscription using the server-controlled Plan ID
+  → Backend returns subscriptionId and keyId to the frontend
+  → Razorpay Checkout modal opens in the browser
+  → User completes payment
+  → Razorpay returns payment details to the handler callback
+  → Frontend sends razorpay_payment_id, razorpay_subscription_id,
+    razorpay_signature to backend: POST /api/billing/verify-razorpay-payment
+  → Backend verifies the HMAC-SHA256 signature
+  → On success: user.plan = PRO, subscriptionStatus = active
+```
+
+> The Plan ID and amount are **server-controlled**. The client cannot modify the subscription price or plan.
+
+### Razorpay Webhook Endpoint
+
+```
+POST /api/billing/razorpay-webhook
+```
+
+- Webhook signature is verified using `RAZORPAY_WEBHOOK_SECRET` and the `X-Razorpay-Signature` header (HMAC-SHA256).
+- The raw request body (Buffer) is required for signature verification. The webhook route is mounted **before** `express.json()` in `server.js`.
+- Subscription ID ownership is validated on every event — stale or cross-account events are rejected.
+
+### Supported Razorpay Events
+
+| Event | `plan` | `subscriptionStatus` |
+|-------|--------|----------------------|
+| `subscription.authenticated` | — | — |
+| `subscription.activated` | `PRO` | `active` |
+| `subscription.charged` | `PRO` | `active` |
+| `subscription.pending` | `PRO` | `past_due` *(grace period — see below)* |
+| `subscription.halted` | `FREE` | `past_due` |
+| `subscription.paused` | `FREE` | `paused` |
+| `subscription.resumed` | `PRO` | `active` |
+| `subscription.cancelled` | `FREE` | `canceled` |
+
+### Grace Period (`subscription.pending`)
+
+When a recurring payment charge fails, Razorpay retries automatically and moves the subscription to `pending`. During this retry window, CareerForge applies a soft grace-period policy:
+
+- `user.plan` remains `PRO`
+- `user.subscriptionStatus` is set to `past_due`
+- Pro access is **preserved** during the retry period
+
+If retries are exhausted, Razorpay sends `subscription.halted` and Pro access is revoked.
+
+> **Testing status:** The `subscription.pending` handler is implemented and covered by automated in-memory tests. A genuine end-to-end recurring-charge failure and retry cycle through Razorpay Test Mode was **not conclusively demonstrated** during development. End-to-end behavior should be validated before production launch.
+
+### Customer Cancellation
+
+Active Razorpay subscribers can cancel their subscription from the **Billing Details** page:
+
+- **Default behavior:** Cancel at the end of the current billing period. Pro access is retained until `subscriptionExpiresAt`.
+- The backend derives the subscription ID from the authenticated user's session — client-supplied subscription IDs are not accepted.
+- Razorpay processes the cancellation and later emits `subscription.cancelled`, which triggers final entitlement revocation (`plan = FREE`, `subscriptionStatus = canceled`).
+
+---
+
+## 🔗 Local Webhook Testing
+
+Razorpay cannot deliver webhooks to `localhost` directly. During local development, expose the backend using a public tunnel such as [zrok](https://zrok.io) or [ngrok](https://ngrok.com).
+
+### Example (zrok)
+
+```bash
+zrok2 share public localhost:5000
+```
+
+This will output a public HTTPS URL. Configure it as your Razorpay webhook endpoint:
+
+```
+https://<current-tunnel-host>.shares.zrok.io/api/billing/razorpay-webhook
+```
+
+### Important Notes
+
+- Tunnel URLs are **temporary**. When the tunnel restarts, the URL changes and must be re-registered in the Razorpay Dashboard.
+- Set the webhook secret in `backend/.env` as `RAZORPAY_WEBHOOK_SECRET` and configure the same secret in the Razorpay Dashboard webhook settings.
+- **Do not commit a tunnel URL as a permanent webhook configuration.** A public tunnel is for local development only — production requires a stable HTTPS URL from the deployed backend.
+
+### Test Mode vs Live Mode
+
+#### Razorpay Test Mode (Local Development)
+- Use `rzp_test_…` key credentials
+- Use the Test Plan ID from the Razorpay Test Dashboard
+- Use the Test webhook secret
+- Use a local tunnel for webhook delivery
+
+#### Razorpay Live Mode (Production)
+- Use `rzp_live_…` key credentials
+- Create a Live subscription Plan and use its Live Plan ID
+- Use the Live webhook secret
+- Register the production backend's stable HTTPS URL as the webhook endpoint
+- Live Mode is **not currently configured** — see [Known Limitations](#️-known-limitations)
 
 ---
 
 ## 🚀 Deployment
 
-To prepare the application for deployment, execute the build process:
-
 ### Frontend Build
+
 Navigate to the `frontend` directory and run:
 ```bash
 npm run build
 ```
-This will compile the React application into static assets within the `frontend/dist` directory. The frontend build output is suitable for deployment to static hosting providers such as Vercel or Netlify.
+This will compile the React application into static assets within the `frontend/dist` directory. The output is suitable for deployment to static hosting providers such as Vercel or Netlify.
+
+Set `VITE_API_URL` in your hosting platform's environment configuration to point to the production backend:
+```
+VITE_API_URL=https://your-backend-domain.example/api
+```
 
 ### Backend Hosting
-The backend runs as a standard Node.js Express server. Ensure the `NODE_ENV` is set to `production` and provide the required environment variables. The backend can be deployed to a Node.js-compatible hosting provider.
 
----
+The backend runs as a standard Node.js Express server and can be deployed to any Node.js-compatible hosting provider. For production:
+
+- Set `NODE_ENV=production`
+- Set `CLIENT_URL` to the deployed frontend URL (used for CORS)
+- Provide a stable `MONGODB_URI` for your production Atlas cluster
+- Provide secure values for all secrets: `JWT_SECRET`, Stripe keys, Razorpay keys
+- Ensure the server is reachable over **HTTPS** (required for Razorpay webhook delivery)
+
+### Razorpay Live Mode Configuration
+
+Local development uses Razorpay **Test Mode** credentials. Before going live:
+
+1. Obtain **Live API keys** (`rzp_live_…`) from the Razorpay Dashboard.
+2. Create a **Live subscription Plan** and note its Plan ID.
+3. Generate a **Live webhook secret** in the Razorpay Dashboard.
+4. Update environment variables:
+   - `RAZORPAY_KEY_ID` → Live key ID
+   - `RAZORPAY_KEY_SECRET` → Live key secret
+   - `RAZORPAY_WEBHOOK_SECRET` → Live webhook secret
+   - `RAZORPAY_PLAN_ID` → Live Plan ID
+5. Register the production webhook endpoint in the Razorpay Dashboard:
+   ```
+   https://your-backend-domain.example/api/billing/razorpay-webhook
+   ```
+
+> **Important:** A public tunnel such as zrok or ngrok is for **local development and testing only**. It must not be used as the permanent production webhook endpoint. Production requires a stable HTTPS URL tied to the deployed backend.
+
+
 
 ## 🔒 Security Auditing & Production Stability
 
@@ -289,22 +451,41 @@ CareerForge Pro has undergone internal code reviews and production readiness val
 - **AutoSave Reliability:** Hardened debounced Zustand local store updates ensure that user input is seamlessly and safely synced to MongoDB, protecting against data loss.
 - **Production Stabilization:** Repository structure has been refactored for strict separation of concerns, providing a highly scalable API architecture ready for deployment.
 
+### Billing Security
+
+- `RAZORPAY_KEY_SECRET` and `RAZORPAY_WEBHOOK_SECRET` are **backend-only**. They must never be sent to the frontend or committed to version control.
+- Razorpay payment signatures are **verified server-side** using HMAC-SHA256 before any Pro entitlement is granted.
+- Razorpay webhook signatures are **verified against the raw request body** using the `X-Razorpay-Signature` header and `RAZORPAY_WEBHOOK_SECRET`. The webhook route is mounted before `express.json()` to preserve the raw buffer.
+- Subscription cancellation derives the subscription ID from the **authenticated server session** — client-supplied subscription IDs are not trusted.
+- Backend feature gates are **authoritative for Pro access**. Frontend plan state is synchronized from the backend on every billing page load.
+- MongoDB startup logs have been sanitized to exclude the connection URI. Credentials are not written to application logs.
+- `.env` files must never be committed to version control.
+
+
+
 ---
 
 ## ⚠️ Known Limitations
 
-### Payment Gateway
-Stripe integration is implemented in the application.
-End-to-end payment verification could not be completed because Stripe account creation is unavailable in the developer's region.
-A request to use Razorpay as an alternative payment gateway has been submitted and is awaiting company confirmation.
+### Razorpay Live Mode
+
+Razorpay subscription billing is implemented and operational in **Test Mode**, including checkout, server-side payment verification, webhook signature verification, full subscription lifecycle handling, and customer-facing cancellation. Production deployment requires configuring Razorpay **Live Mode** credentials, a production Plan ID, a stable HTTPS webhook endpoint, and re-registering the webhook in the Razorpay Dashboard.
+
+### Pending/Grace-Period Verification
+
+The `subscription.pending` grace-period handler (which retains Pro access during a payment retry window) is implemented and covered by automated in-memory tests. A genuine end-to-end recurring-charge failure and retry cycle through Razorpay Test Mode was not conclusively demonstrated during development testing. End-to-end behavior should be validated before production launch.
+
+
 
 ---
 
 ## 🔮 Future Improvements
 
-- **Razorpay Support:** Support Razorpay as an alternative payment gateway if approved.
 - **Template Gallery Expansion:** Add additional specialized resume templates (e.g., Academic CVs, Engineering specific formats).
 - **OAuth Integration:** Add Google and LinkedIn Single Sign-On (SSO) for faster onboarding.
+- **Razorpay Live Mode Launch:** Complete Live Mode configuration, end-to-end verification of the subscription lifecycle (including the payment retry/grace-period flow), and production webhook registration.
+
+
 
 ---
 
