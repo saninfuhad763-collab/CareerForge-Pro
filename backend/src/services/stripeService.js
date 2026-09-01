@@ -98,11 +98,11 @@ export const cancelSubscription = async (user) => {
 };
 
 export const getBillingStatus = async (user) => {
-  const stripe = getStripe();
   let subscription = null;
 
-  if (user.stripeSubscriptionId) {
+  if (user.stripeSubscriptionId && process.env.STRIPE_SECRET_KEY) {
     try {
+      const stripe = getStripe();
       subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
     } catch (error) {
       if (error.statusCode !== 404) {
