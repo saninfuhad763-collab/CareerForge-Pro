@@ -330,6 +330,43 @@ export async function analyzeJobDescription(jdText) {
 }
 
 /**
+ * Boundary-aware keyword matcher that safely handles punctuation-sensitive technical terms
+ * (e.g. C++, C#, Node.js, .NET) without false-positive substring matches (e.g. 'go' in 'mongodb').
+ */
+function matchKeywordBoundary(term, text) {
+  const cleanTerm = term.toLowerCase().trim();
+  const cleanText = text.toLowerCase();
+
+  if (!cleanTerm || !cleanText) return false;
+
+  const isAlphaNumeric = /^[a-z0-9\s]+$/i.test(cleanTerm);
+
+  if (isAlphaNumeric) {
+    const escaped = cleanTerm.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const regex = new RegExp(`\\b${escaped}\\b`, 'i');
+    return regex.test(cleanText);
+  } else {
+    let idx = cleanText.indexOf(cleanTerm);
+    while (idx !== -1) {
+      const charBefore = idx > 0 ? cleanText[idx - 1] : ' ';
+      const charAfter = idx + cleanTerm.length < cleanText.length ? cleanText[idx + cleanTerm.length] : ' ';
+
+      const startsWithAlpha = /[a-z0-9]/i.test(cleanTerm[0]);
+      const endsWithAlpha = /[a-z0-9]/i.test(cleanTerm[cleanTerm.length - 1]);
+
+      const isBeforeBoundary = !startsWithAlpha || !/[a-z0-9]/i.test(charBefore);
+      const isAfterBoundary = !endsWithAlpha || !/[a-z0-9]/i.test(charAfter);
+
+      if (isBeforeBoundary && isAfterBoundary) {
+        return true;
+      }
+      idx = cleanText.indexOf(cleanTerm, idx + 1);
+    }
+    return false;
+  }
+}
+
+/**
  * Local backup heuristic parser when Groq service or JSON parsing fails
  */
 function runHeuristicJdParser(text) {
@@ -345,15 +382,15 @@ function runHeuristicJdParser(text) {
   const foundCerts = [];
 
   skillKeywords.forEach(kw => {
-    if (normalized.includes(kw)) foundTech.push(kw.toUpperCase());
+    if (matchKeywordBoundary(kw, normalized)) foundTech.push(kw.toUpperCase());
   });
 
   softKeywords.forEach(kw => {
-    if (normalized.includes(kw)) foundSoft.push(kw.charAt(0).toUpperCase() + kw.slice(1));
+    if (matchKeywordBoundary(kw, normalized)) foundSoft.push(kw.charAt(0).toUpperCase() + kw.slice(1));
   });
 
   certKeywords.forEach(kw => {
-    if (normalized.includes(kw)) foundCerts.push(kw.toUpperCase());
+    if (matchKeywordBoundary(kw, normalized)) foundCerts.push(kw.toUpperCase());
   });
 
   const reqTechCount = Math.ceil(foundTech.length * 0.6);

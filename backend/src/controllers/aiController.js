@@ -181,7 +181,7 @@ export const analyzeJdAndScoreResume = async (req, res, next) => {
       optimizedScore,
       scoreImprovement,
       lastJdHash: currentJdHash,
-      keywordsFound: (analysis.requiredKeywords || []).filter(kw => !(breakdown.missingKeywords || []).includes(kw)),
+      keywordsFound: Array.from(new Set(breakdown.matchedKeywords || [])),
       keywordsMissing: breakdown.missingKeywords || [],
       feedback: breakdown.recommendations || [],
     };
