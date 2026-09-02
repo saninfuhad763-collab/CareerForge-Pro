@@ -147,7 +147,21 @@ export function calculateAtsScore(resume, jdAnalysis) {
     }
   });
 
+  // Phase 1 Hardening: Classify matched/missing keywords by required vs preferred category.
+  // This does not change the aggregate keywordMatchPercent formula — it adds explicit
+  // sub-classification so callers can report required gaps with higher conceptual urgency.
+  // NOTE: The aggregate score still treats all keywords equally in its denominator (known
+  // Phase 1 limitation — full scoring separation is deferred to a future phase).
+  const requiredLowerSet = new Set(required.map(r => r.toLowerCase()));
+  const preferredLowerSet = new Set(preferred.map(p => p.toLowerCase()));
+
+  const requiredMatched = foundKeywords.filter(kw => requiredLowerSet.has(kw.toLowerCase()));
+  const requiredMissing = missingKeywords.filter(kw => requiredLowerSet.has(kw.toLowerCase()));
+  const preferredMatched = foundKeywords.filter(kw => preferredLowerSet.has(kw.toLowerCase()));
+  const preferredMissing = missingKeywords.filter(kw => preferredLowerSet.has(kw.toLowerCase()));
+
   const keywordMatchPercent = Math.round((foundKeywords.length / allKeywords.length) * 100);
+
 
   // 2. Semantic Similarity Score
   const resumeVector = getEmbeddingVector(resumeText);
@@ -359,6 +373,12 @@ export function calculateAtsScore(resume, jdAnalysis) {
       matchedKeywords: foundKeywords,
       matchedAliases: {},
       totalKeywordsEvaluated: allKeywords.length,
+      // Phase 1 Hardening: explicit required vs preferred classification.
+      // The aggregate keywordMatchPercent still uses the full pool (known Phase 1 limitation).
+      requiredMatched,
+      requiredMissing,
+      preferredMatched,
+      preferredMissing,
       pointAttributions: {
         keywordMatch: {
           rawScore: keywordMatchPercent,
@@ -532,6 +552,14 @@ const checkSingleTermMatch = (term, text) => {
 
   if (!cleanTerm || !cleanText) return false;
 
+  // Special guard: the single-character term 'c' must NOT match inside 'c++' or 'c#'.
+  // Standard \b word boundaries fail here because '+' and '#' are non-word characters,
+  // which means \bc\b would match the 'c' in 'c++' (boundary between 'c' and '+').
+  // The lookahead explicitly rejects the 'c' when immediately followed by '+' or '#'.
+  if (cleanTerm === 'c') {
+    return /\bc(?![+#])\b/i.test(cleanText);
+  }
+
   const isAlphaNumeric = /^[a-z0-9\s]+$/i.test(cleanTerm);
 
   if (isAlphaNumeric) {
@@ -558,6 +586,20 @@ const checkSingleTermMatch = (term, text) => {
     return false;
   }
 };
+
+
+/**
+ * Short tokens that have legitimate meaning as standalone technical terms.
+ * These are preserved during multi-word compound-term splitting even though
+ * they are fewer than 4 characters. Without this set, terms like "Go developer",
+ * "C# engineer", or "CI/CD engineer" would drop the key term during the
+ * multi-word sub-match check (filter(w => w.length > 3)).
+ */
+const SHORT_TECHNICAL_TOKENS = new Set([
+  'go', 'c', 'c++', 'c#', 'r', 'js', 'ts', 'ui', 'ux', 'qa', 'ai', 'ml',
+  'ci', 'cd', 'k8s', 'aws', 'gcp', 'sql', 'git', 'jwt', 'api', 'php',
+  'css', 'npm', 'vue', 'xml', 'ssh', 'ssl', 'ios', 'sdk', 'cli', 'rpc',
+]);
 
 const evaluateKeywordMatch = (keyword, text, aiGeneratedAliases = {}) => {
   const cleanKw = keyword.toLowerCase().trim();
@@ -588,9 +630,15 @@ const evaluateKeywordMatch = (keyword, text, aiGeneratedAliases = {}) => {
     return { matched: true, matchType: 'ALIAS' };
   }
 
-  // Multi-word exact match
-  if (cleanKw.includes(' ') || cleanKw.includes('-')) {
-    const words = cleanKw.split(/[\s\-._]+/).filter(w => w.length > 3);
+  // Multi-word exact match: all constituent words must appear in resume text.
+  // Short technical tokens (go, c#, c++, js, ts, etc.) are preserved even though
+  // they are under 4 characters — they are excluded from the length filter but
+  // are not globally treated as stop words.
+  if (cleanKw.includes(' ') || cleanKw.includes('-') || cleanKw.includes('/')) {
+    const words = cleanKw
+      .split(/[\s\-\/._]+/)
+      .map(w => w.trim())
+      .filter(w => w.length > 3 || SHORT_TECHNICAL_TOKENS.has(w));
     if (words.length > 1) {
       if (words.every(word => checkSingleTermMatch(word, text))) {
         return { matched: true, matchType: 'EXACT' };

@@ -82,6 +82,11 @@ const atsMetadataSchema = new mongoose.Schema({
   keywordsFound: [{ type: String }],
   keywordsMissing: [{ type: String }],
   feedback: [{ type: String }],
+  structuredRecommendations: [{ type: mongoose.Schema.Types.Mixed }],
+  requiredMatched: [{ type: String }],
+  requiredMissing: [{ type: String }],
+  preferredMatched: [{ type: String }],
+  preferredMissing: [{ type: String }],
 }, { _id: false });
 
 const resumeSchema = new mongoose.Schema(

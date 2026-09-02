@@ -66,9 +66,24 @@ const normalizeJdText = (text) => {
     .trim();
 };
 
+/**
+ * ATS analysis algorithm version.
+ * Bump this string whenever the ATS extraction logic, scoring formula, or
+ * heuristic matching logic changes in a way that would make a cached analysis
+ * stale or incorrect. Old cached JobDescription records will naturally stop
+ * matching and fresh re-analyses will be performed and cached under the new hash.
+ *
+ * History:
+ *   v2.0 – initial
+ *   v2.1 – matchKeywordBoundary boundary-aware heuristic parser (aiService.js)
+ *   v2.2 – C/C++/C# guard, short-token fix, required/preferred separation, structured recs persistence
+ */
+const ATS_ANALYSIS_VERSION = 'v2.2';
+
 const generateJdHash = (text) => {
-  return crypto.createHash('md5').update(normalizeJdText(text)).digest('hex');
+  return crypto.createHash('md5').update(`${ATS_ANALYSIS_VERSION}:${normalizeJdText(text)}`).digest('hex');
 };
+
 
 export const analyzeJdAndScoreResume = async (req, res, next) => {
   try {
@@ -184,6 +199,14 @@ export const analyzeJdAndScoreResume = async (req, res, next) => {
       keywordsFound: Array.from(new Set(breakdown.matchedKeywords || [])),
       keywordsMissing: breakdown.missingKeywords || [],
       feedback: breakdown.recommendations || [],
+      // Phase 1 Hardening: persist structured recommendations so they survive browser refresh.
+      // Older resumes that never had a v2.2 analysis will return [] from schema default.
+      structuredRecommendations: breakdown.structuredRecommendations || [],
+      // Phase 1 Hardening: explicitly track required vs preferred classification.
+      requiredMatched: breakdown.requiredMatched || [],
+      requiredMissing: breakdown.requiredMissing || [],
+      preferredMatched: breakdown.preferredMatched || [],
+      preferredMissing: breakdown.preferredMissing || [],
     };
 
     // Store resume embeddings vector for semantic matching
