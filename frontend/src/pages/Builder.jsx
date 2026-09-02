@@ -1441,10 +1441,12 @@ const Builder = () => {
           <button
             onClick={async () => {
               setIsExportingPdf(true);
-              await exportResumePdf(id, currentResume?.title || 'resume');
+              const success = await exportResumePdf(id, currentResume?.title || 'resume');
               setIsExportingPdf(false);
-              setIsExportSuccess(true);
-              setTimeout(() => setIsExportSuccess(false), 2000);
+              if (success) {
+                setIsExportSuccess(true);
+                setTimeout(() => setIsExportSuccess(false), 2000);
+              }
             }}
             disabled={isExportingPdf}
             className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-500/20 hover:shadow-indigo-500/35 hover:-translate-y-0.5 cursor-pointer active:scale-95"

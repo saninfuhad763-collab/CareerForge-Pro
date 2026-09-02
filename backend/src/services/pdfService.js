@@ -1,33 +1,20 @@
 import fs from 'fs';
-import puppeteer from 'puppeteer-core';
+import puppeteer from 'puppeteer';
 import { renderResumeHtml } from '../utils/resumeHtmlRenderer.js';
 
 let browserInstance = null;
 
 const resolveChromeExecutable = () => {
   if (process.env.PUPPETEER_EXECUTABLE_PATH) {
-    return process.env.PUPPETEER_EXECUTABLE_PATH;
-  }
-
-  const candidates = [
-    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-    '/usr/bin/google-chrome-stable',
-    '/usr/bin/google-chrome',
-    '/usr/bin/chromium-browser',
-    '/usr/bin/chromium',
-    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-  ];
-
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) {
-      return candidate;
+    if (fs.existsSync(process.env.PUPPETEER_EXECUTABLE_PATH)) {
+      return process.env.PUPPETEER_EXECUTABLE_PATH;
     }
+    console.warn(
+      `[PDF Service] PUPPETEER_EXECUTABLE_PATH is set to "${process.env.PUPPETEER_EXECUTABLE_PATH}" but file does not exist. Falling back to default Puppeteer browser.`
+    );
   }
 
-  throw new Error(
-    'Chrome/Chromium executable not found. Set PUPPETEER_EXECUTABLE_PATH in your environment.'
-  );
+  return undefined;
 };
 
 const getBrowser = async () => {
@@ -35,8 +22,8 @@ const getBrowser = async () => {
     return browserInstance;
   }
 
-  browserInstance = await puppeteer.launch({
-    executablePath: resolveChromeExecutable(),
+  const executablePath = resolveChromeExecutable();
+  const launchOptions = {
     headless: true,
     args: [
       '--no-sandbox',
@@ -45,7 +32,13 @@ const getBrowser = async () => {
       '--disable-gpu',
       '--font-render-hinting=none',
     ],
-  });
+  };
+
+  if (executablePath) {
+    launchOptions.executablePath = executablePath;
+  }
+
+  browserInstance = await puppeteer.launch(launchOptions);
 
   return browserInstance;
 };
