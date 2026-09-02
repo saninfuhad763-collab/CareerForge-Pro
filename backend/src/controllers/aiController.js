@@ -127,6 +127,7 @@ export const analyzeJdAndScoreResume = async (req, res, next) => {
         softSkills: existingJd.analysis?.softSkills || [],
         technologies: existingJd.analysis?.technologies || [],
         certifications: existingJd.analysis?.certifications || [],
+        requirements: existingJd.analysis?.requirements || [],
         keywordImportance: restoreMapKeys(existingJd.analysis?.keywordImportance),
         aiGeneratedAliases: restoreMapKeys(existingJd.analysis?.aiGeneratedAliases)
       };
@@ -215,6 +216,8 @@ export const analyzeJdAndScoreResume = async (req, res, next) => {
       requiredMissing: breakdown.requiredMissing || [],
       preferredMatched: breakdown.preferredMatched || [],
       preferredMissing: breakdown.preferredMissing || [],
+      // Phase 2A Hardening: persist section-aware requirement evidence
+      requirementEvidence: breakdown.requirementEvidence || [],
     };
 
     // Store resume embeddings vector for semantic matching

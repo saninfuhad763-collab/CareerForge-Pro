@@ -1,4 +1,14 @@
 import { getEmbeddingVector } from './aiService.js';
+import {
+  collectCanonicalRequirements,
+  isTechCategory,
+  checkTermMatch,
+  canonicalizeTerm,
+} from './canonicalTaxonomy.js';
+import {
+  buildStructuredResumeSections,
+  matchAllRequirements,
+} from './evidenceMatcher.js';
 
 /**
  * Calculates cosine similarity between two unit-normalized vectors
@@ -81,30 +91,18 @@ export function extractResumeText(resume) {
 
 /**
  * Central ATS scoring engine
+ * Phase 2A: Powered by Canonical Requirements and Section-Aware Evidence Matching.
+ * Preserves the exact score formula while replacing noisy string duplicates.
  */
 export function calculateAtsScore(resume, jdAnalysis) {
   const resumeText = extractResumeText(resume);
-  const normalizedResume = resumeText.toLowerCase();
 
-  const normalizeList = (list) => (list || []).map(k => typeof k === 'string' ? k.trim() : '').filter(k => k.length > 0);
+  // 1. Canonical Requirement Collection & Deduplication
+  const canonicalRequirements = collectCanonicalRequirements(jdAnalysis);
 
-  const required = normalizeList(jdAnalysis.requiredKeywords);
-  const preferred = normalizeList(jdAnalysis.preferredKeywords);
-  const soft = normalizeList(jdAnalysis.softSkills);
-  const tech = normalizeList(jdAnalysis.technologies);
-
-  // Case-insensitive deduplication preserving original casing for visualization
-  const uniqueMap = new Map();
-  [...required, ...preferred, ...soft, ...tech].forEach(k => {
-    if (!uniqueMap.has(k.toLowerCase())) {
-      uniqueMap.set(k.toLowerCase(), k);
-    }
-  });
-  const allKeywords = Array.from(uniqueMap.values());
-
-  if (allKeywords.length === 0) {
+  if (canonicalRequirements.length === 0) {
     return {
-      atsScore: 70, // Baseline baseline score if no keywords are provided
+      atsScore: 70, // Baseline score if no requirements are provided
       breakdown: {
         keywordMatch: 70,
         semanticMatch: 70,
@@ -114,72 +112,98 @@ export function calculateAtsScore(resume, jdAnalysis) {
         matchedKeywords: [],
         matchedAliases: {},
         totalKeywordsEvaluated: 0,
+        requiredMatched: [],
+        requiredMissing: [],
+        preferredMatched: [],
+        preferredMissing: [],
+        requirementEvidence: [],
         pointAttributions: {
           keywordMatch: { rawScore: 70, weightMultiplier: 0.4, finalContribution: 28 },
           semanticMatch: { rawScore: 70, weightMultiplier: 0.3, finalContribution: 21 },
           skillAlignment: { rawScore: 70, weightMultiplier: 0.2, finalContribution: 14 },
-          experience: { rawScore: 70, weightMultiplier: 0.1, finalContribution: 7 }
+          experience: { rawScore: 70, weightMultiplier: 0.1, finalContribution: 7 },
         },
         categoryBreakdown: {
           keywordMatch: 40,
           semanticMatch: 30,
           skillAlignment: 20,
-          experience: 10
-        }
-      }
+          experience: 10,
+        },
+      },
     };
   }
 
-  // 1. Keyword Matching
-  const foundKeywords = [];
-  const missingKeywords = [];
-  const aliasMatchedKeywords = [];
+  // 2. Build Structured Resume Representation (Section-Aware)
+  const structuredSections = buildStructuredResumeSections(resume);
 
-  allKeywords.forEach(kw => {
-    const evalResult = evaluateKeywordMatch(kw, normalizedResume, jdAnalysis.aiGeneratedAliases || {});
-    if (evalResult.matched) {
-      foundKeywords.push(kw);
-      if (evalResult.matchType === 'ALIAS') {
-        aliasMatchedKeywords.push(kw);
-      }
-    } else {
-      missingKeywords.push(kw);
+  // 3. Section-Aware Evidence Matching
+  const requirementEvidence = matchAllRequirements(canonicalRequirements, structuredSections);
+
+  const foundRequirements = requirementEvidence.filter(
+    e => e.matched && (e.matchType === 'EXACT' || e.matchType === 'ALIAS')
+  );
+  const aliasRequirements = requirementEvidence.filter(
+    e => e.matched && e.matchType === 'ALIAS'
+  );
+  const missingRequirements = requirementEvidence.filter(
+    e => !e.matched || e.matchType === 'MISSING'
+  );
+
+  const allKeywords = canonicalRequirements.map(r => r.displayName);
+  const foundKeywords = foundRequirements.map(r => r.canonicalName);
+  const missingKeywords = missingRequirements.map(r => r.canonicalName);
+  const aliasMatchedKeywords = aliasRequirements.map(r => r.canonicalName);
+
+  const matchedAliases = {};
+  aliasRequirements.forEach(ar => {
+    if (ar.matchedTerm) {
+      matchedAliases[ar.canonicalName] = ar.matchedTerm;
     }
   });
 
-  // Phase 1 Hardening: Classify matched/missing keywords by required vs preferred category.
-  // This does not change the aggregate keywordMatchPercent formula — it adds explicit
-  // sub-classification so callers can report required gaps with higher conceptual urgency.
-  // NOTE: The aggregate score still treats all keywords equally in its denominator (known
-  // Phase 1 limitation — full scoring separation is deferred to a future phase).
-  const requiredLowerSet = new Set(required.map(r => r.toLowerCase()));
-  const preferredLowerSet = new Set(preferred.map(p => p.toLowerCase()));
+  const requiredMatched = foundRequirements
+    .filter(e => e.tier === 'REQUIRED')
+    .map(e => e.canonicalName);
+  const requiredMissing = missingRequirements
+    .filter(e => e.tier === 'REQUIRED')
+    .map(e => e.canonicalName);
+  const preferredMatched = foundRequirements
+    .filter(e => e.tier === 'PREFERRED')
+    .map(e => e.canonicalName);
+  const preferredMissing = missingRequirements
+    .filter(e => e.tier === 'PREFERRED')
+    .map(e => e.canonicalName);
 
-  const requiredMatched = foundKeywords.filter(kw => requiredLowerSet.has(kw.toLowerCase()));
-  const requiredMissing = missingKeywords.filter(kw => requiredLowerSet.has(kw.toLowerCase()));
-  const preferredMatched = foundKeywords.filter(kw => preferredLowerSet.has(kw.toLowerCase()));
-  const preferredMissing = missingKeywords.filter(kw => preferredLowerSet.has(kw.toLowerCase()));
+  const keywordMatchPercent = Math.round(
+    (foundKeywords.length / allKeywords.length) * 100
+  );
 
-  const keywordMatchPercent = Math.round((foundKeywords.length / allKeywords.length) * 100);
+  // 4. Semantic Similarity Score (preserved as in Phase 1)
+  const normalizeList = list =>
+    (list || [])
+      .map(k => (typeof k === 'string' ? k.trim() : ''))
+      .filter(k => k.length > 0);
+  const required = normalizeList(jdAnalysis.requiredKeywords);
+  const tech = normalizeList(jdAnalysis.technologies);
+  const soft = normalizeList(jdAnalysis.softSkills);
 
-
-  // 2. Semantic Similarity Score
   const resumeVector = getEmbeddingVector(resumeText);
-  const jdTextCompiled = `${jdAnalysis.jobTitle} at ${jdAnalysis.company}. Required: ${required.join(', ')}. Tech: ${tech.join(', ')}. Soft skills: ${soft.join(', ')}`;
+  const jdTextCompiled = `${jdAnalysis.jobTitle || 'Role'} at ${
+    jdAnalysis.company || 'Company'
+  }. Required: ${required.join(', ')}. Tech: ${tech.join(', ')}. Soft skills: ${soft.join(', ')}`;
   const jdVector = getEmbeddingVector(jdTextCompiled);
   const semanticMatchPercent = Math.round(cosineSimilarity(resumeVector, jdVector) * 100);
 
-  // 3. Alignment Checks
+  // 5. Alignment Checks (canonical technology alignment)
   let skillAlignment = 0;
-  const techLower = tech.map(t => t.toLowerCase());
-  const requiredLower = required.map(r => r.toLowerCase());
-  
-  const reqTechCount = required.filter(k => techLower.includes(k.toLowerCase())).length;
-  if (reqTechCount > 0) {
-    const foundTechCount = foundKeywords.filter(k => 
-      techLower.includes(k.toLowerCase()) && requiredLower.includes(k.toLowerCase())
-    ).length;
-    skillAlignment = Math.round((foundTechCount / reqTechCount) * 100);
+  const reqTech = canonicalRequirements.filter(
+    r => isTechCategory(r.category) && r.tier === 'REQUIRED'
+  );
+  if (reqTech.length > 0) {
+    const foundTech = foundRequirements.filter(
+      e => isTechCategory(e.category) && e.tier === 'REQUIRED'
+    );
+    skillAlignment = Math.round((foundTech.length / reqTech.length) * 100);
   } else {
     skillAlignment = keywordMatchPercent;
   }
@@ -187,28 +211,24 @@ export function calculateAtsScore(resume, jdAnalysis) {
   const hasExperience = resume.experience && resume.experience.length > 0;
   const experienceContribution = hasExperience ? 10 : 0;
 
-  // Controlled normalization strategy to remove the artificial 93% ceiling
-  // and reduce the noise of the hash-based vector generator.
+  // Controlled normalization strategy
   let normalizedSemantic = semanticMatchPercent;
   if (keywordMatchPercent === 100 && skillAlignment === 100 && hasExperience) {
-    // Perfect match conditions: normalize semanticMatchPercent to 100% to allow a final score of 100%
     normalizedSemantic = 100;
   } else {
-    // Reduce semantic noise: blend with keywordMatchPercent to act as a supporting signal
-    // This reduces the noise of the random vector generator and ensures it doesn't overpower keyword match.
-    normalizedSemantic = Math.round(semanticMatchPercent * 0.3 + keywordMatchPercent * 0.7);
+    normalizedSemantic = Math.round(
+      semanticMatchPercent * 0.3 + keywordMatchPercent * 0.7
+    );
   }
 
-  // 4. Recommendations compiling (incorporating ATS Transparency Details)
+  // 6. Recommendations compiling
   const recommendations = [];
   const structuredRecommendations = [];
 
-  // ATS Transparency Breakdown
   recommendations.push(
     `ATS Score Breakdown: Keyword Match: ${keywordMatchPercent}% (Weight: 40%), Skill Alignment: ${skillAlignment}% (Weight: 20%), Semantic Match: ${normalizedSemantic}% (Weight: 30%), Experience Presence: ${experienceContribution} pts (Weight: 10%).`
   );
 
-  // Positive vs. Negative Attribution
   const positiveContribs = [];
   const negativeContribs = [];
 
@@ -231,130 +251,109 @@ export function calculateAtsScore(resume, jdAnalysis) {
     recommendations.push(`Improvement Drivers: Score reduced by ${negativeContribs.join(', ')}.`);
   }
 
-  // Actionable strategic advice reflecting deficiencies
   if (missingKeywords.length > 0) {
-    recommendations.push(`Action Plan (Keywords): Integrate target terms [${missingKeywords.slice(0, 4).join(', ')}] in your skills or experience fields.`);
+    recommendations.push(
+      `Action Plan (Keywords): Integrate target terms [${missingKeywords
+        .slice(0, 4)
+        .join(', ')}] in your skills or experience fields.`
+    );
   }
 
-  missingKeywords.forEach(kw => {
+  missingRequirements.forEach(req => {
+    const isRequired = req.tier === 'REQUIRED';
+    const isTech = isTechCategory(req.category);
     let priority = 'Medium';
     let targetSection = 'General';
     let impact = 'Low';
-
-    const kwLower = kw.toLowerCase();
-    const isRequired = required.map(r => r.toLowerCase()).includes(kwLower);
-    const isTech = tech.map(t => t.toLowerCase()).includes(kwLower);
-    const isSoft = soft.map(s => s.toLowerCase()).includes(kwLower);
-    const isPreferred = preferred.map(p => p.toLowerCase()).includes(kwLower);
 
     if (isRequired && isTech) {
       priority = 'Critical';
       targetSection = 'Skills or Experience';
       impact = 'High';
-    } else if (isRequired && isSoft) {
+    } else if (isRequired) {
       priority = 'High';
       targetSection = 'Professional Summary';
       impact = 'High';
-    } else if (isPreferred && isTech) {
-      priority = 'Medium';
-      targetSection = 'Skills or Experience';
-      impact = 'Medium';
-    } else if (isPreferred && isSoft) {
-      priority = 'Medium';
-      targetSection = 'Professional Summary';
-      impact = 'Medium';
     } else if (isTech) {
-      priority = 'High';
+      priority = 'Medium';
       targetSection = 'Skills or Experience';
-      impact = 'Medium';
-    } else if (isSoft) {
-      priority = 'Medium';
-      targetSection = 'Professional Summary';
-      impact = 'Medium';
-    } else if (isPreferred) {
-      priority = 'Medium';
-      targetSection = 'General';
       impact = 'Medium';
     }
-
-    let dictCat = null;
-    if (TECH_DICTIONARY[kwLower]) dictCat = TECH_DICTIONARY[kwLower];
-    else if (SOFT_SKILL_DICTIONARY[kwLower]) dictCat = SOFT_SKILL_DICTIONARY[kwLower];
-    else if (isTech) dictCat = 'Tech Fallback';
-    else if (isSoft) dictCat = 'Soft Fallback';
 
     structuredRecommendations.push({
       type: 'Missing Keyword',
       priority,
       targetSection,
-      message: getRecommendationMessage(kw, targetSection, dictCat, false),
+      message: getRecommendationMessage(req.canonicalName, targetSection, req.category, false),
       impact,
-      confidence: 'High'
+      confidence: 'High',
     });
   });
 
-  aliasMatchedKeywords.forEach(kw => {
-    let targetSection = 'General';
-    const kwLower = kw.toLowerCase();
-    const isTech = tech.map(t => t.toLowerCase()).includes(kwLower);
-    const isSoft = soft.map(s => s.toLowerCase()).includes(kwLower);
-    if (isTech) targetSection = 'Skills or Experience';
-    else if (isSoft) targetSection = 'Professional Summary';
-
+  aliasRequirements.forEach(req => {
+    let targetSection = isTechCategory(req.category) ? 'Skills or Experience' : 'Professional Summary';
     structuredRecommendations.push({
       type: 'Strengthen Existing Phrase',
       priority: 'Medium',
       targetSection,
-      message: getRecommendationMessage(kw, targetSection, null, true),
+      message: getRecommendationMessage(req.canonicalName, targetSection, null, true),
       impact: 'Medium',
-      confidence: 'High'
+      confidence: 'High',
     });
   });
 
   if (normalizedSemantic < 80) {
-    recommendations.push('Action Plan (Semantic): Incorporate professional metrics and active industry terminology to lift contextual density.');
+    recommendations.push(
+      'Action Plan (Semantic): Incorporate professional metrics and active industry terminology to lift contextual density.'
+    );
     structuredRecommendations.push({
       type: 'Formatting Advice',
       priority: 'Low',
       targetSection: 'Experience',
       message: 'Incorporate professional metrics and active industry terminology to lift contextual density.',
       impact: 'Medium',
-      confidence: 'High'
+      confidence: 'High',
     });
   }
+
   if (!resume.summary || resume.summary.length < 50) {
-    recommendations.push('Action Plan (Summary): Craft a strong Professional Summary containing target role keywords.');
+    recommendations.push(
+      'Action Plan (Summary): Craft a strong Professional Summary containing target role keywords.'
+    );
     structuredRecommendations.push({
       type: 'Formatting Advice',
       priority: 'Low',
       targetSection: 'Professional Summary',
       message: 'Craft a strong Professional Summary containing target role keywords.',
       impact: 'Medium',
-      confidence: 'High'
+      confidence: 'High',
     });
   }
+
   if (!hasExperience) {
-    recommendations.push('Action Plan (Experience): Add professional experience entries to satisfy resume structure parsing requirements.');
+    recommendations.push(
+      'Action Plan (Experience): Add professional experience entries to satisfy resume structure parsing requirements.'
+    );
     structuredRecommendations.push({
       type: 'Formatting Advice',
       priority: 'Low',
       targetSection: 'Experience',
       message: 'Add professional experience entries to satisfy resume structure parsing requirements.',
       impact: 'High',
-      confidence: 'High'
+      confidence: 'High',
     });
   }
 
-  // Final Weighted ATS Score formulation
+  // Final Weighted ATS Score formulation (Preserved from Phase 1)
   const finalScore = Math.max(
     0,
     Math.min(
       100,
       Math.round(
         keywordMatchPercent * 0.4 +
-        normalizedSemantic * 0.3 +
-        skillAlignment * 0.2 +
-        experienceContribution
+          normalizedSemantic * 0.3 +
+          skillAlignment * 0.2 +
+          experienceContribution
       )
     )
   );
@@ -371,152 +370,55 @@ export function calculateAtsScore(resume, jdAnalysis) {
       recommendations,
       structuredRecommendations,
       matchedKeywords: foundKeywords,
-      matchedAliases: {},
+      matchedAliases,
       totalKeywordsEvaluated: allKeywords.length,
-      // Phase 1 Hardening: explicit required vs preferred classification.
-      // The aggregate keywordMatchPercent still uses the full pool (known Phase 1 limitation).
       requiredMatched,
       requiredMissing,
       preferredMatched,
       preferredMissing,
+      requirementEvidence,
       pointAttributions: {
         keywordMatch: {
           rawScore: keywordMatchPercent,
           weightMultiplier: 0.4,
-          finalContribution: keywordMatchPercent * 0.4
+          finalContribution: keywordMatchPercent * 0.4,
         },
         semanticMatch: {
           rawScore: normalizedSemantic,
           weightMultiplier: 0.3,
-          finalContribution: normalizedSemantic * 0.3
+          finalContribution: normalizedSemantic * 0.3,
         },
         skillAlignment: {
           rawScore: skillAlignment,
           weightMultiplier: 0.2,
-          finalContribution: skillAlignment * 0.2
+          finalContribution: skillAlignment * 0.2,
         },
         experience: {
           rawScore: hasExperience ? 100 : 0,
           weightMultiplier: 0.1,
-          finalContribution: experienceContribution
-        }
+          finalContribution: experienceContribution,
+        },
       },
       categoryBreakdown: {
         keywordMatch: 40,
         semanticMatch: 30,
         skillAlignment: 20,
-        experience: 10
-      }
-    }
+        experience: 10,
+      },
+    },
   };
 }
 
-const ALIAS_MAP = {
-  // Programming Languages
-  "javascript": ["javascript", "js"],
-  "js": ["javascript", "js"],
-  "typescript": ["typescript", "ts"],
-  "ts": ["typescript", "ts"],
-  "python": ["python", "python3"],
-  "python3": ["python", "python3"],
-
-  // Frameworks
-  "express": ["express", "express.js", "expressjs"],
-  "express.js": ["express", "express.js", "expressjs"],
-  "expressjs": ["express", "express.js", "expressjs"],
-  "node": ["node", "node.js", "nodejs"],
-  "node.js": ["node", "node.js", "nodejs"],
-  "nodejs": ["node", "node.js", "nodejs"],
-  "react": ["react", "react.js", "reactjs"],
-  "react.js": ["react", "react.js", "reactjs"],
-  "reactjs": ["react", "react.js", "reactjs"],
-  "next": ["next", "next.js", "nextjs"],
-  "next.js": ["next", "next.js", "nextjs"],
-  "nextjs": ["next", "next.js", "nextjs"],
-
-  // Databases
-  "postgresql": ["postgresql", "postgres"],
-  "postgres": ["postgresql", "postgres"],
-  "mongodb": ["mongodb", "mongo"],
-  "mongo": ["mongodb", "mongo"],
-
-  // Cloud
-  "amazon web services": ["amazon web services", "aws"],
-  "aws": ["amazon web services", "aws"],
-  "google cloud platform": ["google cloud platform", "gcp"],
-  "gcp": ["google cloud platform", "gcp"],
-  "microsoft azure": ["microsoft azure", "azure"],
-  "azure": ["microsoft azure", "azure"],
-
-  // DevOps
-  "kubernetes": ["kubernetes", "k8s"],
-  "k8s": ["kubernetes", "k8s"],
-  "docker compose": ["docker compose", "compose"],
-  "compose": ["docker compose", "compose"],
-  "docker": ["docker", "containerization", "containers"],
-  "ci/cd": ["ci/cd", "cicd", "continuous integration", "continuous delivery", "github actions", "pipelines"],
-  "cicd": ["ci/cd", "cicd", "continuous integration", "continuous delivery", "github actions", "pipelines"],
-
-  // APIs
-  "rest api": ["rest api", "rest apis", "restful api", "restful apis"],
-  "rest apis": ["rest api", "rest apis", "restful api", "restful apis"],
-  "restful api": ["rest api", "rest apis", "restful api", "restful apis"],
-  "restful apis": ["rest api", "rest apis", "restful api", "restful apis"],
-
-  // Other preserved aliases
-  "jwt": ["jwt", "json web token"],
-  "redux": ["redux", "reduxtoolkit", "rtk"],
-  "jest": ["jest", "unit testing", "testing"],
-  "cypress": ["cypress", "e2e testing", "integration testing"],
-  "tailwind-css": ["tailwind-css", "tailwindcss", "tailwind"],
-  "tailwindcss": ["tailwind-css", "tailwindcss", "tailwind"],
-  "tailwind": ["tailwind-css", "tailwindcss", "tailwind"],
-  "tableau": ["tableau", "business intelligence", "bi dashboard"],
-  "looker": ["looker", "business intelligence", "bi dashboard"]
-};
-
-const TECH_DICTIONARY = {
-  "react": "Framework",
-  "node.js": "Framework",
-  "nodejs": "Framework",
-  "express": "Framework",
-  "express.js": "Framework",
-  "python": "Programming Language",
-  "java": "Programming Language",
-  "javascript": "Programming Language",
-  "typescript": "Programming Language",
-  "c#": "Programming Language",
-  "c++": "Programming Language",
-  "go": "Programming Language",
-  "aws": "Cloud",
-  "amazon web services": "Cloud",
-  "docker": "DevOps",
-  "kubernetes": "DevOps",
-  "k8s": "DevOps",
-  "ci/cd": "DevOps",
-  "mongodb": "Database",
-  "sql": "Database",
-  "graphql": "Database",
-  "rest api": "Framework",
-  "testing": "Testing",
-  "jest": "Testing",
-  "cypress": "Testing"
-};
-
-const SOFT_SKILL_DICTIONARY = {
-  "communication": "Communication",
-  "leadership": "Leadership",
-  "teamwork": "Teamwork",
-  "collaboration": "Teamwork",
-  "problem solving": "Problem Solving",
-  "agile": "Teamwork"
-};
-
-const getRecommendationMessage = (keyword, targetSection, dictionaryCategory, isAlias = false) => {
+export const getRecommendationMessage = (
+  keyword,
+  targetSection,
+  dictionaryCategory,
+  isAlias = false
+) => {
   if (isAlias) {
     return `You mentioned a related concept to '${keyword}'. Consider updating your wording to the exact ATS terminology to ensure maximum parser compatibility.`;
   }
-  
+
   switch (dictionaryCategory) {
     case 'Programming Language':
       return `Demonstrate your proficiency in ${keyword} within your ${targetSection} by mentioning a specific module or feature you developed.`;
@@ -529,6 +431,10 @@ const getRecommendationMessage = (keyword, targetSection, dictionaryCategory, is
       return `Highlight deployment or infrastructure experience by adding ${keyword} to your ${targetSection}.`;
     case 'Testing':
       return `Showcase software quality assurance by adding ${keyword} to your ${targetSection}.`;
+    case 'Security':
+      return `Highlight security protocols and implementation details for ${keyword} in your ${targetSection}.`;
+    case 'Architecture':
+      return `Elaborate on architectural patterns related to ${keyword} in your ${targetSection}.`;
     case 'Communication':
       return `Strengthen your ${targetSection} by mentioning cross-functional collaboration or stakeholder management to satisfy the '${keyword}' requirement.`;
     case 'Leadership':
@@ -537,111 +443,49 @@ const getRecommendationMessage = (keyword, targetSection, dictionaryCategory, is
       return `Demonstrate '${keyword}' in your ${targetSection} by outlining a complex challenge you successfully resolved.`;
     case 'Teamwork':
       return `Showcase your '${keyword}' capability inside your ${targetSection} by mentioning your role within collaborative deliveries.`;
-    case 'Tech Fallback':
-      return `Integrate the target technology '${keyword}' into your ${targetSection} to align with the job's technical requirements.`;
-    case 'Soft Fallback':
-      return `Highlight '${keyword}' through measurable examples in your ${targetSection}.`;
     default:
       return `The keyword "${keyword}" is missing from your resume. Add it to your ${targetSection}.`;
   }
 };
 
-const checkSingleTermMatch = (term, text) => {
-  const cleanTerm = term.toLowerCase().trim();
-  const cleanText = text.toLowerCase();
-
-  if (!cleanTerm || !cleanText) return false;
-
-  // Special guard: the single-character term 'c' must NOT match inside 'c++' or 'c#'.
-  // Standard \b word boundaries fail here because '+' and '#' are non-word characters,
-  // which means \bc\b would match the 'c' in 'c++' (boundary between 'c' and '+').
-  // The lookahead explicitly rejects the 'c' when immediately followed by '+' or '#'.
-  if (cleanTerm === 'c') {
-    return /\bc(?![+#])\b/i.test(cleanText);
-  }
-
-  const isAlphaNumeric = /^[a-z0-9\s]+$/i.test(cleanTerm);
-
-  if (isAlphaNumeric) {
-    const escaped = cleanTerm.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-    const regex = new RegExp(`\\b${escaped}\\b`, 'i');
-    return regex.test(cleanText);
-  } else {
-    let idx = cleanText.indexOf(cleanTerm);
-    while (idx !== -1) {
-      const charBefore = idx > 0 ? cleanText[idx - 1] : ' ';
-      const charAfter = idx + cleanTerm.length < cleanText.length ? cleanText[idx + cleanTerm.length] : ' ';
-
-      const startsWithAlpha = /[a-z0-9]/i.test(cleanTerm[0]);
-      const endsWithAlpha = /[a-z0-9]/i.test(cleanTerm[cleanTerm.length - 1]);
-
-      const isBeforeBoundary = !startsWithAlpha || !/[a-z0-9]/i.test(charBefore);
-      const isAfterBoundary = !endsWithAlpha || !/[a-z0-9]/i.test(charAfter);
-
-      if (isBeforeBoundary && isAfterBoundary) {
-        return true;
-      }
-      idx = cleanText.indexOf(cleanTerm, idx + 1);
-    }
-    return false;
-  }
+/**
+ * Direct single-term matcher for backward compatibility
+ */
+export const checkSingleTermMatch = (term, text) => {
+  return checkTermMatch(term, text);
 };
 
-
 /**
- * Short tokens that have legitimate meaning as standalone technical terms.
- * These are preserved during multi-word compound-term splitting even though
- * they are fewer than 4 characters. Without this set, terms like "Go developer",
- * "C# engineer", or "CI/CD engineer" would drop the key term during the
- * multi-word sub-match check (filter(w => w.length > 3)).
+ * Keyword match evaluator with taxonomy awareness
  */
-const SHORT_TECHNICAL_TOKENS = new Set([
-  'go', 'c', 'c++', 'c#', 'r', 'js', 'ts', 'ui', 'ux', 'qa', 'ai', 'ml',
-  'ci', 'cd', 'k8s', 'aws', 'gcp', 'sql', 'git', 'jwt', 'api', 'php',
-  'css', 'npm', 'vue', 'xml', 'ssh', 'ssl', 'ios', 'sdk', 'cli', 'rpc',
-]);
-
-const evaluateKeywordMatch = (keyword, text, aiGeneratedAliases = {}) => {
+export const evaluateKeywordMatch = (keyword, text, aiGeneratedAliases = {}) => {
+  if (!keyword || !text) return { matched: false };
   const cleanKw = keyword.toLowerCase().trim();
   if (!cleanKw) return { matched: false };
 
-  // Exact match check first
-  if (checkSingleTermMatch(cleanKw, text)) {
+  // Check exact term match
+  if (checkTermMatch(cleanKw, text)) {
     return { matched: true, matchType: 'EXACT' };
   }
 
-  // Alias checks
-  const staticAliases = ALIAS_MAP[cleanKw] || [];
+  // Check taxonomy aliases
+  const canon = canonicalizeTerm(cleanKw);
+  if (canon && Array.isArray(canon.aliases)) {
+    for (const alias of canon.aliases) {
+      if (alias !== cleanKw && checkTermMatch(alias, text)) {
+        return { matched: true, matchType: 'ALIAS' };
+      }
+    }
+  }
+
+  // Dynamic AI aliases if provided
   let dynamicAliases = aiGeneratedAliases[cleanKw] || aiGeneratedAliases[keyword];
-  
-  if (!Array.isArray(dynamicAliases)) {
-    dynamicAliases = [];
-  } else {
-    dynamicAliases = dynamicAliases
-      .filter(a => typeof a === 'string' && a.trim() !== '')
-      .map(a => a.toLowerCase().trim());
-  }
-  
-  // Combine all aliases and exclude the exact keyword
-  const combinedAliases = Array.from(new Set([...staticAliases, ...dynamicAliases]))
-    .filter(a => a !== cleanKw);
-
-  if (combinedAliases.some(alias => checkSingleTermMatch(alias, text))) {
-    return { matched: true, matchType: 'ALIAS' };
-  }
-
-  // Multi-word exact match: all constituent words must appear in resume text.
-  // Short technical tokens (go, c#, c++, js, ts, etc.) are preserved even though
-  // they are under 4 characters — they are excluded from the length filter but
-  // are not globally treated as stop words.
-  if (cleanKw.includes(' ') || cleanKw.includes('-') || cleanKw.includes('/')) {
-    const words = cleanKw
-      .split(/[\s\-\/._]+/)
-      .map(w => w.trim())
-      .filter(w => w.length > 3 || SHORT_TECHNICAL_TOKENS.has(w));
-    if (words.length > 1) {
-      if (words.every(word => checkSingleTermMatch(word, text))) {
-        return { matched: true, matchType: 'EXACT' };
+  if (Array.isArray(dynamicAliases)) {
+    for (const dyn of dynamicAliases) {
+      if (typeof dyn === 'string' && dyn.trim() && dyn.toLowerCase().trim() !== cleanKw) {
+        if (checkTermMatch(dyn, text)) {
+          return { matched: true, matchType: 'ALIAS' };
+        }
       }
     }
   }
@@ -649,6 +493,9 @@ const evaluateKeywordMatch = (keyword, text, aiGeneratedAliases = {}) => {
   return { matched: false };
 };
 
+/**
+ * Public predicate exported for backwards compatibility
+ */
 export const isKeywordMatched = (keyword, text, aiGeneratedAliases = {}) => {
   return evaluateKeywordMatch(keyword, text, aiGeneratedAliases).matched;
 };

@@ -29,6 +29,7 @@ const jobDescriptionSchema = new mongoose.Schema(
       softSkills: [{ type: String }],
       technologies: [{ type: String }],
       certifications: [{ type: String }],
+      requirements: [{ type: mongoose.Schema.Types.Mixed }],
       keywordImportance: {
         type: Map,
         of: Number,
