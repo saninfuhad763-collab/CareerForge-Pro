@@ -112,10 +112,10 @@ export const analyzeJdAndScoreResume = async (req, res, next) => {
 
     const currentJdHash = generateJdHash(jdText);
 
-    // 1. Check if a Job Description analysis already exists for this hash and user
+    // 1. Check if a Job Description analysis already exists for this versioned hash and user
     const existingJd = await JobDescription.findOne({
       userId: req.user._id,
-      $or: [{ hash: currentJdHash }, { rawText: jdText }]
+      hash: currentJdHash
     });
 
     if (existingJd) {
