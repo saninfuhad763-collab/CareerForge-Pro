@@ -185,6 +185,8 @@ Rules:
       systemMsg,
       userMsg,
       stream: false,
+      maxTokens: 4000,
+      responseFormat: { type: 'json_object' },
     });
   } catch (aiError) {
     console.error('[Resume Import] AI invocation failure:', aiError.message);
@@ -194,6 +196,11 @@ Rules:
   if (!result?.text) {
     console.error('[Resume Import] AI returned an empty text payload');
     throw new Error('AI parser returned an empty response. Please try again.');
+  }
+
+  if (result.finishReason === 'length') {
+    console.error('[Resume Import] AI output truncated due to token budget limit (finish_reason=length)');
+    throw new Error('Resume content is too extensive for AI import. Please upload a more concise resume or add details in the builder.');
   }
 
   try {

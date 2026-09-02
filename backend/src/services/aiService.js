@@ -169,7 +169,15 @@ export function sanitizeInput(text) {
 /**
  * Call Groq chat completion with robust retries, fallback simulation, and safety filters
  */
-export async function executeAiChain({ promptType, systemMsg, userMsg, stream = false, sseResponse = null }) {
+export async function executeAiChain({
+  promptType,
+  systemMsg,
+  userMsg,
+  stream = false,
+  sseResponse = null,
+  maxTokens = null,
+  responseFormat = null,
+}) {
   const sanitizedUser = sanitizeInput(userMsg);
   const sanitizedSystem = sanitizeInput(systemMsg);
 
@@ -184,16 +192,22 @@ export async function executeAiChain({ promptType, systemMsg, userMsg, stream = 
     try {
       if (stream && sseResponse) {
         // SSE Streaming Mode
-        const completionStream = await groqClient.chat.completions.create({
+        const streamPayload = {
           messages: [
             { role: 'system', content: sanitizedSystem },
             { role: 'user', content: sanitizedUser }
           ],
           model: defaultModel,
           temperature: 0.3,
-          max_tokens: 1500,
+          max_tokens: maxTokens || 1500,
           stream: true,
-        });
+        };
+
+        if (responseFormat) {
+          streamPayload.response_format = responseFormat;
+        }
+
+        const completionStream = await groqClient.chat.completions.create(streamPayload);
 
         let fullOutput = '';
         for await (const chunk of completionStream) {
@@ -207,6 +221,7 @@ export async function executeAiChain({ promptType, systemMsg, userMsg, stream = 
         // Return summary with token estimation for history logging
         return {
           text: fullOutput,
+          finishReason: 'stop',
           tokensUsed: {
             promptTokens: Math.ceil(sanitizedUser.length / 4),
             completionTokens: Math.ceil(fullOutput.length / 4),
@@ -215,19 +230,29 @@ export async function executeAiChain({ promptType, systemMsg, userMsg, stream = 
         };
       } else {
         // Standard non-streaming mode
-        const completion = await groqClient.chat.completions.create({
+        const completionPayload = {
           messages: [
             { role: 'system', content: sanitizedSystem },
             { role: 'user', content: sanitizedUser }
           ],
           model: defaultModel,
           temperature: 0.3,
-          max_tokens: 2000,
-        });
+          max_tokens: maxTokens || 2000,
+        };
 
-        const textOutput = completion.choices[0]?.message?.content || '';
+        if (responseFormat) {
+          completionPayload.response_format = responseFormat;
+        }
+
+        const completion = await groqClient.chat.completions.create(completionPayload);
+
+        const choice = completion.choices[0];
+        const textOutput = choice?.message?.content || '';
+        const finishReason = choice?.finish_reason || null;
+
         return {
           text: textOutput,
+          finishReason,
           tokensUsed: {
             promptTokens: completion.usage?.prompt_tokens || Math.ceil(sanitizedUser.length / 4),
             completionTokens: completion.usage?.completion_tokens || Math.ceil(textOutput.length / 4),
@@ -499,6 +524,7 @@ Sincerely,
 
   return {
     text,
+    finishReason: 'stop',
     tokensUsed: { promptTokens: 15, completionTokens: 40, totalTokens: 55 }
   };
 }
