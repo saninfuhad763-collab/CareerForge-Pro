@@ -316,6 +316,7 @@ export async function analyzeJobDescription(jdText) {
     const structuredOutput = JSON.parse(rawJsonText);
     return {
       success: true,
+      isFallback: false,
       analysis: structuredOutput,
       tokensUsed: result.tokensUsed
     };
@@ -323,6 +324,7 @@ export async function analyzeJobDescription(jdText) {
     console.error('[AI Service] Job description JSON parsing failed. Falling back to local heuristic parser:', error.message);
     return {
       success: true,
+      isFallback: true,
       analysis: runHeuristicJdParser(jdText),
       tokensUsed: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
     };
@@ -338,6 +340,10 @@ function matchKeywordBoundary(term, text) {
   const cleanText = text.toLowerCase();
 
   if (!cleanTerm || !cleanText) return false;
+
+  if (cleanTerm === 'c') {
+    return /\bc(?![+#])\b/i.test(cleanText);
+  }
 
   const isAlphaNumeric = /^[a-z0-9\s]+$/i.test(cleanTerm);
 
@@ -373,17 +379,28 @@ function runHeuristicJdParser(text) {
   const normalized = text.toLowerCase();
   
   // Custom dictionary for highly accurate local extraction
-  const skillKeywords = ['react', 'node', 'express', 'mongodb', 'javascript', 'typescript', 'aws', 'docker', 'python', 'java', 'sql', 'css', 'html', 'ci/cd', 'git', 'rest api', 'kubernetes', 'k8s', 'graphql', 'c#', 'c++', 'go', 'testing'];
+  const skillKeywords = [
+    'mern', 'mongodb', 'express', 'react', 'node.js', 'node',
+    'rest apis', 'rest api', 'restful apis', 'restful api',
+    'jwt authentication', 'jwt', 'javascript', 'typescript', 'python',
+    'docker', 'aws', 'postgresql', 'git', 'kubernetes', 'k8s',
+    'graphql', 'c#', 'c++', 'go', 'testing', 'sql', 'html', 'css', 'java', 'ci/cd'
+  ];
   const softKeywords = ['leadership', 'communication', 'teamwork', 'problem solving', 'agile', 'collaboration', 'analytical', 'mentoring', 'organization', 'time management'];
   const certKeywords = ['aws certified', 'pmp', 'scrum master', 'csm', 'comptia', 'cisco', 'ccna', 'cissp', 'itil'];
 
-  const foundTech = [];
+  const rawTech = [];
   const foundSoft = [];
   const foundCerts = [];
 
   skillKeywords.forEach(kw => {
-    if (matchKeywordBoundary(kw, normalized)) foundTech.push(kw.toUpperCase());
+    if (matchKeywordBoundary(kw, normalized)) rawTech.push(kw.toLowerCase());
   });
+
+  // Canonical filter: prefer longer specific terms over redundant sub-phrases (e.g. 'node.js' over 'node', 'jwt authentication' over 'jwt')
+  const foundTech = rawTech
+    .filter(shortTerm => !rawTech.some(longTerm => longTerm !== shortTerm && longTerm.includes(shortTerm)))
+    .map(kw => kw.toUpperCase());
 
   softKeywords.forEach(kw => {
     if (matchKeywordBoundary(kw, normalized)) foundSoft.push(kw.charAt(0).toUpperCase() + kw.slice(1));

@@ -77,8 +77,9 @@ const normalizeJdText = (text) => {
  *   v2.0 – initial
  *   v2.1 – matchKeywordBoundary boundary-aware heuristic parser (aiService.js)
  *   v2.2 – C/C++/C# guard, short-token fix, required/preferred separation, structured recs persistence
+ *   v2.3 – Invalidate degraded fallback cache, fallback non-caching, enhanced heuristic dictionary
  */
-const ATS_ANALYSIS_VERSION = 'v2.2';
+const ATS_ANALYSIS_VERSION = 'v2.3';
 
 const generateJdHash = (text) => {
   return crypto.createHash('md5').update(`${ATS_ANALYSIS_VERSION}:${normalizeJdText(text)}`).digest('hex');
@@ -109,6 +110,7 @@ export const analyzeJdAndScoreResume = async (req, res, next) => {
     let breakdown;
     let jobDescriptionId = null;
     let analysis;
+    let isFallback = false;
 
     const currentJdHash = generateJdHash(jdText);
 
@@ -129,6 +131,7 @@ export const analyzeJdAndScoreResume = async (req, res, next) => {
         aiGeneratedAliases: restoreMapKeys(existingJd.analysis?.aiGeneratedAliases)
       };
       jobDescriptionId = existingJd._id;
+      isFallback = false;
     } else {
       // 1. Analyze Job Description via LangChain/Groq Agent
       const analysisResult = await analyzeJobDescription(jdText);
@@ -137,24 +140,29 @@ export const analyzeJdAndScoreResume = async (req, res, next) => {
       }
 
       analysis = analysisResult.analysis;
+      isFallback = Boolean(analysisResult.isFallback);
 
-      // 2. Persist the JD analysis & Vector Embeddings
-      const jdVector = getEmbeddingVector(jdText);
-      const persistableAnalysis = {
-        ...analysis,
-        keywordImportance: sanitizeMapKeys(analysis.keywordImportance),
-        aiGeneratedAliases: sanitizeMapKeys(analysis.aiGeneratedAliases),
-      };
-      const newJd = await JobDescription.create({
-        userId: req.user._id,
-        hash: currentJdHash,
-        jobTitle: analysis.jobTitle || jobTitle,
-        company: analysis.company || company,
-        rawText: jdText,
-        analysis: persistableAnalysis,
-        embedding: jdVector,
-      });
-      jobDescriptionId = newJd._id;
+      // 2. Persist the JD analysis & Vector Embeddings ONLY if full AI analysis succeeded.
+      // Degraded heuristic fallback analyses (isFallback === true) MUST NOT be persisted to
+      // the JobDescription cache, preventing poisoned cache records during transient rate-limit events.
+      if (!isFallback) {
+        const jdVector = getEmbeddingVector(jdText);
+        const persistableAnalysis = {
+          ...analysis,
+          keywordImportance: sanitizeMapKeys(analysis.keywordImportance),
+          aiGeneratedAliases: sanitizeMapKeys(analysis.aiGeneratedAliases),
+        };
+        const newJd = await JobDescription.create({
+          userId: req.user._id,
+          hash: currentJdHash,
+          jobTitle: analysis.jobTitle || jobTitle,
+          company: analysis.company || company,
+          rawText: jdText,
+          analysis: persistableAnalysis,
+          embedding: jdVector,
+        });
+        jobDescriptionId = newJd._id;
+      }
     }
 
     // 3. Compute ATS Score and recommendations
@@ -216,7 +224,10 @@ export const analyzeJdAndScoreResume = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: 'ATS analysis and matching successfully calculated.',
+      message: isFallback
+        ? 'ATS analysis calculated using local heuristic fallback (degraded mode).'
+        : 'ATS analysis and matching successfully calculated.',
+      isFallback: isFallback,
       atsScore: calculatedScore,
       breakdown: breakdown,
       atsMetadata: resume.atsMetadata,
