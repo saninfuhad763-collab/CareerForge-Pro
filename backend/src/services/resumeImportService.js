@@ -178,18 +178,30 @@ Rules:
 - Group skills into logical categories with keywords arrays.`;
 
   const userMsg = `Resume text to import:\n${resumeText}`;
-  const result = await executeAiChain({
-    promptType: 'resume_import',
-    systemMsg,
-    userMsg,
-    stream: false,
-  });
+  let result;
+  try {
+    result = await executeAiChain({
+      promptType: 'resume_import',
+      systemMsg,
+      userMsg,
+      stream: false,
+    });
+  } catch (aiError) {
+    console.error('[Resume Import] AI invocation failure:', aiError.message);
+    throw new Error('AI parsing service is currently unavailable. Please try again shortly.');
+  }
+
+  if (!result?.text) {
+    console.error('[Resume Import] AI returned an empty text payload');
+    throw new Error('AI parser returned an empty response. Please try again.');
+  }
 
   try {
     const parsed = JSON.parse(stripJsonFence(result.text));
     return normalizeImportedResume(parsed);
-  } catch (error) {
-    throw new Error('AI parsing failed. Please try again or upload a cleaner resume file.');
+  } catch (parseError) {
+    console.error('[Resume Import] Structured JSON parsing failed:', parseError.message);
+    throw new Error('Could not parse resume data into the required format. Please try again or upload a cleaner resume file.');
   }
 };
 

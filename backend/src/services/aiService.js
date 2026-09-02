@@ -5,7 +5,11 @@ dotenv.config();
 
 // Ensure Groq is initialized safely
 const apiKey = process.env.GROQ_API_KEY;
-const defaultModel = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const envModel = process.env.GROQ_MODEL;
+const defaultModel =
+  envModel && envModel !== 'llama-3.3-70b-versatile'
+    ? envModel
+    : 'openai/gpt-oss-20b';
 
 let groqClient = null;
 if (apiKey) {
@@ -422,6 +426,54 @@ This proven history of driving technical excellence and high-availability archit
 Sincerely,
 
 [Your Name]`;
+  } else if (promptType === 'resume_import') {
+    // Safely extract deterministic personal info without fabricating facts
+    const rawText = sanitizedUser || '';
+    const emailMatch = rawText.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/);
+    const phoneMatch = rawText.match(/(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
+    const linkedinMatch = rawText.match(/linkedin\.com\/in\/([a-zA-Z0-9_-]+)/i);
+    const githubMatch = rawText.match(/github\.com\/([a-zA-Z0-9_-]+)/i);
+
+    // Identify candidate name from earliest header line without contact keywords/digits
+    const lines = rawText
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0 && !l.startsWith('Resume text to import:'));
+    let candidateName = '';
+    for (const line of lines.slice(0, 5)) {
+      if (
+        line.length <= 50 &&
+        !line.includes('@') &&
+        !line.includes('http') &&
+        !line.includes('.com') &&
+        !/\d{3}/.test(line) &&
+        !/resume|curriculum|vitae|contact|phone|email/i.test(line)
+      ) {
+        candidateName = line;
+        break;
+      }
+    }
+
+    const fallbackSchema = {
+      personalInfo: {
+        fullName: candidateName,
+        email: emailMatch ? emailMatch[0] : '',
+        phone: phoneMatch ? phoneMatch[0] : '',
+        location: '',
+        website: '',
+        github: githubMatch ? `https://github.com/${githubMatch[1]}` : '',
+        linkedin: linkedinMatch ? `https://linkedin.com/in/${linkedinMatch[1]}` : '',
+      },
+      summary: '',
+      experience: [],
+      education: [],
+      skills: [],
+      certifications: [],
+      projects: [],
+      languages: [],
+    };
+
+    text = JSON.stringify(fallbackSchema);
   }
 
   if (stream && sseResponse) {
