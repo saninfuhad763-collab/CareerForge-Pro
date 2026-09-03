@@ -277,7 +277,7 @@ export async function executeAiChain({
  * Extracts and structures Job Description characteristics using high-performance LLM JSON schemas
  */
 export async function analyzeJobDescription(jdText) {
-  const systemMsg = `You are a professional ATS parser. You MUST analyze the job description and output a strictly valid JSON document matching this exact schema:
+  const systemMsg = `You are an elite, deterministic ATS parser. You MUST analyze the job description and output a strictly valid JSON document matching this exact schema:
   {
     "jobTitle": "Extracted Job Title",
     "company": "Extracted Company Name (default to Unknown if missing)",
@@ -295,7 +295,18 @@ export async function analyzeJobDescription(jdText) {
       "keyword2": ["alias3"]
     }
   }
-  Where keywordImportance rates keywords from 1 to 5 based on priority and occurrences. Generate standard acronyms and synonyms in aiGeneratedAliases for extracted keywords to improve recognition (e.g. "K8s" for "Kubernetes"). DO NOT include any markdown code blocks, backticks, or text before/after the JSON. Just return the raw JSON object.`;
+
+CRITICAL EXTRACTION RULES:
+1. ATOMIC EXTRACTION: Extract atomic, concise technical skills, tools, frameworks, and engineering concepts. Do NOT extract conversational wrappers, job phrases, or filler text (e.g. extract "Deployment" instead of "deployment familiarity", extract "Application Security" instead of "understanding of application security", extract "MERN Stack" instead of "proven experience building applications with MERN stack").
+2. EXHAUSTIVE COVERAGE: Exhaustively inspect EVERY requirement bullet point without skipping or omitting explicitly stated skills, tools, architecture practices, or protocols (e.g. if a bullet mentions "application security, session tracking, and JWT authentication protocols", you MUST extract all three distinct concepts).
+3. NO GENERIC PHRASES: Do NOT extract generic descriptive phrases like "full-stack web applications" or "web platforms" as standalone technical skills. Extract the underlying specific technologies (e.g. "MongoDB", "Express", "React", "Node.js", "REST APIs").
+4. TIER GUIDANCE:
+   - Items under sections titled "Requirements", "Must have", "Required", "Qualifications", or general core criteria are REQUIRED (place in "requiredKeywords" and "technologies").
+   - Items under sections titled "Nice to have", "Preferred", "Bonus", "Optional", or "Desired" are PREFERRED (place in "preferredKeywords").
+   - Soft interpersonal skills go into "softSkills".
+5. NO HALLUCINATION: Extract ONLY technologies, tools, and practices that are explicitly stated in the text. Do NOT infer or extrapolate unmentioned skills (e.g. do NOT add "JavaScript", "HTML", "CSS", "Git", or "Docker" unless the text actually mentions them).
+6. Rate keywordImportance from 1 to 5 based on occurrences and priority. Keep aiGeneratedAliases concise (at most 2 standard synonyms per keyword).
+7. Return ONLY the raw JSON object. No markdown code blocks, backticks, or explanatory text before or after.`;
 
   const userMsg = `Job Description Text:\n"${jdText}"`;
 
@@ -304,20 +315,41 @@ export async function analyzeJobDescription(jdText) {
       promptType: 'jd_analysis',
       systemMsg,
       userMsg,
+      maxTokens: 3000,
       stream: false
     });
 
-    // Strip markdown formatting if the model still wrapped it in a ```json codeblock
+    // Extract JSON safely, handling markdown codeblocks or leading/trailing commentary
     let rawJsonText = result.text.trim();
-    if (rawJsonText.startsWith('```')) {
-      rawJsonText = rawJsonText.replace(/^```(json)?/, '').replace(/```$/, '').trim();
+    const jsonBlockMatch = rawJsonText.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+    if (jsonBlockMatch) {
+      rawJsonText = jsonBlockMatch[1].trim();
+    } else {
+      const firstBrace = rawJsonText.indexOf('{');
+      const lastBrace = rawJsonText.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        rawJsonText = rawJsonText.substring(firstBrace, lastBrace + 1).trim();
+      }
     }
 
-    const structuredOutput = JSON.parse(rawJsonText);
+    let structuredOutput;
+    try {
+      structuredOutput = JSON.parse(rawJsonText);
+    } catch (parseErr) {
+      // Attempt repair for common LLM JSON flaws (trailing commas or unescaped control characters)
+      const sanitized = rawJsonText
+        .replace(/,\s*([\]}])/g, '$1')
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
+      structuredOutput = JSON.parse(sanitized);
+    }
+
     return {
       success: true,
       isFallback: false,
-      analysis: structuredOutput,
+      analysis: {
+        ...structuredOutput,
+        rawText: jdText
+      },
       tokensUsed: result.tokensUsed
     };
   } catch (error) {
@@ -325,7 +357,10 @@ export async function analyzeJobDescription(jdText) {
     return {
       success: true,
       isFallback: true,
-      analysis: runHeuristicJdParser(jdText),
+      analysis: {
+        ...runHeuristicJdParser(jdText),
+        rawText: jdText
+      },
       tokensUsed: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
     };
   }

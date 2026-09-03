@@ -79,8 +79,9 @@ const normalizeJdText = (text) => {
  *   v2.2 – C/C++/C# guard, short-token fix, required/preferred separation, structured recs persistence
  *   v2.3 – Invalidate degraded fallback cache, fallback non-caching, enhanced heuristic dictionary
  *   v3.0 – Phase 2B: deterministic evidence-driven scoring; pseudo-semantic score removed
+ *   v3.1 – Phase 2D: deterministic JD requirement grounding & extraction stabilization
  */
-const ATS_ANALYSIS_VERSION = 'v3.0';
+const ATS_ANALYSIS_VERSION = 'v3.1';
 
 const generateJdHash = (text) => {
   return crypto.createHash('md5').update(`${ATS_ANALYSIS_VERSION}:${normalizeJdText(text)}`).digest('hex');
@@ -130,7 +131,8 @@ export const analyzeJdAndScoreResume = async (req, res, next) => {
         certifications: existingJd.analysis?.certifications || [],
         requirements: existingJd.analysis?.requirements || [],
         keywordImportance: restoreMapKeys(existingJd.analysis?.keywordImportance),
-        aiGeneratedAliases: restoreMapKeys(existingJd.analysis?.aiGeneratedAliases)
+        aiGeneratedAliases: restoreMapKeys(existingJd.analysis?.aiGeneratedAliases),
+        rawText: existingJd.rawText || jdText,
       };
       jobDescriptionId = existingJd._id;
       isFallback = false;

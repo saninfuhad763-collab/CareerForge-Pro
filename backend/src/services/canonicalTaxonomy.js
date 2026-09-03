@@ -388,6 +388,12 @@ export function checkTermMatch(term, text) {
     return /\bc(?![+#])\b/i.test(cleanText);
   }
 
+  // Guard 2: 'js' must NOT match inside framework/runtime names ending with .js (e.g. Node.js, Express.js)
+  if (cleanTerm === 'js') {
+    const withoutFrameworks = cleanText.replace(/\b[a-z0-9_]+\.js\b/gi, ' ');
+    return /\bjs\b/i.test(withoutFrameworks);
+  }
+
   // Guard 2: Term is purely alphanumeric with spaces
   const isAlphaNumericOnly = /^[a-z0-9\s]+$/i.test(cleanTerm);
 
@@ -421,6 +427,50 @@ export function checkTermMatch(term, text) {
 }
 
 /**
+ * Generic filler phrases that should never be registered as custom technical skills
+ */
+const GENERIC_FILLER_PHRASES = new Set([
+  'full stack web applications',
+  'full-stack web applications',
+  'full stack web application',
+  'full-stack web application',
+  'full stack web development',
+  'full-stack web development',
+  'web applications',
+  'web application',
+  'web platforms',
+  'next generation web platforms',
+  'next-generation web platforms',
+  'software applications',
+]);
+
+/**
+ * Strips common conversational and qualitative wrapper prefixes/suffixes from
+ * LLM-extracted terms to normalize them before taxonomy lookup.
+ * e.g. "deployment familiarity" -> "deployment"
+ *      "understanding of application security" -> "application security"
+ */
+export function normalizeConversationalWrapper(term) {
+  if (!term || typeof term !== 'string') return '';
+  let cleaned = term.toLowerCase().trim();
+
+  // Strip conversational prefix patterns
+  const prefixRegex = /^(proven\s+)?(professional\s+)?(hands[- ]on\s+)?(strong\s+)?(deep\s+)?(solid\s+)?(understanding\s+of|knowledge\s+of|experience\s+(with|in|utilizing|building|designing)|familiarity\s+with|proficiency\s+in|working\s+knowledge\s+of|ability\s+to|skilled\s+in|expertise\s+in)\s+/i;
+  cleaned = cleaned.replace(prefixRegex, '').trim();
+
+  // Strip conversational suffix patterns
+  const suffixRegex = /\s+(familiarity|experience|knowledge|proficiency|understanding|protocols?|principles?)$/i;
+  if (suffixRegex.test(cleaned)) {
+    const candidate = cleaned.replace(suffixRegex, '').trim();
+    if (candidate.length >= 2) {
+      cleaned = candidate;
+    }
+  }
+
+  return cleaned;
+}
+
+/**
  * Resolves a raw term into a canonical entity.
  * If the term matches the taxonomy, returns the registered entry.
  * If unknown, creates a deterministic custom canonical representation.
@@ -433,19 +483,35 @@ export function canonicalizeTerm(rawTerm) {
   const clean = rawTerm.toLowerCase().trim();
   if (!clean) return null;
 
-  // Direct alias index lookup
+  // 1. Direct alias index lookup
   if (ALIAS_INDEX.has(clean)) {
     return { ...ALIAS_INDEX.get(clean), isCustom: false };
   }
 
-  // Handle common trailing punctuation or suffixes (e.g. "React.js," or "JWT:")
+  // 2. Handle common trailing punctuation or suffixes (e.g. "React.js," or "JWT:")
   const stripped = clean.replace(/^[^\w.#+]+|[^\w.#+]+$/g, '');
   if (ALIAS_INDEX.has(stripped)) {
     return { ...ALIAS_INDEX.get(stripped), isCustom: false };
   }
 
-  // Deterministic custom canonical representation for unlisted terms
-  const cleanId = clean.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  // 3. Conversational wrapper normalization (e.g. "deployment familiarity" -> "deployment")
+  const normalized = normalizeConversationalWrapper(clean);
+  if (normalized && ALIAS_INDEX.has(normalized)) {
+    return { ...ALIAS_INDEX.get(normalized), isCustom: false };
+  }
+
+  const normalizedStripped = normalized ? normalized.replace(/^[^\w.#+]+|[^\w.#+]+$/g, '') : '';
+  if (normalizedStripped && ALIAS_INDEX.has(normalizedStripped)) {
+    return { ...ALIAS_INDEX.get(normalizedStripped), isCustom: false };
+  }
+
+  // 4. Suppress generic non-technical filler phrases from becoming custom requirements
+  if (GENERIC_FILLER_PHRASES.has(clean) || (normalized && GENERIC_FILLER_PHRASES.has(normalized))) {
+    return null;
+  }
+
+  // 5. Deterministic custom canonical representation for unlisted terms
+  const cleanId = (normalized || clean).replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
   const formattedDisplay = rawTerm.trim().replace(/\s+/g, ' ');
 
   return {
@@ -459,9 +525,138 @@ export function canonicalizeTerm(rawTerm) {
 }
 
 /**
- * Normalizes and collects canonical requirements from JD analysis fields
+ * Extracts requirement-bearing text blocks from a Job Description to ensure
+ * deterministic grounding only operates on actual candidate requirements.
  */
-export function collectCanonicalRequirements(jdAnalysis) {
+export function extractRequirementSections(jdText) {
+  if (!jdText || typeof jdText !== 'string') {
+    return { requiredText: '', preferredText: '', allRequirementText: '' };
+  }
+
+  const lines = jdText.split(/\r?\n/);
+  const requiredLines = [];
+  const preferredLines = [];
+  let currentSection = null; // 'required' | 'preferred' | 'other'
+
+  const requiredHeaderRegex = /^\s*(requirements?|qualifications?|what you('?ll)? need|what we('?re)? looking for|must[- ]haves?|required skills?|minimum qualifications?|core responsibilities)\b[:\s-]*$/i;
+  const preferredHeaderRegex = /^\s*(preferred(\s+qualifications?)?|nice[- ]to[- ]haves?|bonus(\s+points?)?|optional|desired(\s+skills?)?)\b[:\s-]*$/i;
+  const otherHeaderRegex = /^\s*(about (us|the company)|who we are|benefits|what we offer|perks|compensation|overview|summary)\b[:\s-]*$/i;
+
+  let foundExplicitHeaders = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    if (requiredHeaderRegex.test(trimmed)) {
+      currentSection = 'required';
+      foundExplicitHeaders = true;
+      continue;
+    } else if (preferredHeaderRegex.test(trimmed)) {
+      currentSection = 'preferred';
+      foundExplicitHeaders = true;
+      continue;
+    } else if (otherHeaderRegex.test(trimmed)) {
+      currentSection = 'other';
+      foundExplicitHeaders = true;
+      continue;
+    }
+
+    if (currentSection === 'required') {
+      requiredLines.push(trimmed);
+    } else if (currentSection === 'preferred') {
+      preferredLines.push(trimmed);
+    }
+  }
+
+  // If no explicit section headers were found, look for bullet points
+  if (!foundExplicitHeaders) {
+    const bulletLines = lines
+      .map(l => l.trim())
+      .filter(l => /^[-*•\d.]\s+/.test(l));
+
+    if (bulletLines.length > 0) {
+      return {
+        requiredText: bulletLines.join('\n'),
+        preferredText: '',
+        allRequirementText: bulletLines.join('\n'),
+      };
+    }
+
+    // Fallback: whole text
+    return {
+      requiredText: jdText,
+      preferredText: '',
+      allRequirementText: jdText,
+    };
+  }
+
+  return {
+    requiredText: requiredLines.join('\n'),
+    preferredText: preferredLines.join('\n'),
+    allRequirementText: [...requiredLines, ...preferredLines].join('\n'),
+  };
+}
+
+/**
+ * Scans requirement-bearing text against CANONICAL_TAXONOMY using boundary-aware term matching.
+ * Guarantees that any canonical concept explicitly present in the JD requirements is included.
+ */
+export function groundTaxonomyRequirements(requirementText, canonicalMap, tier = 'REQUIRED') {
+  if (!requirementText || typeof requirementText !== 'string' || !requirementText.trim()) {
+    return;
+  }
+
+  for (const entry of CANONICAL_TAXONOMY) {
+    let isPresent = false;
+
+    // Check displayName first
+    if (checkTermMatch(entry.displayName, requirementText)) {
+      isPresent = true;
+    }
+
+    // If not matched by displayName, check each alias
+    if (!isPresent && Array.isArray(entry.aliases)) {
+      for (const alias of entry.aliases) {
+        if (checkTermMatch(alias, requirementText)) {
+          isPresent = true;
+          break;
+        }
+      }
+    }
+
+    if (isPresent) {
+      if (canonicalMap.has(entry.canonicalId)) {
+        const existing = canonicalMap.get(entry.canonicalId);
+        // Elevate to REQUIRED if detected in required requirement context
+        if (tier === 'REQUIRED' && existing.tier !== 'REQUIRED') {
+          existing.tier = 'REQUIRED';
+        }
+      } else {
+        canonicalMap.set(entry.canonicalId, {
+          canonicalId: entry.canonicalId,
+          displayName: entry.displayName,
+          category: entry.category,
+          tier: tier,
+          rawTerms: [entry.displayName],
+          aliases: entry.aliases || [entry.displayName.toLowerCase()],
+          partialIndicators: entry.partialIndicators || [],
+          isCustom: false,
+        });
+      }
+    }
+  }
+}
+
+/**
+ * Normalizes and collects canonical requirements from JD analysis fields
+ * with deterministic grounding against requirement-bearing JD text.
+ */
+export function collectCanonicalRequirements(jdAnalysis, rawJdText = null) {
+  if (!jdAnalysis || typeof jdAnalysis !== 'object') {
+    return [];
+  }
+
   const normalizeList = (list) =>
     (list || [])
       .map(k => (typeof k === 'string' ? k.trim() : ''))
@@ -472,6 +667,10 @@ export function collectCanonicalRequirements(jdAnalysis) {
   const soft = normalizeList(jdAnalysis.softSkills);
   const tech = normalizeList(jdAnalysis.technologies);
   const certs = normalizeList(jdAnalysis.certifications);
+
+  // Sets for context-aware membership checks
+  const requiredSet = new Set(required.map(t => t.toLowerCase()));
+  const preferredSet = new Set(preferred.map(t => t.toLowerCase()));
 
   const canonicalMap = new Map();
 
@@ -502,12 +701,39 @@ export function collectCanonicalRequirements(jdAnalysis) {
     }
   }
 
-  // Process in priority order
+  // 1. Process explicit required skills
   required.forEach(t => processTerm(t, 'REQUIRED', 'Technology'));
-  tech.forEach(t => processTerm(t, 'REQUIRED', 'Technology'));
+
+  // 2. Process certifications (default to REQUIRED)
   certs.forEach(t => processTerm(t, 'REQUIRED', 'Certification'));
+
+  // 3. Process technologies without blindly forcing REQUIRED:
+  //    If term is explicitly in preferredKeywords (and NOT in requiredKeywords), tier is PREFERRED.
+  tech.forEach(t => {
+    const lower = t.toLowerCase();
+    const isExplicitlyPreferred = preferredSet.has(lower) && !requiredSet.has(lower);
+    const techTier = isExplicitlyPreferred ? 'PREFERRED' : 'REQUIRED';
+    processTerm(t, techTier, 'Technology');
+  });
+
+  // 4. Process soft skills (default to PREFERRED)
   soft.forEach(t => processTerm(t, 'PREFERRED', 'SoftSkill'));
+
+  // 5. Process preferred skills
   preferred.forEach(t => processTerm(t, 'PREFERRED', 'Technology'));
+
+  // 6. Deterministic JD Grounding Pass
+  // Extract requirement context from raw JD text if available
+  const jdText = rawJdText || jdAnalysis.rawText || '';
+  if (jdText) {
+    const sections = extractRequirementSections(jdText);
+    if (sections.requiredText) {
+      groundTaxonomyRequirements(sections.requiredText, canonicalMap, 'REQUIRED');
+    }
+    if (sections.preferredText) {
+      groundTaxonomyRequirements(sections.preferredText, canonicalMap, 'PREFERRED');
+    }
+  }
 
   return Array.from(canonicalMap.values());
 }
