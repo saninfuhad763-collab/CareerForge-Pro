@@ -249,33 +249,158 @@ const Builder = () => {
 
   const dynamicAtsData = useMemo(() => {
     const meta = currentResume?.atsMetadata;
-    if (!currentResume || !meta?.lastJdHash) {
+    const hasLiveBreakdown = Boolean(_atsBreakdown);
+    const hasPersistedAnalysis = Boolean(meta?.lastJdHash);
+
+    if (!currentResume || (!hasLiveBreakdown && !hasPersistedAnalysis)) {
       return {
+        hasAnalysis: false,
         matchedKeywords: [],
         missingKeywords: [],
         score: 0,
         keywordMatchPercent: 0,
-        density: {},
-        feedback: []
+        requiredCoverage: 0,
+        preferredCoverage: 0,
+        requiredMatched: [],
+        requiredPartial: [],
+        requiredMissing: [],
+        preferredMatched: [],
+        preferredPartial: [],
+        preferredMissing: [],
+        exactMatches: [],
+        aliasMatches: [],
+        partialMatches: [],
+        missingRequirements: [],
+        matchedAliases: {},
+        requirementEvidence: [],
+        structuredRecommendations: [],
+        feedback: [],
+        density: {}
       };
     }
 
-    const uniqueMatched = [...new Set(meta.keywordsFound || [])];
-    const uniqueMissing = [...new Set(meta.keywordsMissing || [])];
+    // Priority 1: Fresh live analysis from _atsBreakdown (all fields from live run, never mixed)
+    if (hasLiveBreakdown) {
+      const breakdown = _atsBreakdown;
+      const uniqueMatched = Array.from(new Set(breakdown.matchedKeywords || []));
+      const uniqueMissing = Array.from(new Set(breakdown.missingKeywords || []));
+      const requiredCoverage = breakdown.requiredCoverage ?? breakdown.keywordMatch ?? 0;
+      const preferredCoverage = breakdown.preferredCoverage ?? 0;
+      const score = breakdown.atsScore ?? breakdown.score ?? 0;
 
-    const totalCount = uniqueMatched.length + uniqueMissing.length;
-    const keywordMatchPercent = totalCount > 0 ? Math.round((uniqueMatched.length / totalCount) * 100) : 0;
+      return {
+        hasAnalysis: true,
+        matchedKeywords: uniqueMatched,
+        missingKeywords: uniqueMissing,
+        keywordMatchPercent: requiredCoverage,
+        requiredCoverage,
+        preferredCoverage,
+        score,
+        requiredMatched: breakdown.requiredMatched || [],
+        requiredPartial: breakdown.requiredPartial || [],
+        requiredMissing: breakdown.requiredMissing || [],
+        preferredMatched: breakdown.preferredMatched || [],
+        preferredPartial: breakdown.preferredPartial || [],
+        preferredMissing: breakdown.preferredMissing || [],
+        exactMatches: breakdown.exactMatches || [],
+        aliasMatches: breakdown.aliasMatches || [],
+        partialMatches: breakdown.partialMatches || [],
+        missingRequirements: breakdown.missingRequirements || [],
+        matchedAliases: breakdown.matchedAliases || {},
+        requirementEvidence: breakdown.requirementEvidence || [],
+        structuredRecommendations: breakdown.structuredRecommendations || [],
+        feedback: breakdown.recommendations || [],
+        density: {}
+      };
+    }
+
+    // Priority 2: Persisted MongoDB analysis from currentResume.atsMetadata (after page refresh)
+    const uniqueMatched = Array.from(new Set(meta?.keywordsFound || []));
+    const uniqueMissing = Array.from(new Set(meta?.keywordsMissing || []));
+    const requirementEvidence = meta?.requirementEvidence || [];
+    const requiredMatched = meta?.requiredMatched || [];
+    const requiredPartial = meta?.requiredPartial || [];
+    const requiredMissing = meta?.requiredMissing || [];
+    const preferredMatched = meta?.preferredMatched || [];
+    const preferredPartial = meta?.preferredPartial || [];
+    const preferredMissing = meta?.preferredMissing || [];
+
+    let requiredCoverage = meta?.requiredCoverage;
+    if (requiredCoverage === undefined) {
+      if (requirementEvidence.length > 0) {
+        const reqEv = requirementEvidence.filter(e => e.tier === 'REQUIRED');
+        if (reqEv.length > 0) {
+          const totalCredit = reqEv.reduce((sum, e) => {
+            if (e.matchType === 'EXACT' || e.matchType === 'ALIAS') return sum + 1.0;
+            if (e.matchType === 'PARTIAL') return sum + 0.5;
+            return sum;
+          }, 0);
+          requiredCoverage = Math.round((totalCredit / reqEv.length) * 100);
+        } else {
+          requiredCoverage = 100;
+        }
+      } else if (requiredMatched.length + requiredPartial.length + requiredMissing.length > 0) {
+        const total = requiredMatched.length + requiredPartial.length + requiredMissing.length;
+        const credit = requiredMatched.length * 1.0 + requiredPartial.length * 0.5;
+        requiredCoverage = Math.round((credit / total) * 100);
+      } else {
+        requiredCoverage = meta?.score ?? 0;
+      }
+    }
+
+    let preferredCoverage = meta?.preferredCoverage;
+    if (preferredCoverage === undefined) {
+      if (requirementEvidence.length > 0) {
+        const prefEv = requirementEvidence.filter(e => e.tier === 'PREFERRED');
+        if (prefEv.length > 0) {
+          const totalCredit = prefEv.reduce((sum, e) => {
+            if (e.matchType === 'EXACT' || e.matchType === 'ALIAS') return sum + 1.0;
+            if (e.matchType === 'PARTIAL') return sum + 0.5;
+            return sum;
+          }, 0);
+          preferredCoverage = Math.round((totalCredit / prefEv.length) * 100);
+        } else {
+          preferredCoverage = 0;
+        }
+      } else if (preferredMatched.length + preferredPartial.length + preferredMissing.length > 0) {
+        const total = preferredMatched.length + preferredPartial.length + preferredMissing.length;
+        const credit = preferredMatched.length * 1.0 + preferredPartial.length * 0.5;
+        preferredCoverage = Math.round((credit / total) * 100);
+      } else {
+        preferredCoverage = 0;
+      }
+    }
+
+    const exactMatches = requirementEvidence.filter(e => e.matchType === 'EXACT').map(e => e.canonicalName);
+    const aliasMatches = requirementEvidence.filter(e => e.matchType === 'ALIAS').map(e => e.canonicalName);
+    const partialMatches = requirementEvidence.filter(e => e.matchType === 'PARTIAL').map(e => e.canonicalName);
+    const missingRequirements = requirementEvidence.filter(e => e.matchType === 'MISSING').map(e => e.canonicalName);
 
     return {
+      hasAnalysis: true,
       matchedKeywords: uniqueMatched,
       missingKeywords: uniqueMissing,
-      keywordMatchPercent,
-      score: meta.score || 0,
-      density: {},
-      feedback: meta.feedback || []
+      keywordMatchPercent: requiredCoverage,
+      requiredCoverage,
+      preferredCoverage,
+      score: meta?.score ?? 0,
+      requiredMatched,
+      requiredPartial,
+      requiredMissing,
+      preferredMatched,
+      preferredPartial,
+      preferredMissing,
+      exactMatches,
+      aliasMatches,
+      partialMatches,
+      missingRequirements,
+      matchedAliases: {},
+      requirementEvidence,
+      structuredRecommendations: meta?.structuredRecommendations || [],
+      feedback: meta?.feedback || [],
+      density: {}
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentResume]);
+  }, [currentResume, _atsBreakdown]);
 
   // Destructure resume sections with fallbacks
   const {
@@ -302,8 +427,16 @@ const Builder = () => {
   const hasOptimization = currentResume?.atsMetadata?.lastJdHash && (optimizedAtsScore > 0);
 
   const safeAtsMetadata = {
-    score: activeAtsScore,
-    feedback: currentResume?.atsMetadata?.feedback || []
+    score: dynamicAtsData.score,
+    feedback: dynamicAtsData.feedback,
+    structuredRecommendations: dynamicAtsData.structuredRecommendations,
+    requirementEvidence: dynamicAtsData.requirementEvidence,
+    requiredMatched: dynamicAtsData.requiredMatched,
+    requiredPartial: dynamicAtsData.requiredPartial,
+    requiredMissing: dynamicAtsData.requiredMissing,
+    preferredMatched: dynamicAtsData.preferredMatched,
+    preferredPartial: dynamicAtsData.preferredPartial,
+    preferredMissing: dynamicAtsData.preferredMissing,
   };
 
   const totalContentCount = useMemo(() => {
@@ -604,6 +737,7 @@ const Builder = () => {
     setIsJdAnalyzing(true);
     setAtsPhase('Analyzing Job Description...');
     setAtsError(null); // Clear any previous error before new attempt
+    setAtsBreakdown(null); // Clear previous analysis state during JD switch
 
     try {
       if (hasUnsavedChanges) {
@@ -683,7 +817,7 @@ const Builder = () => {
       // Success path — clear any residual error state
       setAtsError(null);
       setAtsPhase('Calculating ATS Score...');
-      setAtsBreakdown(data.breakdown);
+      setAtsBreakdown({ ...data.breakdown, atsScore: data.atsScore });
       setAtsPhase('Saving Results...');
       setAnalyzedJdPreset(selectedJdPreset);
       setAnalyzedJdText(jdText);
