@@ -78,8 +78,9 @@ const normalizeJdText = (text) => {
  *   v2.1 – matchKeywordBoundary boundary-aware heuristic parser (aiService.js)
  *   v2.2 – C/C++/C# guard, short-token fix, required/preferred separation, structured recs persistence
  *   v2.3 – Invalidate degraded fallback cache, fallback non-caching, enhanced heuristic dictionary
+ *   v3.0 – Phase 2B: deterministic evidence-driven scoring; pseudo-semantic score removed
  */
-const ATS_ANALYSIS_VERSION = 'v2.3';
+const ATS_ANALYSIS_VERSION = 'v3.0';
 
 const generateJdHash = (text) => {
   return crypto.createHash('md5').update(`${ATS_ANALYSIS_VERSION}:${normalizeJdText(text)}`).digest('hex');
@@ -216,6 +217,9 @@ export const analyzeJdAndScoreResume = async (req, res, next) => {
       requiredMissing: breakdown.requiredMissing || [],
       preferredMatched: breakdown.preferredMatched || [],
       preferredMissing: breakdown.preferredMissing || [],
+      // Phase 2B: partial evidence tracking
+      requiredPartial: breakdown.requiredPartial || [],
+      preferredPartial: breakdown.preferredPartial || [],
       // Phase 2A Hardening: persist section-aware requirement evidence
       requirementEvidence: breakdown.requirementEvidence || [],
     };

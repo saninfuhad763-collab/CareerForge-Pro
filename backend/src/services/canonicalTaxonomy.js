@@ -202,7 +202,8 @@ export const CANONICAL_TAXONOMY = [
     canonicalId: 'devops.cicd',
     displayName: 'CI/CD',
     category: 'DevOps',
-    aliases: ['ci/cd', 'cicd', 'continuous integration', 'continuous delivery', 'ci / cd', 'pipelines'],
+    // 'pipelines' removed – too broad; data/graphics pipelines are unrelated to CI/CD.
+    aliases: ['ci/cd', 'cicd', 'continuous integration', 'continuous delivery', 'ci / cd', 'ci/cd pipelines', 'deployment pipelines'],
   },
   {
     canonicalId: 'cloud.aws',
@@ -265,7 +266,8 @@ export const CANONICAL_TAXONOMY = [
     displayName: 'Session Tracking',
     category: 'Architecture',
     aliases: ['session tracking', 'session management', 'sessions', 'session handling'],
-    partialIndicators: ['cookies', 'session storage', 'token management', 'stateless sessions', 'session data'],
+    // 'cookies' removed – too broad; generic cookie usage doesn't prove server-side session tracking.
+    partialIndicators: ['session storage', 'token management', 'stateless sessions', 'session data'],
   },
   {
     canonicalId: 'concept.system_architecture',
@@ -284,7 +286,7 @@ export const CANONICAL_TAXONOMY = [
       'distributed systems',
       'event-driven',
       'system design',
-      'scalable software solutions',
+      // 'scalable software solutions' removed – generic resume filler, not evidence of architecture work.
       'scalable architecture',
     ],
   },
@@ -305,8 +307,8 @@ export const CANONICAL_TAXONOMY = [
       'queue workers',
       'cron jobs',
       'background tasks',
-      'backend systems',
-      'backend performance',
+      // 'backend systems' removed – too generic, doesn't prove server process impl.
+      // 'backend performance' removed – performance optimization ≠ background server processes.
     ],
   },
   {

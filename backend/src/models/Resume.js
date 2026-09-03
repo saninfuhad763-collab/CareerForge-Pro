@@ -84,8 +84,10 @@ const atsMetadataSchema = new mongoose.Schema({
   feedback: [{ type: String }],
   structuredRecommendations: [{ type: mongoose.Schema.Types.Mixed }],
   requiredMatched: [{ type: String }],
+  requiredPartial: [{ type: String }],
   requiredMissing: [{ type: String }],
   preferredMatched: [{ type: String }],
+  preferredPartial: [{ type: String }],
   preferredMissing: [{ type: String }],
   requirementEvidence: [{ type: mongoose.Schema.Types.Mixed }],
 }, { _id: false });

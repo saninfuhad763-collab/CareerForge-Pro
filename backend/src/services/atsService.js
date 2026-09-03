@@ -1,4 +1,30 @@
-import { getEmbeddingVector } from './aiService.js';
+/**
+ * ATS Scoring Service – Phase 2B: Deterministic Evidence-Driven Scoring
+ *
+ * Scoring Formula (deterministic, reproducible):
+ *   requiredScore  = (requiredEvidencePoints / totalRequired) * 100
+ *   preferredScore = (preferredEvidencePoints / totalPreferred) * 100
+ *   expScore       = 10 if resume has at least one experience entry
+ *
+ *   finalScore = clamp(round(
+ *     requiredScore  * 0.70 +
+ *     preferredScore * 0.20 +
+ *     expScore
+ *   ), 0, 100)
+ *
+ * Evidence point values:
+ *   EXACT   = 1.0 (full credit)
+ *   ALIAS   = 1.0 (full credit – verified canonical synonym)
+ *   PARTIAL = 0.5 (half credit – meaningful but incomplete evidence)
+ *   MISSING = 0.0
+ *
+ * NOTE: getEmbeddingVector() is imported ONLY to support resume.embedding persistence
+ * (an existing feature in aiController.js). It does NOT influence the ATS score.
+ * Phase 2A's pseudo-semantic component has been completely removed from scoring.
+ *
+ * Part of CareerForge Pro ATS Phase 2B Hardening.
+ */
+
 import {
   collectCanonicalRequirements,
   isTechCategory,
@@ -10,44 +36,67 @@ import {
   matchAllRequirements,
 } from './evidenceMatcher.js';
 
-/**
- * Calculates cosine similarity between two unit-normalized vectors
- */
-function cosineSimilarity(vecA, vecB) {
-  if (!vecA || !vecB || vecA.length !== vecB.length) return 0;
-  let dotProduct = 0;
-  for (let i = 0; i < vecA.length; i++) {
-    dotProduct += vecA[i] * vecB[i];
-  }
-  return Math.max(0, Math.min(1, dotProduct)); // Clamp between 0 and 1
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// SCORING CONSTANTS
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Extracts all indexable text fields from a structured Resume object
+ * Evidence credit values.
+ * EXACT and ALIAS receive full credit; PARTIAL receives conservative half credit.
+ * Deliberately chosen to be: explainable, simple, and non-inflationary.
+ */
+const EVIDENCE_CREDIT = {
+  EXACT: 1.0,
+  ALIAS: 1.0,
+  PARTIAL: 0.5,
+  MISSING: 0.0,
+};
+
+/**
+ * Weight breakdown (must sum to 1.0 when expWeight is expressed as a fraction).
+ * Required requirements dominate because missing a required skill is critically penalized.
+ * Preferred requirements carry meaningful but secondary weight.
+ * Experience presence is a structural bonus (max 10 points added to the 90-point base).
+ *
+ *   0.70 × Required Coverage Score (0–100) → max contribution 70 pts
+ *   0.20 × Preferred Coverage Score (0–100) → max contribution 20 pts
+ *   10 pts fixed if resume has ≥1 experience entry
+ */
+const REQUIRED_WEIGHT = 0.70;
+const PREFERRED_WEIGHT = 0.20;
+const EXPERIENCE_BONUS = 10;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TEXT EXTRACTION (unchanged, used by aiController.js for embedding storage)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Extracts all indexable text fields from a structured Resume object.
+ * Used by aiController.js for embedding vector storage (not scoring).
  */
 export function extractResumeText(resume) {
   const parts = [];
-  
+
   if (resume.title) parts.push(resume.title);
   if (resume.summary) parts.push(resume.summary);
-  
+
   if (resume.personalInfo) {
     const p = resume.personalInfo;
     parts.push(p.fullName || '', p.location || '');
   }
-  
+
   if (resume.experience && Array.isArray(resume.experience)) {
     resume.experience.forEach(exp => {
       parts.push(exp.company || '', exp.position || '', exp.description || '');
     });
   }
-  
+
   if (resume.education && Array.isArray(resume.education)) {
     resume.education.forEach(edu => {
       parts.push(edu.school || '', edu.degree || '', edu.fieldOfStudy || '', edu.description || '');
     });
   }
-  
+
   if (resume.skills && Array.isArray(resume.skills)) {
     resume.skills.forEach(s => {
       parts.push(s.name || '');
@@ -56,19 +105,19 @@ export function extractResumeText(resume) {
       }
     });
   }
-  
+
   if (resume.projects && Array.isArray(resume.projects)) {
     resume.projects.forEach(p => {
       parts.push(p.title || '', p.role || '', p.description || '');
     });
   }
-  
+
   if (resume.certifications && Array.isArray(resume.certifications)) {
     resume.certifications.forEach(c => {
       parts.push(c.name || '', c.issuer || '');
     });
   }
-  
+
   if (resume.languages && Array.isArray(resume.languages)) {
     resume.languages.forEach(l => {
       parts.push(l.language || '', l.proficiency || '');
@@ -85,238 +134,264 @@ export function extractResumeText(resume) {
       }
     });
   }
-  
+
   return parts.join(' ').replace(/\s+/g, ' ').trim();
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// EVIDENCE CREDIT CALCULATION
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
- * Central ATS scoring engine
- * Phase 2A: Powered by Canonical Requirements and Section-Aware Evidence Matching.
- * Preserves the exact score formula while replacing noisy string duplicates.
+ * Returns the fractional credit value for a single matched requirement.
+ * EXACT/ALIAS = 1.0; PARTIAL = 0.5; MISSING = 0.0.
+ */
+function getEvidenceCredit(matchResult) {
+  return EVIDENCE_CREDIT[matchResult.matchType] ?? 0.0;
+}
+
+/**
+ * Computes a coverage score (0–100) for a subset of evidence results.
+ * If the subset is empty, returns 100 (no requirements = full score, graceful).
+ */
+function computeCoverageScore(evidenceSubset) {
+  if (evidenceSubset.length === 0) return 100;
+  const totalCredit = evidenceSubset.reduce((sum, e) => sum + getEvidenceCredit(e), 0);
+  return Math.round((totalCredit / evidenceSubset.length) * 100);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EVIDENCE-DRIVEN STRATEGIC ADVICE
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Generates a single structured recommendation grounded only in verified evidence.
+ * - MISSING: explains what is absent and recommends genuine experience addition.
+ * - PARTIAL: explains what related evidence was found and what specific gap remains.
+ * - ALIAS: encourages adopting the exact canonical term for ATS parser compatibility.
+ * Does NOT tell candidates to fabricate experience they don't have.
+ */
+function buildEvidenceRecommendation(req) {
+  const { canonicalName, tier, category, matchType, matchedTerm, evidenceSnippet } = req;
+  const isRequired = tier === 'REQUIRED';
+  const isTech = isTechCategory(category);
+  const targetSection = isRequired && isTech ? 'Skills or Experience' : isRequired ? 'Professional Summary' : 'Skills';
+  const priority = isRequired ? (matchType === 'PARTIAL' ? 'High' : 'Critical') : 'Medium';
+  const impact = isRequired ? 'High' : 'Medium';
+
+  let message;
+  let type;
+
+  if (matchType === 'PARTIAL') {
+    // Explain what was found and what specific gap remains
+    const foundNote = evidenceSnippet
+      ? `Resume demonstrates: "${evidenceSnippet.substring(0, 100)}".`
+      : `Partial evidence of ${canonicalName} was found.`;
+    message = `${foundNote} However, broader ${canonicalName} practices are not explicitly demonstrated. If you have hands-on ${canonicalName} experience, expand the relevant ${targetSection} section with concrete implementation details.`;
+    type = 'Strengthen Existing Evidence';
+  } else if (matchType === 'ALIAS') {
+    // Candidate already qualifies – just suggest exact terminology
+    message = `Your resume references a related concept to '${canonicalName}' (via '${matchedTerm}'). Using the exact ATS term '${canonicalName}' in your ${targetSection} maximises parser recognition without misrepresenting your experience.`;
+    type = 'Terminology Alignment';
+  } else {
+    // MISSING – explain that no verified evidence exists; only recommend if candidate genuinely has it
+    message = `No verified evidence of '${canonicalName}' was found in your resume. If you have genuine experience with ${canonicalName}, consider demonstrating it in your ${targetSection}.`;
+    type = 'Missing Requirement';
+  }
+
+  return {
+    type,
+    priority,
+    targetSection,
+    message,
+    impact,
+    confidence: 'High',
+    canonicalName,
+    canonicalId: req.canonicalId,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN SCORING ENGINE
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Central ATS scoring engine – Phase 2B.
+ *
+ * Deterministic formula (same inputs always produce same score):
+ *   finalScore = clamp(round(
+ *     requiredCoverage * 0.70 +
+ *     preferredCoverage * 0.20 +
+ *     experienceBonus (10 if experience section present)
+ *   ), 0, 100)
+ *
+ * Evidence hierarchy (single authoritative path):
+ *   Canonical JD requirements
+ *   → collectCanonicalRequirements()   (dedup + tier assignment)
+ *   → buildStructuredResumeSections()  (section-aware resume breakdown)
+ *   → matchAllRequirements()           (EXACT / ALIAS / PARTIAL / MISSING)
+ *   → getEvidenceCredit()              (1.0 / 1.0 / 0.5 / 0.0)
+ *   → computeCoverageScore()           (per-tier aggregate)
+ *   → final score
+ *
+ * No pseudo-semantic vectors influence this score.
+ * No hash-cosine similarity is used.
+ * The old getEmbeddingVector() is NOT called in this function.
  */
 export function calculateAtsScore(resume, jdAnalysis) {
-  const resumeText = extractResumeText(resume);
-
-  // 1. Canonical Requirement Collection & Deduplication
+  // ── 1. Canonical Requirement Collection & Deduplication ─────────────────
   const canonicalRequirements = collectCanonicalRequirements(jdAnalysis);
 
   if (canonicalRequirements.length === 0) {
-    return {
-      atsScore: 70, // Baseline score if no requirements are provided
-      breakdown: {
-        keywordMatch: 70,
-        semanticMatch: 70,
-        missingKeywords: [],
-        recommendations: ['Provide a detailed Job Description to obtain highly tailored ATS suggestions.'],
-        structuredRecommendations: [],
-        matchedKeywords: [],
-        matchedAliases: {},
-        totalKeywordsEvaluated: 0,
-        requiredMatched: [],
-        requiredMissing: [],
-        preferredMatched: [],
-        preferredMissing: [],
-        requirementEvidence: [],
-        pointAttributions: {
-          keywordMatch: { rawScore: 70, weightMultiplier: 0.4, finalContribution: 28 },
-          semanticMatch: { rawScore: 70, weightMultiplier: 0.3, finalContribution: 21 },
-          skillAlignment: { rawScore: 70, weightMultiplier: 0.2, finalContribution: 14 },
-          experience: { rawScore: 70, weightMultiplier: 0.1, finalContribution: 7 },
-        },
-        categoryBreakdown: {
-          keywordMatch: 40,
-          semanticMatch: 30,
-          skillAlignment: 20,
-          experience: 10,
-        },
-      },
-    };
+    // No requirements provided – return a neutral 70 baseline with explanatory advice
+    return buildEmptyJdResult();
   }
 
-  // 2. Build Structured Resume Representation (Section-Aware)
+  // ── 2. Section-Aware Resume Representation ───────────────────────────────
   const structuredSections = buildStructuredResumeSections(resume);
 
-  // 3. Section-Aware Evidence Matching
+  // ── 3. Authoritative Evidence Matching ───────────────────────────────────
+  // This is the SINGLE source of truth for all matching decisions.
   const requirementEvidence = matchAllRequirements(canonicalRequirements, structuredSections);
 
-  const foundRequirements = requirementEvidence.filter(
-    e => e.matched && (e.matchType === 'EXACT' || e.matchType === 'ALIAS')
-  );
-  const aliasRequirements = requirementEvidence.filter(
-    e => e.matched && e.matchType === 'ALIAS'
-  );
-  const missingRequirements = requirementEvidence.filter(
-    e => !e.matched || e.matchType === 'MISSING'
+  // ── 4. Partition by Tier ─────────────────────────────────────────────────
+  const requiredEvidence = requirementEvidence.filter(e => e.tier === 'REQUIRED');
+  const preferredEvidence = requirementEvidence.filter(e => e.tier === 'PREFERRED');
+
+  // ── 5. Per-Tier Coverage Scores ───────────────────────────────────────────
+  // Each tier is scored independently as 0–100 based on evidence credit.
+  const requiredCoverage = computeCoverageScore(requiredEvidence);   // 0–100
+  const preferredCoverage = computeCoverageScore(preferredEvidence); // 0–100
+
+  // ── 6. Experience Presence Bonus ─────────────────────────────────────────
+  const hasExperience = Array.isArray(resume.experience) && resume.experience.length > 0;
+  const experienceBonus = hasExperience ? EXPERIENCE_BONUS : 0;
+
+  // ── 7. Deterministic Final Score ─────────────────────────────────────────
+  const rawScore =
+    requiredCoverage  * REQUIRED_WEIGHT +
+    preferredCoverage * PREFERRED_WEIGHT +
+    experienceBonus;
+
+  const finalScore = Math.max(0, Math.min(100, Math.round(rawScore)));
+
+  // ── 8. Build Detailed Breakdowns ─────────────────────────────────────────
+
+  // Match-type partitions for all evidence
+  const exactEvidence   = requirementEvidence.filter(e => e.matchType === 'EXACT');
+  const aliasEvidence   = requirementEvidence.filter(e => e.matchType === 'ALIAS');
+  const partialEvidence = requirementEvidence.filter(e => e.matchType === 'PARTIAL');
+  const missingEvidence = requirementEvidence.filter(e => e.matchType === 'MISSING');
+
+  // Legacy field compatibility: matched = EXACT + ALIAS (full credit)
+  const foundEvidence   = requirementEvidence.filter(e =>
+    e.matchType === 'EXACT' || e.matchType === 'ALIAS'
   );
 
-  const allKeywords = canonicalRequirements.map(r => r.displayName);
-  const foundKeywords = foundRequirements.map(r => r.canonicalName);
-  const missingKeywords = missingRequirements.map(r => r.canonicalName);
-  const aliasMatchedKeywords = aliasRequirements.map(r => r.canonicalName);
+  const foundKeywords   = foundEvidence.map(e => e.canonicalName);
+  const missingKeywords = missingEvidence.map(e => e.canonicalName);
+  const partialKeywords = partialEvidence.map(e => e.canonicalName);
 
   const matchedAliases = {};
-  aliasRequirements.forEach(ar => {
-    if (ar.matchedTerm) {
-      matchedAliases[ar.canonicalName] = ar.matchedTerm;
+  aliasEvidence.forEach(ae => {
+    if (ae.matchedTerm) {
+      matchedAliases[ae.canonicalName] = ae.matchedTerm;
     }
   });
 
-  const requiredMatched = foundRequirements
-    .filter(e => e.tier === 'REQUIRED')
+  const requiredMatched = requiredEvidence
+    .filter(e => e.matchType === 'EXACT' || e.matchType === 'ALIAS')
     .map(e => e.canonicalName);
-  const requiredMissing = missingRequirements
-    .filter(e => e.tier === 'REQUIRED')
+  const requiredPartial = requiredEvidence
+    .filter(e => e.matchType === 'PARTIAL')
     .map(e => e.canonicalName);
-  const preferredMatched = foundRequirements
-    .filter(e => e.tier === 'PREFERRED')
-    .map(e => e.canonicalName);
-  const preferredMissing = missingRequirements
-    .filter(e => e.tier === 'PREFERRED')
+  const requiredMissing = requiredEvidence
+    .filter(e => e.matchType === 'MISSING')
     .map(e => e.canonicalName);
 
-  const keywordMatchPercent = Math.round(
-    (foundKeywords.length / allKeywords.length) * 100
-  );
+  const preferredMatched = preferredEvidence
+    .filter(e => e.matchType === 'EXACT' || e.matchType === 'ALIAS')
+    .map(e => e.canonicalName);
+  const preferredPartial = preferredEvidence
+    .filter(e => e.matchType === 'PARTIAL')
+    .map(e => e.canonicalName);
+  const preferredMissing = preferredEvidence
+    .filter(e => e.matchType === 'MISSING')
+    .map(e => e.canonicalName);
 
-  // 4. Semantic Similarity Score (preserved as in Phase 1)
-  const normalizeList = list =>
-    (list || [])
-      .map(k => (typeof k === 'string' ? k.trim() : ''))
-      .filter(k => k.length > 0);
-  const required = normalizeList(jdAnalysis.requiredKeywords);
-  const tech = normalizeList(jdAnalysis.technologies);
-  const soft = normalizeList(jdAnalysis.softSkills);
+  // ── 9. Canonical Technology Alignment (legacy field: skillAlignment) ──────
+  // Measures how many required technical requirements are covered (EXACT or ALIAS only).
+  // Retained for backward compatibility but does not influence final score.
+  const reqTech = requiredEvidence.filter(e => isTechCategory(e.category));
+  const skillAlignment = reqTech.length > 0
+    ? Math.round(
+        reqTech.filter(e => e.matchType === 'EXACT' || e.matchType === 'ALIAS').length
+        / reqTech.length * 100
+      )
+    : requiredCoverage;
 
-  const resumeVector = getEmbeddingVector(resumeText);
-  const jdTextCompiled = `${jdAnalysis.jobTitle || 'Role'} at ${
-    jdAnalysis.company || 'Company'
-  }. Required: ${required.join(', ')}. Tech: ${tech.join(', ')}. Soft skills: ${soft.join(', ')}`;
-  const jdVector = getEmbeddingVector(jdTextCompiled);
-  const semanticMatchPercent = Math.round(cosineSimilarity(resumeVector, jdVector) * 100);
-
-  // 5. Alignment Checks (canonical technology alignment)
-  let skillAlignment = 0;
-  const reqTech = canonicalRequirements.filter(
-    r => isTechCategory(r.category) && r.tier === 'REQUIRED'
-  );
-  if (reqTech.length > 0) {
-    const foundTech = foundRequirements.filter(
-      e => isTechCategory(e.category) && e.tier === 'REQUIRED'
-    );
-    skillAlignment = Math.round((foundTech.length / reqTech.length) * 100);
-  } else {
-    skillAlignment = keywordMatchPercent;
-  }
-
-  const hasExperience = resume.experience && resume.experience.length > 0;
-  const experienceContribution = hasExperience ? 10 : 0;
-
-  // Controlled normalization strategy
-  let normalizedSemantic = semanticMatchPercent;
-  if (keywordMatchPercent === 100 && skillAlignment === 100 && hasExperience) {
-    normalizedSemantic = 100;
-  } else {
-    normalizedSemantic = Math.round(
-      semanticMatchPercent * 0.3 + keywordMatchPercent * 0.7
-    );
-  }
-
-  // 6. Recommendations compiling
-  const recommendations = [];
+  // ── 10. Evidence-Driven Advice ─────────────────────────────────────────
   const structuredRecommendations = [];
+  const recommendations = [];
 
+  // Score breakdown explanation (plain text, appears first)
   recommendations.push(
-    `ATS Score Breakdown: Keyword Match: ${keywordMatchPercent}% (Weight: 40%), Skill Alignment: ${skillAlignment}% (Weight: 20%), Semantic Match: ${normalizedSemantic}% (Weight: 30%), Experience Presence: ${experienceContribution} pts (Weight: 10%).`
+    `ATS Score Breakdown (Phase 2B – Deterministic): ` +
+    `Required Coverage: ${requiredCoverage}% × 70% = ${Math.round(requiredCoverage * REQUIRED_WEIGHT)} pts; ` +
+    `Preferred Coverage: ${preferredCoverage}% × 20% = ${Math.round(preferredCoverage * PREFERRED_WEIGHT)} pts; ` +
+    `Experience Bonus: ${experienceBonus} pts. ` +
+    `Final: ${finalScore}/100.`
   );
 
-  const positiveContribs = [];
-  const negativeContribs = [];
+  // Advice for MISSING required requirements (highest priority)
+  missingEvidence
+    .filter(e => e.tier === 'REQUIRED')
+    .forEach(req => structuredRecommendations.push(buildEvidenceRecommendation(req)));
 
-  if (keywordMatchPercent >= 80) positiveContribs.push('Keyword Match');
-  else negativeContribs.push(`Keyword Match (-${Math.round((100 - keywordMatchPercent) * 0.4)} pts)`);
+  // Advice for PARTIAL requirements (show what was found + what gap remains)
+  partialEvidence.forEach(req =>
+    structuredRecommendations.push(buildEvidenceRecommendation(req))
+  );
 
-  if (skillAlignment >= 80) positiveContribs.push('Skill Alignment');
-  else negativeContribs.push(`Skill Alignment (-${Math.round((100 - skillAlignment) * 0.2)} pts)`);
+  // Advice for ALIAS matches (terminology alignment – low urgency)
+  aliasEvidence.forEach(req =>
+    structuredRecommendations.push(buildEvidenceRecommendation(req))
+  );
 
-  if (normalizedSemantic >= 80) positiveContribs.push('Semantic Match');
-  else negativeContribs.push(`Semantic Match (-${Math.round((100 - normalizedSemantic) * 0.3)} pts)`);
-
-  if (hasExperience) positiveContribs.push('Experience Presence');
-  else negativeContribs.push('Experience Presence (-10 pts)');
-
-  if (positiveContribs.length > 0) {
-    recommendations.push(`Positive Drivers: Strong alignment in ${positiveContribs.join(', ')}.`);
-  }
-  if (negativeContribs.length > 0) {
-    recommendations.push(`Improvement Drivers: Score reduced by ${negativeContribs.join(', ')}.`);
-  }
+  // Advice for MISSING preferred requirements (lower priority)
+  missingEvidence
+    .filter(e => e.tier === 'PREFERRED')
+    .forEach(req => structuredRecommendations.push(buildEvidenceRecommendation(req)));
 
   if (missingKeywords.length > 0) {
     recommendations.push(
-      `Action Plan (Keywords): Integrate target terms [${missingKeywords
-        .slice(0, 4)
-        .join(', ')}] in your skills or experience fields.`
+      `Missing Requirements: ${missingKeywords.slice(0, 4).join(', ')}. ` +
+      `Add genuine experience with these technologies to your resume if applicable.`
     );
   }
 
-  missingRequirements.forEach(req => {
-    const isRequired = req.tier === 'REQUIRED';
-    const isTech = isTechCategory(req.category);
-    let priority = 'Medium';
-    let targetSection = 'General';
-    let impact = 'Low';
-
-    if (isRequired && isTech) {
-      priority = 'Critical';
-      targetSection = 'Skills or Experience';
-      impact = 'High';
-    } else if (isRequired) {
-      priority = 'High';
-      targetSection = 'Professional Summary';
-      impact = 'High';
-    } else if (isTech) {
-      priority = 'Medium';
-      targetSection = 'Skills or Experience';
-      impact = 'Medium';
-    }
-
-    structuredRecommendations.push({
-      type: 'Missing Keyword',
-      priority,
-      targetSection,
-      message: getRecommendationMessage(req.canonicalName, targetSection, req.category, false),
-      impact,
-      confidence: 'High',
-    });
-  });
-
-  aliasRequirements.forEach(req => {
-    let targetSection = isTechCategory(req.category) ? 'Skills or Experience' : 'Professional Summary';
-    structuredRecommendations.push({
-      type: 'Strengthen Existing Phrase',
-      priority: 'Medium',
-      targetSection,
-      message: getRecommendationMessage(req.canonicalName, targetSection, null, true),
-      impact: 'Medium',
-      confidence: 'High',
-    });
-  });
-
-  if (normalizedSemantic < 80) {
+  if (partialKeywords.length > 0) {
     recommendations.push(
-      'Action Plan (Semantic): Incorporate professional metrics and active industry terminology to lift contextual density.'
+      `Partially evidenced: ${partialKeywords.join(', ')}. ` +
+      `Expand with explicit implementation details to earn full credit.`
+    );
+  }
+
+  if (!hasExperience) {
+    recommendations.push(
+      'Action Plan (Experience): Add professional experience entries to satisfy resume structure parsing requirements.'
     );
     structuredRecommendations.push({
       type: 'Formatting Advice',
-      priority: 'Low',
+      priority: 'High',
       targetSection: 'Experience',
-      message: 'Incorporate professional metrics and active industry terminology to lift contextual density.',
-      impact: 'Medium',
+      message: 'Add professional experience entries to satisfy resume structure parsing requirements.',
+      impact: 'High',
       confidence: 'High',
     });
   }
 
-  if (!resume.summary || resume.summary.length < 50) {
+  if (!resume.summary || String(resume.summary).length < 50) {
     recommendations.push(
       'Action Plan (Summary): Craft a strong Professional Summary containing target role keywords.'
     );
@@ -330,85 +405,149 @@ export function calculateAtsScore(resume, jdAnalysis) {
     });
   }
 
-  if (!hasExperience) {
-    recommendations.push(
-      'Action Plan (Experience): Add professional experience entries to satisfy resume structure parsing requirements.'
-    );
-    structuredRecommendations.push({
-      type: 'Formatting Advice',
-      priority: 'Low',
-      targetSection: 'Experience',
-      message: 'Add professional experience entries to satisfy resume structure parsing requirements.',
-      impact: 'High',
-      confidence: 'High',
-    });
-  }
-
-  // Final Weighted ATS Score formulation (Preserved from Phase 1)
-  const finalScore = Math.max(
-    0,
-    Math.min(
-      100,
-      Math.round(
-        keywordMatchPercent * 0.4 +
-          normalizedSemantic * 0.3 +
-          skillAlignment * 0.2 +
-          experienceContribution
-      )
-    )
-  );
-
+  // ── 11. Return Full Result Object ─────────────────────────────────────────
   return {
     atsScore: finalScore,
     breakdown: {
-      keywordMatch: keywordMatchPercent,
-      semanticMatch: normalizedSemantic,
-      rawSemanticMatch: semanticMatchPercent,
-      skillAlignment: skillAlignment,
-      experienceContribution: experienceContribution,
-      missingKeywords,
-      recommendations,
-      structuredRecommendations,
+      // Phase 2B deterministic coverage scores
+      requiredCoverage,
+      preferredCoverage,
+      experienceBonus,
+
+      // Evidence categorisation
+      exactMatches: exactEvidence.map(e => e.canonicalName),
+      aliasMatches: aliasEvidence.map(e => e.canonicalName),
+      partialMatches: partialKeywords,
+      missingRequirements: missingKeywords,
+
+      // Legacy fields (backward compat – consumed by frontend and aiController)
+      keywordMatch: requiredCoverage,      // legacy: was keyword match percent
+      semanticMatch: requiredCoverage,     // legacy: was semantic; now aliases to requiredCoverage
+      skillAlignment,
+      experienceContribution: experienceBonus,
       matchedKeywords: foundKeywords,
+      missingKeywords,
       matchedAliases,
-      totalKeywordsEvaluated: allKeywords.length,
+      totalKeywordsEvaluated: canonicalRequirements.length,
+
+      // Tier-separated match lists (used by frontend ATS panel and controller)
       requiredMatched,
+      requiredPartial,
       requiredMissing,
       preferredMatched,
+      preferredPartial,
       preferredMissing,
+
+      // Full evidence payload (consumed by ATSReportModal and persisted to DB)
       requirementEvidence,
+
+      // Advice
+      recommendations,
+      structuredRecommendations,
+
+      // Score attribution (transparent explainability for Phase 2B)
       pointAttributions: {
-        keywordMatch: {
-          rawScore: keywordMatchPercent,
-          weightMultiplier: 0.4,
-          finalContribution: keywordMatchPercent * 0.4,
+        requiredCoverage: {
+          rawScore: requiredCoverage,
+          weightMultiplier: REQUIRED_WEIGHT,
+          finalContribution: Math.round(requiredCoverage * REQUIRED_WEIGHT),
         },
-        semanticMatch: {
-          rawScore: normalizedSemantic,
-          weightMultiplier: 0.3,
-          finalContribution: normalizedSemantic * 0.3,
-        },
-        skillAlignment: {
-          rawScore: skillAlignment,
-          weightMultiplier: 0.2,
-          finalContribution: skillAlignment * 0.2,
+        preferredCoverage: {
+          rawScore: preferredCoverage,
+          weightMultiplier: PREFERRED_WEIGHT,
+          finalContribution: Math.round(preferredCoverage * PREFERRED_WEIGHT),
         },
         experience: {
           rawScore: hasExperience ? 100 : 0,
-          weightMultiplier: 0.1,
-          finalContribution: experienceContribution,
+          weightMultiplier: EXPERIENCE_BONUS / 100,
+          finalContribution: experienceBonus,
+        },
+        // Legacy keys retained to avoid breaking any downstream consumers
+        semanticMatch: {
+          rawScore: 0,
+          weightMultiplier: 0,
+          finalContribution: 0,
+          note: 'Phase 2B: pseudo-semantic scoring removed. This field is zero.',
+        },
+        skillAlignment: {
+          rawScore: skillAlignment,
+          weightMultiplier: 0,
+          finalContribution: 0,
+          note: 'Phase 2B: skillAlignment is reported for transparency but does not contribute to final score.',
         },
       },
       categoryBreakdown: {
-        keywordMatch: 40,
-        semanticMatch: 30,
-        skillAlignment: 20,
-        experience: 10,
+        requiredCoverage: Math.round(REQUIRED_WEIGHT * 100),  // 70
+        preferredCoverage: Math.round(PREFERRED_WEIGHT * 100), // 20
+        experience: EXPERIENCE_BONUS,                          // 10
+        // Legacy labels for any UI code reading these
+        keywordMatch: Math.round(REQUIRED_WEIGHT * 100),
+        semanticMatch: 0,
+        skillAlignment: 0,
       },
     },
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// EMPTY JD FALLBACK
+// ─────────────────────────────────────────────────────────────────────────────
+
+function buildEmptyJdResult() {
+  return {
+    atsScore: 70,
+    breakdown: {
+      requiredCoverage: 70,
+      preferredCoverage: 70,
+      experienceBonus: 0,
+      exactMatches: [],
+      aliasMatches: [],
+      partialMatches: [],
+      missingRequirements: [],
+      keywordMatch: 70,
+      semanticMatch: 70,
+      skillAlignment: 70,
+      experienceContribution: 0,
+      missingKeywords: [],
+      recommendations: ['Provide a detailed Job Description to obtain highly tailored ATS suggestions.'],
+      structuredRecommendations: [],
+      matchedKeywords: [],
+      matchedAliases: {},
+      totalKeywordsEvaluated: 0,
+      requiredMatched: [],
+      requiredPartial: [],
+      requiredMissing: [],
+      preferredMatched: [],
+      preferredPartial: [],
+      preferredMissing: [],
+      requirementEvidence: [],
+      pointAttributions: {
+        requiredCoverage:  { rawScore: 70, weightMultiplier: 0.70, finalContribution: 49 },
+        preferredCoverage: { rawScore: 70, weightMultiplier: 0.20, finalContribution: 14 },
+        experience:        { rawScore: 0,  weightMultiplier: 0.10, finalContribution: 0 },
+        semanticMatch:     { rawScore: 0,  weightMultiplier: 0,    finalContribution: 0 },
+        skillAlignment:    { rawScore: 70, weightMultiplier: 0,    finalContribution: 0 },
+      },
+      categoryBreakdown: {
+        requiredCoverage: 70,
+        preferredCoverage: 20,
+        experience: 10,
+        keywordMatch: 70,
+        semanticMatch: 0,
+        skillAlignment: 0,
+      },
+    },
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RECOMMENDATION MESSAGE LIBRARY
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Generates a category-specific recommendation message for a missing requirement.
+ * Does NOT fabricate experience – all messages qualify with "if applicable" intent.
+ */
 export const getRecommendationMessage = (
   keyword,
   targetSection,
@@ -444,31 +583,34 @@ export const getRecommendationMessage = (
     case 'Teamwork':
       return `Showcase your '${keyword}' capability inside your ${targetSection} by mentioning your role within collaborative deliveries.`;
     default:
-      return `The keyword "${keyword}" is missing from your resume. Add it to your ${targetSection}.`;
+      return `The keyword "${keyword}" is missing from your resume. Add it to your ${targetSection} if you have genuine experience with it.`;
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// BACKWARD COMPATIBILITY EXPORTS
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
- * Direct single-term matcher for backward compatibility
+ * Direct single-term matcher – backward compat for any external callers.
  */
 export const checkSingleTermMatch = (term, text) => {
   return checkTermMatch(term, text);
 };
 
 /**
- * Keyword match evaluator with taxonomy awareness
+ * Keyword match evaluator with taxonomy alias awareness.
+ * Used by legacy test scripts; also exported for external consumers.
  */
 export const evaluateKeywordMatch = (keyword, text, aiGeneratedAliases = {}) => {
   if (!keyword || !text) return { matched: false };
   const cleanKw = keyword.toLowerCase().trim();
   if (!cleanKw) return { matched: false };
 
-  // Check exact term match
   if (checkTermMatch(cleanKw, text)) {
     return { matched: true, matchType: 'EXACT' };
   }
 
-  // Check taxonomy aliases
   const canon = canonicalizeTerm(cleanKw);
   if (canon && Array.isArray(canon.aliases)) {
     for (const alias of canon.aliases) {
@@ -478,7 +620,6 @@ export const evaluateKeywordMatch = (keyword, text, aiGeneratedAliases = {}) => 
     }
   }
 
-  // Dynamic AI aliases if provided
   let dynamicAliases = aiGeneratedAliases[cleanKw] || aiGeneratedAliases[keyword];
   if (Array.isArray(dynamicAliases)) {
     for (const dyn of dynamicAliases) {
@@ -494,7 +635,7 @@ export const evaluateKeywordMatch = (keyword, text, aiGeneratedAliases = {}) => 
 };
 
 /**
- * Public predicate exported for backwards compatibility
+ * Public boolean predicate – backward compat.
  */
 export const isKeywordMatched = (keyword, text, aiGeneratedAliases = {}) => {
   return evaluateKeywordMatch(keyword, text, aiGeneratedAliases).matched;
