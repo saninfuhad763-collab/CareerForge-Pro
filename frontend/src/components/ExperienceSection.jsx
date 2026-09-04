@@ -43,7 +43,7 @@ const ExperienceSection = ({
                   
                   <h6 className="text-xs font-bold text-indigo-600 dark:text-indigo-400">Position #{idx + 1}</h6>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <label className="text-[9px] font-bold text-slate-400">Company</label>
                       <input
@@ -66,7 +66,7 @@ const ExperienceSection = ({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                     <div className="space-y-1">
                       <label className="text-[9px] font-bold text-slate-400">Location</label>
                       <input

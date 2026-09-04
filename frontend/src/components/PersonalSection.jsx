@@ -29,7 +29,7 @@ const PersonalSection = ({
             className="overflow-hidden border-t border-slate-100 dark:border-slate-800/80"
           >
             <div className="p-5 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Full Name</label>
                   <input
@@ -52,7 +52,7 @@ const PersonalSection = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email</label>
                   <input
@@ -90,7 +90,7 @@ const PersonalSection = ({
 
               <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800/80">
                 <h5 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Links & Portfolios</h5>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-1">
                     <label className="text-[9px] font-bold text-slate-400">Website</label>
                     <input

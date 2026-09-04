@@ -1401,8 +1401,8 @@ const Builder = () => {
       className="min-h-screen md:h-screen md:overflow-hidden bg-slate-50 dark:bg-slate-950 flex flex-col"
     >
       {/* Top action header banner */}
-      <header id="builder-header-banner" className="sticky top-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200/50 dark:border-slate-800/50 px-6 py-4 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-4">
+      <header id="builder-header-banner" className="sticky top-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200/50 dark:border-slate-800/50 px-4 md:px-6 py-3 md:py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 shadow-sm">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
           <Link
             to="/dashboard"
             onClick={async (e) => {
@@ -1415,17 +1415,17 @@ const Builder = () => {
               }
               await saveResumeImmediately();
             }}
-            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="text-left">
+          <div className="text-left min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <input
                 type="text"
                 value={title}
                 onChange={(e) => updateResumeLocal({ title: e.target.value })}
-                className="bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-700 focus:border-indigo-500 font-bold font-display text-slate-800 dark:text-slate-100 text-lg focus:outline-none px-1 py-0.5 rounded transition-all"
+                className="bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-700 focus:border-indigo-500 font-bold font-display text-slate-800 dark:text-slate-100 text-base sm:text-lg focus:outline-none px-1 py-0.5 rounded transition-all w-full max-w-[220px] sm:max-w-xs md:max-w-sm truncate"
               />
             </div>
             <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
@@ -1438,11 +1438,11 @@ const Builder = () => {
         </div>
 
         {/* Header Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
           {!isOptimizeMode && (
             <button
               onClick={() => setSearchParams(prev => { prev.set('mode', 'optimize'); return prev; })}
-              className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-500/20 hover:shadow-indigo-500/35 hover:-translate-y-0.5 cursor-pointer active:scale-95"
+              className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-500/20 hover:shadow-indigo-500/35 hover:-translate-y-0.5 cursor-pointer active:scale-95 shrink-0"
             >
               <span>ATS Optimize</span>
             </button>
@@ -1453,37 +1453,37 @@ const Builder = () => {
               resetUploadModal();
               setIsUploadModalOpen(true);
             }}
-            className="inline-flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow cursor-pointer active:scale-95 hover:-translate-y-0.5"
+            className="inline-flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow cursor-pointer active:scale-95 hover:-translate-y-0.5 shrink-0"
           >
             <Upload className="w-3.5 h-3.5 text-indigo-500" />
-            <span>Upload Existing Resume</span>
+            <span>Upload <span className="hidden sm:inline">Existing </span>Resume</span>
           </button>
 
           {/* Auto Save Toggle Switch */}
-          <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 select-none">
-            <span className="text-slate-500 dark:text-slate-400">Auto Save:</span>
-            <span className={autoSaveEnabled ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}>
+          <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 select-none shrink-0">
+            <span className="text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs">Auto Save:</span>
+            <span className={`text-[11px] sm:text-xs ${autoSaveEnabled ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}>
               {autoSaveEnabled ? 'ON' : 'OFF'}
             </span>
             <button
               onClick={handleToggleAutoSave}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+              className={`relative inline-flex h-4.5 sm:h-5 w-8 sm:w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                 autoSaveEnabled ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
               }`}
             >
               <span
-                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
-                  autoSaveEnabled ? 'translate-x-4' : 'translate-x-0'
+                className={`pointer-events-none inline-block h-3.5 sm:h-4 w-3.5 sm:w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                  autoSaveEnabled ? 'translate-x-3.5 sm:translate-x-4' : 'translate-x-0'
                 }`}
               />
             </button>
           </div>
 
           {/* Professional Custom Theme Dropdown */}
-          <div className="relative">
+          <div className="relative shrink-0">
             <button
               onClick={() => setThemeDropdownOpen(!themeDropdownOpen)}
-              className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm hover:shadow active:scale-95 cursor-pointer"
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm hover:shadow active:scale-95 cursor-pointer"
             >
               <Palette className="w-3.5 h-3.5 text-indigo-500" />
               <span>Theme: <strong className="text-indigo-600 dark:text-indigo-400 capitalize">{activeTheme === 'minimalist' ? 'Minimal' : activeTheme}</strong></span>
@@ -1572,7 +1572,7 @@ const Builder = () => {
             <button
               onClick={handleForceSave}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 bg-slate-900 dark:bg-slate-100 hover:bg-slate-800 dark:hover:bg-white text-white dark:text-slate-900 px-3.5 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center gap-1.5 bg-slate-900 dark:bg-slate-100 hover:bg-slate-800 dark:hover:bg-white text-white dark:text-slate-900 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shrink-0"
             >
               <Save className="w-3.5 h-3.5" />
               <span>Save Now</span>
@@ -1590,7 +1590,7 @@ const Builder = () => {
               }
             }}
             disabled={isExportingPdf}
-            className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-500/20 hover:shadow-indigo-500/35 hover:-translate-y-0.5 cursor-pointer active:scale-95"
+            className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-500/20 hover:shadow-indigo-500/35 hover:-translate-y-0.5 cursor-pointer active:scale-95 shrink-0"
           >
             <Download className="w-3.5 h-3.5" />
             <span>{isExportingPdf ? 'Generating PDF...' : isExportSuccess ? 'Exported' : 'Export PDF'}</span>

@@ -70,17 +70,17 @@ const Contact = () => {
             </span>
           </Link>
           {user ? (
-            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 text-right md:text-left">
-              <Link to="/dashboard?tab=settings" className="flex items-center justify-end md:justify-start gap-1.5 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+            <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm font-semibold text-slate-500">
+              <Link to="/dashboard?tab=settings" className="flex items-center gap-1 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> <span><span className="hidden sm:inline">Back to </span>Dashboard</span>
               </Link>
-              <Link to="/" className="flex items-center justify-end md:justify-start gap-1.5 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                <Home className="w-4 h-4" /> Home
+              <Link to="/" className="flex items-center gap-1 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                <Home className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> <span>Home</span>
               </Link>
             </div>
           ) : (
-            <Link to="/" className="flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-              <ArrowLeft className="w-4 h-4" /> Back to Home
+            <Link to="/" className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+              <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> <span>Back to Home</span>
             </Link>
           )}
         </div>

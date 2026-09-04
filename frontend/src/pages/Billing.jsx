@@ -480,57 +480,61 @@ const Billing = () => {
               </div>
 
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
-                {/* Table Header */}
-                <div className="grid grid-cols-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
-                  <div className="px-6 py-4 text-left">
-                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Feature</span>
-                  </div>
-                  <div className="px-4 py-4 text-center">
-                    <div className="inline-flex flex-col items-center gap-1">
-                      <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Free</span>
-                      <span className="text-[10px] text-slate-400 font-semibold">$0/mo</span>
-                    </div>
-                  </div>
-                  <div className="px-4 py-4 text-center">
-                    <div className="inline-flex flex-col items-center gap-1">
-                      <span className="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
-                        <Crown className="w-3 h-3 text-amber-500" /> Pro
-                      </span>
-                      <span className="text-[10px] text-indigo-500 dark:text-indigo-400 font-semibold">$9/mo</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Table Rows */}
-                <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {comparisonRows.map((row, idx) => (
-                    <div
-                      key={row.label}
-                      className={`grid grid-cols-3 items-center hover:bg-slate-50/70 dark:hover:bg-slate-950/40 transition-colors duration-300 ${
-                        idx % 2 === 0 ? '' : 'bg-slate-50/40 dark:bg-slate-950/20'
-                      }`}
-                    >
-                      <div className="px-6 py-4 text-left">
-                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{row.label}</span>
+                <div className="overflow-x-auto">
+                  <div className="min-w-[480px]">
+                    {/* Table Header */}
+                    <div className="grid grid-cols-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
+                      <div className="px-4 sm:px-6 py-3 sm:py-4 text-left">
+                        <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Feature</span>
                       </div>
-
-                      <div className="px-4 py-4">
-                        {typeof row.free === 'string' ? (
-                          <p className="text-center text-xs font-bold text-slate-600 dark:text-slate-400">{row.free}</p>
-                        ) : (
-                          <FeatureCell available={row.freeAvail} />
-                        )}
+                      <div className="px-3 sm:px-4 py-3 sm:py-4 text-center">
+                        <div className="inline-flex flex-col items-center gap-1">
+                          <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Free</span>
+                          <span className="text-[10px] text-slate-400 font-semibold">$0/mo</span>
+                        </div>
                       </div>
-
-                      <div className="px-4 py-4">
-                        {typeof row.pro === 'string' ? (
-                          <p className="text-center text-xs font-bold text-indigo-600 dark:text-indigo-400">{row.pro}</p>
-                        ) : (
-                          <FeatureCell available={row.proAvail} />
-                        )}
+                      <div className="px-3 sm:px-4 py-3 sm:py-4 text-center">
+                        <div className="inline-flex flex-col items-center gap-1">
+                          <span className="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                            <Crown className="w-3 h-3 text-amber-500" /> Pro
+                          </span>
+                          <span className="text-[10px] text-indigo-500 dark:text-indigo-400 font-semibold">$9/mo</span>
+                        </div>
                       </div>
                     </div>
-                  ))}
+
+                    {/* Table Rows */}
+                    <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {comparisonRows.map((row, idx) => (
+                        <div
+                          key={row.label}
+                          className={`grid grid-cols-3 items-center hover:bg-slate-50/70 dark:hover:bg-slate-950/40 transition-colors duration-300 ${
+                            idx % 2 === 0 ? '' : 'bg-slate-50/40 dark:bg-slate-950/20'
+                          }`}
+                        >
+                          <div className="px-4 sm:px-6 py-3 sm:py-4 text-left">
+                            <span className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">{row.label}</span>
+                          </div>
+
+                          <div className="px-3 sm:px-4 py-3 sm:py-4">
+                            {typeof row.free === 'string' ? (
+                              <p className="text-center text-xs font-bold text-slate-600 dark:text-slate-400">{row.free}</p>
+                            ) : (
+                              <FeatureCell available={row.freeAvail} />
+                            )}
+                          </div>
+
+                          <div className="px-3 sm:px-4 py-3 sm:py-4">
+                            {typeof row.pro === 'string' ? (
+                              <p className="text-center text-xs font-bold text-indigo-600 dark:text-indigo-400">{row.pro}</p>
+                            ) : (
+                              <FeatureCell available={row.proAvail} />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
                 {!isPro && (

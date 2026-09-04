@@ -122,11 +122,11 @@ const MagicOptimizerModal = ({
               </div>
 
               {/* Actions row */}
-              <div className="flex items-center justify-between pt-2">
+              <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
                 <div className="text-[10px] font-medium text-slate-400">
                   Remaining credits: <span className="font-bold text-slate-600 dark:text-slate-300">{planStats.aiLimit === Infinity ? 'Unlimited' : `${planStats.aiLimit - planStats.aiRewriteCount} free credits left`}</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
                   {isOptimizing ? (
                     <button
                       type="button"
@@ -139,7 +139,7 @@ const MagicOptimizerModal = ({
                     <button
                       type="button"
                       onClick={startStreamOptimization}
-                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+                      className="px-3 sm:px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>Generate Optimizations</span>
@@ -149,7 +149,7 @@ const MagicOptimizerModal = ({
                     type="button"
                     disabled={!optimizedText || isOptimizing}
                     onClick={applySuggestion}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-500/20 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+                    className="px-3 sm:px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-500/20 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
                   >
                     <Check className="w-3.5 h-3.5" />
                     <span>Apply Changes</span>
