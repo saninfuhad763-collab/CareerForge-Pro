@@ -15,6 +15,16 @@ import {
 } from 'lucide-react';
 import DeleteModal from './DeleteModal';
 
+/**
+ * Cleanly truncates snippet at nearest previous word boundary within maxLen
+ */
+const truncateSnippet = (text, maxLen = 160) => {
+  if (!text || typeof text !== 'string') return '';
+  if (text.length <= maxLen) return text;
+  const lastSpace = text.lastIndexOf(' ', maxLen);
+  return (lastSpace > 0 ? text.substring(0, lastSpace) : text.substring(0, maxLen)) + '...';
+};
+
 const ATSReportModal = ({
   isOpen,
   onClose,
@@ -24,6 +34,7 @@ const ATSReportModal = ({
   modalKeywordSearch,
   setModalKeywordSearch,
   openMagicOptimizer,
+  isAtsStale = false,
 }) => {
   const [alertModalOpen, setAlertModalOpen] = useState(false);
   const [alertModalContent, setAlertModalContent] = useState('');
@@ -166,8 +177,10 @@ const ATSReportModal = ({
                     </div>
                     <p className="text-[9px] text-slate-400 font-semibold mt-2">
                       {report.hasEvidence
-                        ? `${report.matchedEvidence.length} of ${report.evidence.length} requirements verified`
-                        : `${report.matchedKeywords.length} of ${report.matchedKeywords.length + report.missingKeywords.length} keywords verified`}
+                        ? report.partialEvidence.length > 0
+                          ? `${report.matchedEvidence.length} verified · ${report.partialEvidence.length} partial of ${report.evidence.length} requirements`
+                          : `${report.matchedEvidence.length} verified of ${report.evidence.length} requirements`
+                        : `${report.matchedKeywords.length} verified of ${report.matchedKeywords.length + report.missingKeywords.length} requirements`}
                     </p>
                   </div>
                 </div>
@@ -206,6 +219,29 @@ const ATSReportModal = ({
                 </div>
               </div>
 
+              {/* Stale Analysis Warning if JD was modified */}
+              {isAtsStale && (
+                <div className="flex items-center gap-2.5 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/50 rounded-xl text-amber-800 dark:text-amber-300 text-xs">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <span className="font-medium">
+                    Job description modified — click <strong className="font-bold">"Run ATS Matcher"</strong> to update this analysis.
+                  </span>
+                </div>
+              )}
+
+              {/* Score Metric Explanation Banner (Fix 8) */}
+              <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-800/80 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 text-xs">
+                <div className="flex items-start gap-2">
+                  <Info className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
+                  <p className="text-[10px] text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                    <strong className="text-slate-800 dark:text-slate-100 font-bold">Requirement Match</strong> measures core requirement coverage. <strong className="text-slate-800 dark:text-slate-100 font-bold">ATS Readiness Score</strong> adds weighted preferred requirements and verified experience evidence.
+                  </p>
+                </div>
+                <span className="text-[9px] font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/50 dark:border-indigo-800/60 px-2 py-1 rounded-lg shrink-0" title="Deterministic Formula: 70% Core Requirements + 20% Preferred + 10-point Experience">
+                  70% Core Requirements · 20% Preferred · 10-point Experience
+                </span>
+              </div>
+
               {/* Requirement Compliance Breakdown */}
               <div className="space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
@@ -229,6 +265,7 @@ const ATSReportModal = ({
                     <input
                       type="text"
                       placeholder="Filter requirements..."
+                      aria-label="Filter requirements"
                       value={modalKeywordSearch}
                       onChange={(e) => setModalKeywordSearch(e.target.value)}
                       className="pl-8 pr-2.5 py-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-[10px] focus:outline-none focus:border-indigo-500 w-full text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500"
@@ -240,9 +277,13 @@ const ATSReportModal = ({
                 {report.hasEvidence ? (
                   <div className="space-y-3">
                     {/* Status Filter Tabs */}
-                    <div className="flex items-center gap-1.5 flex-wrap border-b border-slate-100 dark:border-slate-800/80 pb-2">
+                    <div role="tablist" aria-label="Requirement filter tabs" className="flex items-center gap-1.5 flex-wrap border-b border-slate-100 dark:border-slate-800/80 pb-2">
                       <button
                         type="button"
+                        role="tab"
+                        id="tab-all"
+                        aria-selected={activeTab === 'all'}
+                        aria-controls="requirements-evidence-list"
                         onClick={() => setActiveTab('all')}
                         className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
                           activeTab === 'all'
@@ -254,6 +295,10 @@ const ATSReportModal = ({
                       </button>
                       <button
                         type="button"
+                        role="tab"
+                        id="tab-matched"
+                        aria-selected={activeTab === 'matched'}
+                        aria-controls="requirements-evidence-list"
                         onClick={() => setActiveTab('matched')}
                         className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
                           activeTab === 'matched'
@@ -266,6 +311,10 @@ const ATSReportModal = ({
                       </button>
                       <button
                         type="button"
+                        role="tab"
+                        id="tab-partial"
+                        aria-selected={activeTab === 'partial'}
+                        aria-controls="requirements-evidence-list"
                         onClick={() => setActiveTab('partial')}
                         className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
                           activeTab === 'partial'
@@ -278,6 +327,10 @@ const ATSReportModal = ({
                       </button>
                       <button
                         type="button"
+                        role="tab"
+                        id="tab-missing"
+                        aria-selected={activeTab === 'missing'}
+                        aria-controls="requirements-evidence-list"
                         onClick={() => setActiveTab('missing')}
                         className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
                           activeTab === 'missing'
@@ -291,7 +344,7 @@ const ATSReportModal = ({
                     </div>
 
                     {/* Requirements Evidence Cards List */}
-                    <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                    <div id="requirements-evidence-list" role="tabpanel" aria-labelledby={`tab-${activeTab}`} className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
                       {filteredEvidence.map((item, idx) => {
                         const isExact = item.matchType === 'EXACT';
                         const isAlias = item.matchType === 'ALIAS';
@@ -374,25 +427,30 @@ const ATSReportModal = ({
                             {isExact && item.evidenceSnippet && (
                               <div className="mt-2 text-[10.5px] text-slate-600 dark:text-slate-300 bg-white/70 dark:bg-slate-900/60 p-2 rounded-lg border border-slate-200/40 dark:border-slate-800/50 leading-relaxed font-mono">
                                 <span className="text-emerald-500 font-bold mr-1">"</span>
-                                {item.evidenceSnippet.length > 160 ? `${item.evidenceSnippet.substring(0, 160)}...` : item.evidenceSnippet}
+                                {truncateSnippet(item.evidenceSnippet, 160)}
                                 <span className="text-emerald-500 font-bold ml-1">"</span>
                               </div>
                             )}
 
                             {isAlias && (
                               <div className="mt-2 space-y-1.5">
-                                {item.matchedTerm && (
-                                  <div className="text-[10px] text-sky-800 dark:text-sky-300 font-medium">
-                                    Verified terminology in resume:{' '}
-                                    <span className="font-bold font-mono bg-sky-100/70 dark:bg-sky-900/50 px-1.5 py-0.5 rounded border border-sky-200/50 dark:border-sky-800/60">
-                                      "{item.matchedTerm}"
-                                    </span>
-                                  </div>
-                                )}
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {item.matchedTerm && (
+                                    <div className="text-[10px] text-sky-800 dark:text-sky-300 font-medium">
+                                      Verified terminology in resume:{' '}
+                                      <span className="font-bold font-mono bg-sky-100/70 dark:bg-sky-900/50 px-1.5 py-0.5 rounded border border-sky-200/50 dark:border-sky-800/60">
+                                        "{item.matchedTerm}"
+                                      </span>
+                                    </div>
+                                  )}
+                                  <span className="text-[8.5px] font-bold text-sky-700 dark:text-sky-300 bg-sky-100/70 dark:bg-sky-950/60 px-1.5 py-0.5 rounded border border-sky-200/50 dark:border-sky-800/60">
+                                    Credited (100%) · Optional Terminology Alignment
+                                  </span>
+                                </div>
                                 {item.evidenceSnippet && (
                                   <div className="text-[10.5px] text-slate-600 dark:text-slate-300 bg-white/70 dark:bg-slate-900/60 p-2 rounded-lg border border-slate-200/40 dark:border-slate-800/50 leading-relaxed font-mono">
                                     <span className="text-sky-500 font-bold mr-1">"</span>
-                                    {item.evidenceSnippet.length > 160 ? `${item.evidenceSnippet.substring(0, 160)}...` : item.evidenceSnippet}
+                                    {truncateSnippet(item.evidenceSnippet, 160)}
                                     <span className="text-sky-500 font-bold ml-1">"</span>
                                   </div>
                                 )}
@@ -407,7 +465,7 @@ const ATSReportModal = ({
                                       Evidence Found:
                                     </span>
                                     <span className="font-mono">
-                                      "{item.evidenceSnippet.length > 160 ? `${item.evidenceSnippet.substring(0, 160)}...` : item.evidenceSnippet}"
+                                      "{truncateSnippet(item.evidenceSnippet, 160)}"
                                     </span>
                                   </div>
                                 )}
@@ -571,6 +629,12 @@ const ATSReportModal = ({
                                 {item.type || 'Missing Requirement'}
                               </span>
 
+                              {isTerminology && (
+                                <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/50">
+                                  Credited (100%) · Optional
+                                </span>
+                              )}
+
                               {item.priority && (
                                 <span className="text-[8.5px] font-semibold text-slate-400">
                                   Priority: {item.priority}
@@ -585,7 +649,12 @@ const ATSReportModal = ({
                             </div>
 
                             <span className="text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
-                              {item.message}
+                              {isTerminology
+                                ? (() => {
+                                    const aliasTerm = item.matchedTerm || item.message?.match(/via '([^']+)'/)?.[1] || 'an equivalent term';
+                                    return `${item.canonicalName || 'This requirement'} is already credited through the equivalent term '${aliasTerm}'. Using the exact phrase is optional and may improve compatibility with simpler ATS parsers.`;
+                                  })()
+                                : item.message}
                             </span>
                           </div>
                         </div>
@@ -613,7 +682,7 @@ const ATSReportModal = ({
             {/* Footer */}
             <div className="px-6 py-4 bg-slate-50 dark:bg-slate-950/60 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs shrink-0">
               <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-                CareerForge Pro ATS v3
+                CareerForge Pro ATS
               </span>
               <button
                 type="button"

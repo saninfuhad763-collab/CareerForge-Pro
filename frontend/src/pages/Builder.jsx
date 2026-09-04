@@ -425,6 +425,13 @@ const Builder = () => {
   const optimizedAtsScore = currentResume?.atsMetadata?.optimizedScore || 0;
   const scoreImprovement = currentResume?.atsMetadata?.scoreImprovement || 0;
   const hasOptimization = currentResume?.atsMetadata?.lastJdHash && (optimizedAtsScore > 0);
+  const hasActiveAnalysis = Boolean(_atsBreakdown || currentResume?.atsMetadata?.lastJdHash);
+  const isAtsStale = Boolean(
+    hasActiveAnalysis && (
+      (analyzedJdText && jdText.trim() !== analyzedJdText.trim()) ||
+      (!analyzedJdText && jdText.trim().length > 0 && currentResume?.atsMetadata?.lastJdHash)
+    )
+  );
 
   const safeAtsMetadata = {
     score: dynamicAtsData.score,
@@ -1721,11 +1728,21 @@ const Builder = () => {
                   No Job Description Analyzed
                 </h5>
                 <p className="text-[10px] text-slate-400 dark:text-slate-500 max-w-xs mx-auto leading-relaxed">
-                  Enter a target Job Description above and click "Run ATS Matcher" to perform semantic AI matching.
+                  Enter a target Job Description above and click "Run ATS Matcher" to perform evidence-based ATS verification.
                 </p>
               </div>
             ) : (
               <>
+                {/* Stale Analysis Warning Banner (Fix 14) */}
+                {isAtsStale && (
+                  <div className="flex items-center gap-2 p-2.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/50 rounded-xl text-amber-800 dark:text-amber-300 text-[10.5px] leading-snug">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <span className="font-medium">
+                      Job description modified — click <strong className="font-bold">"Run ATS Matcher"</strong> to update this analysis.
+                    </span>
+                  </div>
+                )}
+
                 <div className="flex items-center gap-5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
                   {/* Circular ATS score progress with click overlay & confetti sparkles */}
                   <div 
@@ -1816,11 +1833,13 @@ const Builder = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Analysis Status</span>
                     <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full leading-none ${
-                      hasOptimization
+                      isAtsStale
+                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                        : hasOptimization
                         ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20'
                         : 'bg-slate-100 dark:bg-slate-800/85 text-slate-500 dark:text-slate-400'
                     }`}>
-                      {hasOptimization ? '✦ Optimized' : 'Initial Analysis'}
+                      {isAtsStale ? '⚠ Modified (Stale)' : hasOptimization ? '✓ Optimized' : 'Initial Analysis'}
                     </span>
                   </div>
 
@@ -1852,7 +1871,7 @@ const Builder = () => {
                     </div>
                   ) : (
                     <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800/60">
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400">Current ATS Match</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400">ATS Readiness Score</span>
                       <span className={`text-sm font-extrabold ${
                         activeAtsScore >= 80 ? 'text-emerald-500' : activeAtsScore >= 60 ? 'text-amber-500' : 'text-red-500'
                       }`}>{activeAtsScore}%</span>
@@ -1863,7 +1882,7 @@ const Builder = () => {
                 {/* Resume Strength Dashboard with Readiness Indicator */}
                 <div className="bg-slate-50/70 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/80 rounded-xl p-3 space-y-2">
                   <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    <span>ATS Readiness Index</span>
+                    <span>ATS Readiness Score</span>
                     <span className={`${
                       animatedScore >= 80 ? 'text-emerald-500' : animatedScore >= 60 ? 'text-amber-500' : 'text-red-500'
                     } font-extrabold`}>
@@ -1878,20 +1897,42 @@ const Builder = () => {
                       style={{ width: `${animatedScore}%` }}
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-center text-[9px] pt-1">
-                    <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-1.5 rounded-lg">
-                      <div className="font-bold text-slate-400 uppercase tracking-widest text-[7.5px]">Matched</div>
-                      <div className="text-xs font-extrabold text-emerald-500 mt-0.5">
-                        {dynamicAtsData.matchedKeywords.length} keywords
+                  {/* Canonical Requirement Counts: Matched, Partial, Missing (Fix 4 & Fix 9) */}
+                  {(() => {
+                    const hasEvidence = Boolean(dynamicAtsData.requirementEvidence && dynamicAtsData.requirementEvidence.length > 0);
+                    const matchedCount = hasEvidence
+                      ? dynamicAtsData.requirementEvidence.filter(e => e.matchType === 'EXACT' || e.matchType === 'ALIAS').length
+                      : dynamicAtsData.matchedKeywords.length;
+                    const partialCount = hasEvidence
+                      ? dynamicAtsData.requirementEvidence.filter(e => e.matchType === 'PARTIAL').length
+                      : (dynamicAtsData.partialMatches?.length || 0);
+                    const missingCount = hasEvidence
+                      ? dynamicAtsData.requirementEvidence.filter(e => e.matchType === 'MISSING').length
+                      : dynamicAtsData.missingKeywords.length;
+
+                    return (
+                      <div className="grid grid-cols-3 gap-1.5 text-center text-[9px] pt-1">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-1.5 rounded-lg">
+                          <div className="font-bold text-slate-400 uppercase tracking-widest text-[7px]">Matched</div>
+                          <div className="text-xs font-extrabold text-emerald-500 mt-0.5">
+                            {matchedCount}
+                          </div>
+                        </div>
+                        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-1.5 rounded-lg">
+                          <div className="font-bold text-slate-400 uppercase tracking-widest text-[7px]">Partial</div>
+                          <div className="text-xs font-extrabold text-amber-500 mt-0.5">
+                            {partialCount}
+                          </div>
+                        </div>
+                        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-1.5 rounded-lg">
+                          <div className="font-bold text-slate-400 uppercase tracking-widest text-[7px]">Missing</div>
+                          <div className="text-xs font-extrabold text-rose-400 mt-0.5">
+                            {missingCount}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-1.5 rounded-lg">
-                      <div className="font-bold text-slate-400 uppercase tracking-widest text-[7.5px]">Gaps</div>
-                      <div className="text-xs font-extrabold text-red-400 mt-0.5">
-                        {dynamicAtsData.missingKeywords.length} keywords
-                      </div>
-                    </div>
-                  </div>
+                    );
+                  })()}
                 </div>
 
                 <button
@@ -1902,35 +1943,50 @@ const Builder = () => {
                   View Detailed ATS Report
                 </button>
 
-                {/* Keyword gaps list (Searchable, fully responsive) */}
+                {/* Requirement Alignment (Fix 5 & Fix 6) */}
                 <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-800/80">
                   <div className="flex items-center justify-between">
-                    <h6 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ATS Keyword Visualizer</h6>
+                    <h6 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Requirement Alignment</h6>
                     <input
                       type="text"
-                      placeholder="Filter keywords..."
+                      placeholder="Filter requirements..."
+                      aria-label="Filter requirements"
                       value={keywordSearch}
                       onChange={(e) => setKeywordSearch(e.target.value)}
-                      className="px-2 py-0.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-[9px] focus:outline-none focus:border-indigo-500 w-24 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                      className="px-2 py-0.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-[9px] focus:outline-none focus:border-indigo-500 w-28 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                     />
                   </div>
                   <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
                     {(() => {
-                      const allKw = [
-                        ...dynamicAtsData.matchedKeywords.map(k => ({ name: k, matched: true })),
-                        ...dynamicAtsData.missingKeywords.map(k => ({ name: k, matched: false }))
-                      ];
-                      const filtered = allKw.filter(k => k.name.toLowerCase().includes(keywordSearch.toLowerCase()));
+                      let allReqs = [];
+                      if (dynamicAtsData.requirementEvidence && dynamicAtsData.requirementEvidence.length > 0) {
+                        allReqs = dynamicAtsData.requirementEvidence.map(e => ({
+                          name: e.canonicalName,
+                          status: (e.matchType === 'EXACT' || e.matchType === 'ALIAS')
+                            ? 'matched'
+                            : e.matchType === 'PARTIAL'
+                            ? 'partial'
+                            : 'missing',
+                        }));
+                      } else {
+                        const partialSet = new Set(dynamicAtsData.partialMatches || []);
+                        allReqs = [
+                          ...dynamicAtsData.matchedKeywords.map(k => ({ name: k, status: 'matched' })),
+                          ...(dynamicAtsData.partialMatches || []).map(k => ({ name: k, status: 'partial' })),
+                          ...dynamicAtsData.missingKeywords.filter(k => !partialSet.has(k)).map(k => ({ name: k, status: 'missing' })),
+                        ];
+                      }
+                      const filtered = allReqs.filter(k => k.name.toLowerCase().includes(keywordSearch.toLowerCase()));
                       
                       if (filtered.length === 0) {
-                        return <span className="text-[9px] text-slate-400">No matching keywords found.</span>;
+                        return <span className="text-[9px] text-slate-400">No matching requirements found.</span>;
                       }
 
-                      return filtered.map((kw) => (
+                      return filtered.map((item) => (
                         <span
-                          key={kw.name}
+                          key={item.name}
                           onClick={() => {
-                            if (!kw.matched) {
+                            if (item.status === 'missing' || item.status === 'partial') {
                               openMagicOptimizer('bullet', '', (newVal) => {
                                 setAlertModalTitle('Suggestion Ready');
                                 setAlertModalContent(`Suggested optimized sentence to inject:\n\n${newVal}`);
@@ -1939,14 +1995,31 @@ const Builder = () => {
                             }
                           }}
                           className={`px-2 py-0.5 rounded-lg text-[9px] font-bold border flex items-center gap-1 transition-colors ${
-                            kw.matched 
-                              ? 'bg-emerald-50/60 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30' 
-                              : 'bg-amber-50/60 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-900/30 cursor-pointer hover:border-indigo-500'
+                            item.status === 'matched'
+                              ? 'bg-emerald-50/60 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30'
+                              : item.status === 'partial'
+                              ? 'bg-amber-50/60 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border-amber-200/50 dark:border-amber-900/40 cursor-pointer hover:border-amber-500'
+                              : 'bg-rose-50/60 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 border-rose-200/50 dark:border-rose-900/40 cursor-pointer hover:border-indigo-500'
                           }`}
-                          title={kw.matched ? "Successfully matched!" : "Click to optimize and inject using AI"}
+                          title={
+                            item.status === 'matched'
+                              ? 'Requirement verified'
+                              : item.status === 'partial'
+                              ? 'Partial evidence — click to optimize'
+                              : 'No verified evidence — click to optimize'
+                          }
                         >
-                          <span className={`w-1.5 h-1.5 rounded-full ${kw.matched ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
-                          {kw.name}
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            item.status === 'matched'
+                              ? 'bg-emerald-500'
+                              : item.status === 'partial'
+                              ? 'bg-amber-500'
+                              : 'bg-rose-500 animate-pulse'
+                          }`} />
+                          {item.name}
+                          {item.status === 'partial' && (
+                            <span className="text-[7.5px] uppercase font-extrabold tracking-wider ml-0.5 opacity-80">(Partial)</span>
+                          )}
                         </span>
                       ));
                     })()}
@@ -2901,6 +2974,7 @@ const Builder = () => {
         modalKeywordSearch={modalKeywordSearch}
         setModalKeywordSearch={setModalKeywordSearch}
         openMagicOptimizer={openMagicOptimizer}
+        isAtsStale={isAtsStale}
       />
 
       <DeleteModal
