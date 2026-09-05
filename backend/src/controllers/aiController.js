@@ -252,7 +252,7 @@ export const analyzeJdAndScoreResume = async (req, res, next) => {
  */
 export const streamResumeRewrite = async (req, res, next) => {
   try {
-    const { resumeId, promptType, originalText, contextKeyword = '' } = req.query;
+    const { resumeId, promptType, originalText, contextKeyword = '', verifiedContext = null } = req.query;
 
     if (!resumeId || !promptType || !originalText) {
       return res.status(400).json({ success: false, message: 'Missing required query parameters: resumeId, promptType, originalText.' });
@@ -286,8 +286,32 @@ export const streamResumeRewrite = async (req, res, next) => {
         .filter(Boolean)
       : contextKeyword;
 
-    // Compile Prompt Templates
-    const userMsg = selectedPrompt.template(originalText, normalizedContextKeyword);
+    // Parse verified candidate context if provided
+    let parsedVerifiedContext = {};
+    if (verifiedContext) {
+      try {
+        const raw = typeof verifiedContext === 'string' ? JSON.parse(verifiedContext) : verifiedContext;
+        if (raw && typeof raw === 'object') {
+          parsedVerifiedContext = {
+            title: typeof raw.title === 'string' ? raw.title.slice(0, 100) : '',
+            skills: Array.isArray(raw.skills) ? raw.skills.slice(0, 25).map(s => String(s).slice(0, 50)) : [],
+            experience: Array.isArray(raw.experience)
+              ? raw.experience.slice(0, 5).map(e => ({
+                  company: typeof e?.company === 'string' ? e.company.slice(0, 100) : '',
+                  position: typeof e?.position === 'string' ? e.position.slice(0, 100) : ''
+                }))
+              : []
+          };
+        }
+      } catch (_e) {
+        // Fall back to empty verified context
+      }
+    }
+
+    // Compile Prompt Templates with verified candidate context
+    const userMsg = promptType === 'summary_rewrite'
+      ? selectedPrompt.template(originalText, normalizedContextKeyword, parsedVerifiedContext)
+      : selectedPrompt.template(originalText, normalizedContextKeyword);
     const systemMsg = selectedPrompt.system;
 
     // Stream the output
@@ -303,7 +327,14 @@ export const streamResumeRewrite = async (req, res, next) => {
 
     clearInterval(heartbeat);
 
-    // Persist the History Log
+    // If fallback was triggered and returned an error or empty text, do not persist a false successful log or bill credits
+    if (aiResult.isFallback || !aiResult.text) {
+      res.write(`data: ${JSON.stringify({ complete: true, isFallback: true, text: '' })}\n\n`);
+      res.end();
+      return;
+    }
+
+    // Persist the History Log for successful AI rewrite
     const newLog = await HistoryLog.create({
       userId: req.user._id,
       resumeId,
@@ -316,7 +347,7 @@ export const streamResumeRewrite = async (req, res, next) => {
       status: 'pending',
     });
 
-    // Increment User's AI usage count
+    // Increment User's AI usage count only on genuine AI generation
     await User.findByIdAndUpdate(req.user._id, { $inc: { aiRewriteCount: 1 } });
 
     // Send final log meta and terminate stream

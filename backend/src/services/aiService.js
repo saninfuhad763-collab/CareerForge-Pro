@@ -42,20 +42,36 @@ export const PROMPT_LIBRARY = {
     `
   },
   summary_rewrite: {
-    version: '1.0.0',
-    system: 'You are a professional executive resume writer.',
-    template: (input, keywords = []) => {
+    version: '1.1.0',
+    system: 'You are a professional executive resume writer and career consultant. Your top priority is strict factual accuracy: you must ONLY use verified facts provided in the candidate context. Never fabricate or extrapolate information.',
+    template: (input, keywords = [], verifiedContext = {}) => {
       const safeKeywords = Array.isArray(keywords) ? keywords : [];
+      const title = verifiedContext.title || '';
+      const skills = Array.isArray(verifiedContext.skills) ? verifiedContext.skills.join(', ') : '';
+      const experiences = Array.isArray(verifiedContext.experience)
+        ? verifiedContext.experience.map(e => `${e.position || ''} at ${e.company || ''}`).filter(Boolean).join('; ')
+        : '';
+
       return `
-      Task: Rewrite the following professional summary to elevate its tone, flow, and align it to industry best practices.
-      Original Summary: "${input}"
-      Target Keywords to Integrate: [${safeKeywords.join(', ')}]
-      
-      Requirements:
-      1. Create a compelling, professional narrative (2-3 sentences max).
-      2. Seamlessly blend the specified target keywords.
-      3. Focus on value proposition, expertise, and career accomplishments.
-      4. Return only the rewritten text, no greeting or commentary.
+      Task: Rewrite the following professional summary into a polished, compelling executive summary (2-3 sentences max).
+
+      Original Summary:
+      "${input}"
+
+      VERIFIED CANDIDATE CONTEXT (Only use these facts):
+      - Target/Professional Title: ${title || 'Not specified'}
+      - Verified Skills: ${skills || 'None supplied'}
+      - Verified Roles/Companies: ${experiences || 'None supplied'}
+
+      OPTIONAL TARGET KEYWORDS (Only integrate if naturally supported by the candidate's verified skills/background):
+      [${safeKeywords.join(', ')}]
+
+      STRICT ANTI-FABRICATION GUARDRAILS:
+      1. DO NOT invent, hallucinate, or assume any facts, job titles, employer names, degrees, schools, certifications, metrics (percentages, revenues, headcount), projects, or technologies not explicitly listed above or in the original summary.
+      2. If the original summary is minimal or casual (e.g. "hello guys"), polish ONLY the tone and professional voice while strictly adhering to the verified candidate context provided. Do NOT invent a fake career story.
+      3. An optional target keyword is NOT proof that the candidate knows that skill; only include it if supported by verified context or original summary.
+      4. Length: Strictly 2-3 concise, powerful sentences.
+      5. Output format: Return ONLY the rewritten summary text. No introductory remarks, labels, quotes, greetings, or commentary.
     `;
     }
   },
@@ -507,12 +523,12 @@ export function getEmbeddingVector(text) {
  * Handles professional simulator fallback for key, quota, or rate errors
  */
 function handleMockAiResponse({ promptType, sanitizedUser, stream, sseResponse }) {
+  let isFallback = true;
   let text = 'Enhanced professional development artifact based on CareerForge criteria.';
-  
   if (promptType === 'bullet_rewrite') {
     text = `Architected and spearheaded scalable enterprise pipelines, integrating target ATS keywords to maximize operational excellence by 24%.`;
   } else if (promptType === 'summary_rewrite') {
-    text = `Distinguished Professional with deep expertise in full-stack architecture, building highly performant applications and delivering solid values to clients. Proven history of optimizing user experiences and managing high-performing developer squads.`;
+    text = '';
   } else if (promptType === 'experience_enhancement') {
     text = `• Pioneered robust modular state systems, delivering an 18% lift in client-side loading metrics.\n• Standardized multi-tenant database designs, guaranteeing complete operational isolation and scaling up to 100k requests.`;
   } else if (promptType === 'achievement_quantification') {
@@ -591,6 +607,18 @@ Sincerely,
   }
 
   if (stream && sseResponse) {
+    if (promptType === 'summary_rewrite') {
+      // For summary_rewrite, do NOT stream fake mock text as if it succeeded.
+      // Send an explicit fallback error signal so frontend can inform the user.
+      sseResponse.write(`data: ${JSON.stringify({ error: true, isFallback: true, message: 'AI rewrite provider is currently unavailable. Please try again in a few moments.' })}\n\n`);
+      return Promise.resolve({
+        text: '',
+        isFallback: true,
+        finishReason: 'error',
+        tokensUsed: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
+      });
+    }
+
     const chunks = text.split(' ');
     let currentIdx = 0;
     
@@ -600,6 +628,7 @@ Sincerely,
           clearInterval(interval);
           resolve({
             text,
+            isFallback: true,
             tokensUsed: { promptTokens: 10, completionTokens: chunks.length, totalTokens: 10 + chunks.length }
           });
           return;
@@ -613,7 +642,8 @@ Sincerely,
 
   return {
     text,
-    finishReason: 'stop',
+    isFallback: true,
+    finishReason: promptType === 'summary_rewrite' ? 'error' : 'stop',
     tokensUsed: { promptTokens: 15, completionTokens: 40, totalTokens: 55 }
   };
 }

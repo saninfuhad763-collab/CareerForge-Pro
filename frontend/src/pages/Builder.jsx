@@ -873,6 +873,38 @@ const Builder = () => {
     return '';
   };
 
+  const getVerifiedSummaryContext = () => {
+    if (!currentResume) return null;
+    const verifiedSkills = [];
+    if (Array.isArray(currentResume.skills)) {
+      currentResume.skills.forEach(group => {
+        if (Array.isArray(group?.keywords)) {
+          group.keywords.forEach(k => {
+            if (typeof k === 'string' && k.trim()) verifiedSkills.push(k.trim());
+          });
+        }
+      });
+    }
+
+    const verifiedExp = [];
+    if (Array.isArray(currentResume.experience)) {
+      currentResume.experience.forEach(exp => {
+        if (exp?.position || exp?.company) {
+          verifiedExp.push({
+            position: exp.position || '',
+            company: exp.company || ''
+          });
+        }
+      });
+    }
+
+    return {
+      title: currentResume.personalInfo?.title || currentResume.title || '',
+      skills: verifiedSkills.slice(0, 20),
+      experience: verifiedExp.slice(0, 5)
+    };
+  };
+
   const startStreamOptimization = async () => {
     setIsOptimizing(true);
     setOptimizedText('');
@@ -882,12 +914,22 @@ const Builder = () => {
     setActiveAbortController(controller);
 
     try {
-      const params = new URLSearchParams({
+      const backendPromptType = getBackendPromptType(magicPromptType);
+      const queryPayload = {
         resumeId: id,
-        promptType: getBackendPromptType(magicPromptType),
+        promptType: backendPromptType,
         originalText,
         contextKeyword: getOptimizerContextKeyword()
-      });
+      };
+
+      if (magicPromptType === 'summary_rewrite') {
+        const verifiedCtx = getVerifiedSummaryContext();
+        if (verifiedCtx) {
+          queryPayload.verifiedContext = JSON.stringify(verifiedCtx);
+        }
+      }
+
+      const params = new URLSearchParams(queryPayload);
 
       const response = await fetch(`${API_URL}/ai/stream-rewrite?${params.toString()}`, {
         headers: {
@@ -903,6 +945,7 @@ const Builder = () => {
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
+      let streamFailed = false;
 
       while (true) {
         const { value, done } = await reader.read();
@@ -916,18 +959,27 @@ const Builder = () => {
             try {
               const data = JSON.parse(line.substring(6));
               if (data.error) {
-                throw new Error(data.message);
+                streamFailed = true;
+                throw new Error(data.message || 'AI service error');
               }
-              if (data.complete) {
-                setCurrentLogId(data.logId);
+              if (data.isFallback) {
+                streamFailed = true;
+                setOptimizedText('AI optimization is temporarily unavailable. Please try again in a few moments.');
+              } else if (data.complete) {
+                if (!streamFailed && data.logId) {
+                  setCurrentLogId(data.logId);
+                  fetchPlanStats();
+                  fetchHistoryLogs();
+                }
                 setIsOptimizing(false);
-                fetchPlanStats();
-                fetchHistoryLogs();
-              } else if (data.text) {
+              } else if (data.text && !streamFailed) {
                 setOptimizedText(prev => prev + data.text);
               }
-            } catch (_e) {
-              // Ignore partial parsing
+            } catch (jsonErr) {
+              if (streamFailed) {
+                throw jsonErr;
+              }
+              // Ignore partial chunk syntax errors
             }
           }
         }
@@ -935,7 +987,7 @@ const Builder = () => {
     } catch (e) {
       if (e.name !== 'AbortError') {
         console.error('AI Optimization streaming error:', e);
-        setOptimizedText(`Optimization failed: ${e.message}`);
+        setOptimizedText(`Optimization unavailable: ${e.message}`);
       }
       setIsOptimizing(false);
     }
