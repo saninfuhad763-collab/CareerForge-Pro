@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Briefcase, ChevronUp, ChevronDown, Trash2, Sparkles, Plus } from 'lucide-react';
+import { Briefcase, ChevronUp, ChevronDown, Trash2, Sparkles, Plus, RotateCcw } from 'lucide-react';
 
 const ExperienceSection = ({
   activeAccordion,
@@ -9,6 +9,8 @@ const ExperienceSection = ({
   handleUpdateExperience,
   openMagicOptimizer,
   handleAddExperience,
+  bulletHistory = {},
+  handleUndoBullet,
 }) => {
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 rounded-2xl overflow-hidden shadow-sm">
@@ -120,10 +122,21 @@ const ExperienceSection = ({
                       onChange={(e) => handleUpdateExperience(idx, 'description', e.target.value)}
                       className="w-full px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-lg text-xs text-slate-800 dark:text-slate-100 focus:outline-none resize-y"
                     />
-                    <div className="flex justify-end pt-1">
+                    <div className="flex items-center justify-end gap-2 pt-1">
+                      {bulletHistory?.[idx]?.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => handleUndoBullet && handleUndoBullet(idx)}
+                          className="inline-flex items-center gap-1 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-950 text-amber-700 dark:text-amber-400 text-[9px] font-bold px-2.5 py-1.5 rounded-md border border-amber-200/50 dark:border-amber-900/40 cursor-pointer hover:-translate-y-0.5 active:scale-95 active:translate-y-0 transition-all duration-150"
+                          title={`Undo bullet optimization (${bulletHistory[idx].length} in history)`}
+                        >
+                          <RotateCcw className="w-2.5 h-2.5" />
+                          <span>Undo</span>
+                        </button>
+                      )}
                       <button
                         type="button"
-                        onClick={() => openMagicOptimizer('bullet', exp.description, (newVal) => handleUpdateExperience(idx, 'description', newVal))}
+                        onClick={() => openMagicOptimizer('bullet', exp.description, (newVal) => handleUpdateExperience(idx, 'description', newVal), idx)}
                         disabled={!exp.description.trim()}
                         title={!exp.description.trim() ? "Please write a draft bullet first to enable AI optimization." : undefined}
                         className="inline-flex items-center gap-1 bg-linear-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-[9px] font-bold px-2.5 py-1.5 rounded-md shadow-sm shadow-indigo-500/25 cursor-pointer hover:-translate-y-0.5 active:scale-95 active:translate-y-0 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100"

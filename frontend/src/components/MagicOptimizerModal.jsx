@@ -181,14 +181,20 @@ const MagicOptimizerModal = ({
                             {log.generatedContent}
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => rollbackSuggestion(log._id)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-950 text-amber-700 dark:text-amber-400 rounded-lg text-[10px] font-bold border border-amber-200/40 dark:border-amber-900/40 cursor-pointer"
-                        >
-                          <RotateCcw className="w-3 h-3" />
-                          <span>Undo</span>
-                        </button>
+                        {log.status === 'rolled_back' ? (
+                          <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 px-2 py-1">
+                            Undone
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => rollbackSuggestion(log._id)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-950 text-amber-700 dark:text-amber-400 rounded-lg text-[10px] font-bold border border-amber-200/40 dark:border-amber-900/40 cursor-pointer"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            <span>Undo</span>
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>

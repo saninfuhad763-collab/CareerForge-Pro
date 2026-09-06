@@ -512,7 +512,9 @@ const Builder = () => {
 
   // Magic Optimizer State
   const [isOptimizerOpen, setIsOptimizerOpen] = useState(false);
-  const [_optimizerType, setOptimizerType] = useState('summary'); // 'summary' | 'bullet'
+  const [optimizerType, setOptimizerType] = useState('summary'); // 'summary' | 'bullet'
+  const [activeExpIndex, setActiveExpIndex] = useState(null);
+  const [bulletHistory, setBulletHistory] = useState({});
   const [originalText, setOriginalText] = useState('');
   const [optimizedText, setOptimizedText] = useState('');
   const [targetKeyword, setTargetKeyword] = useState('');
@@ -838,9 +840,10 @@ const Builder = () => {
   };
 
 
-  const openMagicOptimizer = (type, currentVal, applyFn) => {
+  const openMagicOptimizer = (type, currentVal, applyFn, expIndex = null) => {
     if (!currentVal || !currentVal.trim()) return;
     setOptimizerType(type);
+    setActiveExpIndex(type === 'bullet' ? expIndex : null);
     setOriginalText(currentVal);
     setOptimizedText('');
     setTargetKeyword('');
@@ -1047,6 +1050,13 @@ const Builder = () => {
 
   const applySuggestion = async () => {
     if (onApplyCallback && optimizedText) {
+      if (optimizerType === 'bullet' && activeExpIndex !== null && activeExpIndex !== undefined) {
+        setBulletHistory(prev => ({
+          ...prev,
+          [activeExpIndex]: [...(prev[activeExpIndex] || []), originalText]
+        }));
+      }
+
       onApplyCallback(optimizedText);
       
       // Auto-save changes locally
@@ -1077,6 +1087,24 @@ const Builder = () => {
     }
   };
 
+  const handleUndoBullet = (expIndex) => {
+    setBulletHistory((prev) => {
+      const stack = prev[expIndex] || [];
+      if (stack.length === 0) return prev;
+
+      const newStack = [...stack];
+      const previousContent = newStack.pop();
+
+      handleUpdateExperience(expIndex, 'description', previousContent);
+      updateResumeLocal({});
+
+      return {
+        ...prev,
+        [expIndex]: newStack,
+      };
+    });
+  };
+
   const rollbackSuggestion = async (logId) => {
     try {
       const response = await fetch(`${API_URL}/ai/rollback`, {
@@ -1095,12 +1123,33 @@ const Builder = () => {
           setAlertModalTitle('Original Content Restored');
           setAlertModalContent('Original summary successfully restored.');
           setAlertModalOpen(true);
-        } else if (log.actionType === 'bullet_rewrite' && experience.findIndex(exp => exp.description.trim() === log.generatedContent.trim()) !== -1) {
-          const matchIndex = experience.findIndex(exp => exp.description.trim() === log.generatedContent.trim());
-          handleUpdateExperience(matchIndex, 'description', data.originalContent);
-          setAlertModalTitle('Original Content Restored');
-          setAlertModalContent('Original experience bullet successfully restored.');
-          setAlertModalOpen(true);
+        } else if (log.actionType === 'bullet_rewrite') {
+          let targetIndex = (activeExpIndex !== null && activeExpIndex !== undefined && experience[activeExpIndex])
+            ? activeExpIndex
+            : experience.findIndex(exp => exp.description.trim() === log.generatedContent.trim());
+
+          if (targetIndex !== -1 && experience[targetIndex]) {
+            let restoredContent = data.originalContent;
+            setBulletHistory(prev => {
+              const stack = prev[targetIndex] || [];
+              if (stack.length > 0) {
+                const newStack = [...stack];
+                restoredContent = newStack.pop();
+                return { ...prev, [targetIndex]: newStack };
+              }
+              return prev;
+            });
+            handleUpdateExperience(targetIndex, 'description', restoredContent);
+            updateResumeLocal({});
+            setAlertModalTitle('Original Content Restored');
+            setAlertModalContent('Original experience bullet successfully restored.');
+            setAlertModalOpen(true);
+          } else {
+            setAlertModalTitle('Original Content Restored');
+            setAlertModalContent(`Original content restored! Copied to clipboard:\n\n${data.originalContent}`);
+            setAlertModalOpen(true);
+            navigator.clipboard.writeText(data.originalContent);
+          }
         } else {
           setAlertModalTitle('Original Content Restored');
           setAlertModalContent(`Original content restored! Copied to clipboard:\n\n${data.originalContent}`);
@@ -1119,6 +1168,7 @@ const Builder = () => {
   useEffect(() => {
     loadResumeById(id);
     setLocalSkillsText({});
+    setBulletHistory({});
   }, [id, loadResumeById]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -1231,6 +1281,18 @@ const Builder = () => {
   const handleRemoveExperience = (index) => {
     const updated = experience.filter((_, i) => i !== index);
     updateResumeLocal({ experience: updated });
+    setBulletHistory((prev) => {
+      const nextHistory = {};
+      Object.keys(prev).forEach((k) => {
+        const i = Number(k);
+        if (i < index) {
+          nextHistory[i] = prev[i];
+        } else if (i > index) {
+          nextHistory[i - 1] = prev[i];
+        }
+      });
+      return nextHistory;
+    });
   };
 
   // Education CRUD
@@ -2193,6 +2255,8 @@ const Builder = () => {
               handleUpdateExperience={handleUpdateExperience}
               openMagicOptimizer={openMagicOptimizer}
               handleAddExperience={handleAddExperience}
+              bulletHistory={bulletHistory}
+              handleUndoBullet={handleUndoBullet}
             />
 
             {/* 4. EDUCATION */}
