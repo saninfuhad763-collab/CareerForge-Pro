@@ -11,6 +11,7 @@ import UploadResumeModal from '../components/UploadResumeModal';
 import MagicOptimizerModal from '../components/MagicOptimizerModal';
 import ATSReportModal from '../components/ATSReportModal';
 import DeleteModal from '../components/DeleteModal';
+import Drawer from '../components/Drawer';
 
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useResumeStore } from '../store/resumeStore';
@@ -20,7 +21,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { pageTransitions, slideUp } from '../animations/pageTransitions';
 import { ArrowLeft, Save, ArrowUp, ArrowDown, Eye, // eslint-disable-line no-unused-vars
   ChevronDown, ChevronUp, AlertTriangle, Info, // eslint-disable-line no-unused-vars
-  ExternalLink, Laptop, Sparkles, Brain, Check, RotateCcw, X, Target, Loader2, Palette, Download, Upload, Lock } from 'lucide-react';
+  ExternalLink, Laptop, Sparkles, Brain, Check, RotateCcw, X, Target, Loader2, Palette, Download, Upload, Lock, Menu } from 'lucide-react';
 
 const normalizeUrl = (url) => {
   if (!url) return '';
@@ -512,6 +513,7 @@ const Builder = () => {
 
   // Magic Optimizer State
   const [isOptimizerOpen, setIsOptimizerOpen] = useState(false);
+  const [isActionDrawerOpen, setIsActionDrawerOpen] = useState(false);
   const [optimizerType, setOptimizerType] = useState('summary'); // 'summary' | 'bullet'
   const [activeExpIndex, setActiveExpIndex] = useState(null);
   const [bulletHistory, setBulletHistory] = useState({});
@@ -1559,8 +1561,8 @@ const Builder = () => {
       className="min-h-screen md:h-screen md:overflow-hidden bg-slate-50 dark:bg-slate-950 flex flex-col"
     >
       {/* Top action header banner */}
-      <header id="builder-header-banner" className="sticky top-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200/50 dark:border-slate-800/50 px-4 md:px-6 py-3 md:py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 shadow-sm">
-        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+      <header id="builder-header-banner" className="sticky top-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200/50 dark:border-slate-800/50 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-3 shadow-sm">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
           <Link
             to="/dashboard"
             onClick={async (e) => {
@@ -1583,7 +1585,7 @@ const Builder = () => {
                 type="text"
                 value={title}
                 onChange={(e) => updateResumeLocal({ title: e.target.value })}
-                className="bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-700 focus:border-indigo-500 font-bold font-display text-slate-800 dark:text-slate-100 text-base sm:text-lg focus:outline-none px-1 py-0.5 rounded transition-all w-full max-w-[220px] sm:max-w-xs md:max-w-sm truncate"
+                className="bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-700 focus:border-indigo-500 font-bold font-display text-slate-800 dark:text-slate-100 text-base sm:text-lg focus:outline-none px-1 py-0.5 rounded transition-all w-full max-w-[160px] sm:max-w-xs md:max-w-sm truncate"
               />
             </div>
             <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
@@ -1595,8 +1597,24 @@ const Builder = () => {
           </div>
         </div>
 
-        {/* Header Actions */}
-        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+        {/* Mobile/Tablet Compact Header Actions (< 1024px) */}
+        <div className="flex lg:hidden items-center gap-2 shrink-0">
+          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-300">
+            <span className={`w-1.5 h-1.5 rounded-full ${autoSaveEnabled ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+            <span>Auto: {autoSaveEnabled ? 'ON' : 'OFF'}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsActionDrawerOpen(true)}
+            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+            aria-label="Open builder actions menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Desktop Header Actions (>= 1024px) */}
+        <div className="hidden lg:flex items-center gap-2 sm:gap-2.5 flex-wrap">
           {!isOptimizeMode && (
             <button
               onClick={() => setSearchParams(prev => { prev.set('mode', 'optimize'); return prev; })}
@@ -1755,6 +1773,181 @@ const Builder = () => {
           </button>
         </div>
       </header>
+
+      {/* Mobile/Tablet Action Drawer (< 1024px) */}
+      <Drawer
+        isOpen={isActionDrawerOpen}
+        onClose={() => setIsActionDrawerOpen(false)}
+        title="Resume Actions"
+      >
+        <div className="space-y-4">
+          {/* ATS Optimize */}
+          {!isOptimizeMode && (
+            <button
+              type="button"
+              onClick={() => {
+                setIsActionDrawerOpen(false);
+                setSearchParams(prev => { prev.set('mode', 'optimize'); return prev; });
+              }}
+              className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md shadow-indigo-500/20 active:scale-95 cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>ATS Optimize</span>
+            </button>
+          )}
+
+          {/* Upload Existing Resume */}
+          <button
+            type="button"
+            onClick={() => {
+              setIsActionDrawerOpen(false);
+              resetUploadModal();
+              setIsUploadModalOpen(true);
+            }}
+            className="w-full flex items-center justify-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95 cursor-pointer"
+          >
+            <Upload className="w-4 h-4 text-indigo-500" />
+            <span>Upload Existing Resume</span>
+          </button>
+
+          {/* Auto Save Toggle */}
+          <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
+            <div>
+              <div className="text-xs font-bold text-slate-700 dark:text-slate-200">Auto Save</div>
+              <div className="text-[11px] text-slate-400">Save edits to cloud automatically</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`text-xs font-semibold ${autoSaveEnabled ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}>
+                {autoSaveEnabled ? 'ON' : 'OFF'}
+              </span>
+              <button
+                type="button"
+                onClick={handleToggleAutoSave}
+                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  autoSaveEnabled ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                    autoSaveEnabled ? 'translate-x-4' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
+          {/* Template Theme Selector */}
+          <div className="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2.5">
+            <div className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+              <Palette className="w-3.5 h-3.5 text-indigo-500" />
+              <span>Resume Theme</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: 'modern',     label: 'Modern' },
+                { id: 'minimalist', label: 'Minimalist' },
+                { id: 'classic',    label: 'Classic' },
+              ].map((t) => {
+                const locked = isPremiumTemplate(t.id) && !isPro;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={async () => {
+                      if (locked) {
+                        setShowProBanner(true);
+                        return;
+                      }
+                      setShowProBanner(false);
+                      setActiveTheme(t.id);
+                      updateResumeLocal({ templateId: t.id });
+                      await saveResumeImmediately();
+                    }}
+                    className={`flex flex-col items-center justify-center p-2 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                      activeTheme === t.id
+                        ? 'border-indigo-600 bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold'
+                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1">
+                      {t.label}
+                      {locked && <Lock className="w-3 h-3 text-amber-500" />}
+                    </span>
+                    {activeTheme === t.id && (
+                      <Check className="w-3 h-3 mt-1 text-indigo-600 dark:text-indigo-400" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {showProBanner && (
+              <div className="p-2.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-lg space-y-2">
+                <div className="flex items-start gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                  <p className="text-[11px] font-semibold text-amber-900 dark:text-amber-200 flex-1">
+                    Classic &amp; Minimalist templates require Pro.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowProBanner(false)}
+                    className="text-amber-400 hover:text-amber-600 dark:hover:text-amber-200"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsActionDrawerOpen(false);
+                    _navigate('/billing');
+                  }}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-1.5 rounded-lg transition-colors cursor-pointer"
+                >
+                  Upgrade Now →
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Save Now Button (when autoSave is off) */}
+          {!autoSaveEnabled && (
+            <button
+              type="button"
+              onClick={() => {
+                handleForceSave();
+                setIsActionDrawerOpen(false);
+              }}
+              disabled={saving}
+              className="w-full flex items-center justify-center gap-2 bg-slate-900 dark:bg-slate-100 hover:bg-slate-800 dark:hover:bg-white text-white dark:text-slate-900 px-4 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-50 cursor-pointer active:scale-95"
+            >
+              <Save className="w-4 h-4" />
+              <span>Save Now</span>
+            </button>
+          )}
+
+          {/* Export PDF Button */}
+          <button
+            type="button"
+            onClick={async () => {
+              setIsActionDrawerOpen(false);
+              setIsExportingPdf(true);
+              const success = await exportResumePdf(id, currentResume?.title || 'resume');
+              setIsExportingPdf(false);
+              if (success) {
+                setIsExportSuccess(true);
+                setTimeout(() => setIsExportSuccess(false), 2000);
+              }
+            }}
+            disabled={isExportingPdf}
+            className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md shadow-indigo-500/20 active:scale-95 cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            <span>{isExportingPdf ? 'Generating PDF...' : isExportSuccess ? 'Exported' : 'Export PDF'}</span>
+          </button>
+        </div>
+      </Drawer>
+
 
       {/* Editor Split-Screen Layout Workspace */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">

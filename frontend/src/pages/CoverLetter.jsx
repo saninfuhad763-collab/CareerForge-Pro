@@ -697,13 +697,17 @@ const CoverLetter = () => {
                       whileHover="hover"
                       whileTap="tap"
                       onClick={handleExportPdf}
-                      disabled={exportingPdf || !exportCoverLetterId}
+                      disabled={exportingPdf}
+                      aria-disabled={!exportCoverLetterId}
+                      aria-describedby={exportError ? 'cover-letter-export-error' : undefined}
                       title={exportCoverLetterId ? 'Download PDF' : 'Save to history before exporting PDF'}
                       className={`inline-flex items-center gap-1.5 px-3 py-1.5 disabled:cursor-not-allowed rounded-lg text-xs font-semibold cursor-pointer transition-all duration-300 ${
                         exportSuccess
                           ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400'
-                          : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:shadow-indigo-500/20 disabled:bg-indigo-600/50'
-                      }`}
+                          : !exportCoverLetterId
+                          ? 'bg-indigo-600/75 hover:bg-indigo-600 text-white shadow-xs'
+                          : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md hover:shadow-indigo-500/20'
+                      } ${exportingPdf ? 'disabled:bg-indigo-600/50' : ''}`}
                     >
                       {exportingPdf ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -743,7 +747,12 @@ const CoverLetter = () => {
               </div>
 
               {exportError && (
-                <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 rounded-xl flex items-center gap-2 text-amber-700 dark:text-amber-300">
+                <div
+                  id="cover-letter-export-error"
+                  role="alert"
+                  aria-live="polite"
+                  className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 rounded-xl flex items-center gap-2 text-amber-700 dark:text-amber-300 transition-all duration-200"
+                >
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <p className="text-xs font-semibold">{exportError}</p>
                 </div>
