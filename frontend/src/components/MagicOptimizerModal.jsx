@@ -124,7 +124,11 @@ const MagicOptimizerModal = ({
               {/* Actions row */}
               <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
                 <div className="text-[10px] font-medium text-slate-400">
-                  Remaining credits: <span className="font-bold text-slate-600 dark:text-slate-300">{planStats.aiLimit === Infinity ? 'Unlimited' : `${planStats.aiLimit - planStats.aiRewriteCount} free credits left`}</span>
+                  Remaining credits: <span className="font-bold text-slate-600 dark:text-slate-300">
+                    {planStats.plan === 'PRO' || planStats.aiLimit === 'unlimited' || planStats.aiLimit === Infinity
+                      ? 'Unlimited'
+                      : `${Math.max(0, (typeof planStats.aiLimit === 'number' ? planStats.aiLimit : 10) - (planStats.aiRewriteCount || 0))} free credits left`}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
                   {isOptimizing ? (

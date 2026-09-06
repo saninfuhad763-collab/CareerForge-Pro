@@ -294,13 +294,16 @@ export const streamResumeRewrite = async (req, res, next) => {
         if (raw && typeof raw === 'object') {
           parsedVerifiedContext = {
             title: typeof raw.title === 'string' ? raw.title.slice(0, 100) : '',
-            skills: Array.isArray(raw.skills) ? raw.skills.slice(0, 25).map(s => String(s).slice(0, 50)) : [],
+            skills: Array.isArray(raw.skills) ? raw.skills.slice(0, 50).map(s => String(s).slice(0, 50)) : [],
             experience: Array.isArray(raw.experience)
               ? raw.experience.slice(0, 5).map(e => ({
                   company: typeof e?.company === 'string' ? e.company.slice(0, 100) : '',
                   position: typeof e?.position === 'string' ? e.position.slice(0, 100) : ''
                 }))
-              : []
+              : [],
+            education: Array.isArray(raw.education) ? raw.education.slice(0, 5).map(e => String(e).slice(0, 150)) : [],
+            certifications: Array.isArray(raw.certifications) ? raw.certifications.slice(0, 5).map(c => String(c).slice(0, 120)) : [],
+            projects: Array.isArray(raw.projects) ? raw.projects.slice(0, 5).map(p => String(p).slice(0, 120)) : []
           };
         }
       } catch (_e) {
@@ -438,14 +441,15 @@ export const getPlanStats = async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
     const resumeCount = await Resume.countDocuments({ userId: req.user._id });
+    const isPro = isProPlan(user);
 
     res.status(200).json({
       success: true,
       plan: user.plan,
       aiRewriteCount: user.aiRewriteCount,
       resumeCount,
-      resumeLimit: isProPlan(user) ? Infinity : 1,
-      aiLimit: isProPlan(user) ? Infinity : 10,
+      resumeLimit: isPro ? 'unlimited' : 1,
+      aiLimit: isPro ? 'unlimited' : 10,
     });
   } catch (error) {
     next(error);

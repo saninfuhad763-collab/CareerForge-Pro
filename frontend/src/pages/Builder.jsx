@@ -875,12 +875,25 @@ const Builder = () => {
 
   const getVerifiedSummaryContext = () => {
     if (!currentResume) return null;
+
+    // Never use currentResume.title (document name) as professional job title
+    const verifiedTitle = typeof currentResume.personalInfo?.title === 'string' && currentResume.personalInfo.title.trim()
+      ? currentResume.personalInfo.title.trim()
+      : '';
+
     const verifiedSkills = [];
+    const seenSkills = new Set();
     if (Array.isArray(currentResume.skills)) {
       currentResume.skills.forEach(group => {
         if (Array.isArray(group?.keywords)) {
           group.keywords.forEach(k => {
-            if (typeof k === 'string' && k.trim()) verifiedSkills.push(k.trim());
+            if (typeof k === 'string' && k.trim()) {
+              const clean = k.trim();
+              if (!seenSkills.has(clean.toLowerCase())) {
+                seenSkills.add(clean.toLowerCase());
+                verifiedSkills.push(clean);
+              }
+            }
           });
         }
       });
@@ -898,10 +911,41 @@ const Builder = () => {
       });
     }
 
+    const verifiedEdu = [];
+    if (Array.isArray(currentResume.education)) {
+      currentResume.education.forEach(edu => {
+        const degree = edu?.degree?.trim() || '';
+        const school = edu?.school?.trim() || '';
+        const field = edu?.fieldOfStudy?.trim() || '';
+        const combined = [degree, field ? `in ${field}` : '', school ? `from ${school}` : ''].filter(Boolean).join(' ');
+        if (combined) verifiedEdu.push(combined);
+      });
+    }
+
+    const verifiedCerts = [];
+    if (Array.isArray(currentResume.certifications)) {
+      currentResume.certifications.forEach(cert => {
+        const name = cert?.name?.trim() || '';
+        const issuer = cert?.issuer?.trim() || '';
+        if (name) verifiedCerts.push(issuer ? `${name} (${issuer})` : name);
+      });
+    }
+
+    const verifiedProjects = [];
+    if (Array.isArray(currentResume.projects)) {
+      currentResume.projects.forEach(proj => {
+        const pTitle = proj?.title?.trim() || '';
+        if (pTitle) verifiedProjects.push(pTitle);
+      });
+    }
+
     return {
-      title: currentResume.personalInfo?.title || currentResume.title || '',
-      skills: verifiedSkills.slice(0, 20),
-      experience: verifiedExp.slice(0, 5)
+      title: verifiedTitle,
+      skills: verifiedSkills.slice(0, 50),
+      experience: verifiedExp.slice(0, 5),
+      education: verifiedEdu.slice(0, 5),
+      certifications: verifiedCerts.slice(0, 5),
+      projects: verifiedProjects.slice(0, 5)
     };
   };
 
@@ -1874,7 +1918,7 @@ const Builder = () => {
                         : 'Choose a JD above to calculate your keyword alignments.'}
                     </p>
                     <div className="text-[9px] text-slate-400 font-medium">
-                      AI rewrite credit usage: <span className="font-bold text-slate-600 dark:text-slate-300">{planStats.aiRewriteCount} / {planStats.aiLimit === Infinity ? 'Unlimited' : planStats.aiLimit}</span>
+                      AI rewrite credit usage: <span className="font-bold text-slate-600 dark:text-slate-300">{planStats.aiRewriteCount} / {planStats.plan === 'PRO' || planStats.aiLimit === 'unlimited' || planStats.aiLimit === Infinity ? 'Unlimited' : planStats.aiLimit}</span>
                     </div>
                   </div>
                 </div>

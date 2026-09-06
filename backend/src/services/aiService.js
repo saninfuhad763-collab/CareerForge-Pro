@@ -27,51 +27,60 @@ if (apiKey) {
  */
 export const PROMPT_LIBRARY = {
   bullet_rewrite: {
-    version: '1.0.0',
-    system: 'You are an expert ATS optimization assistant. Rewrite resume bullet points to maximize impact and match ATS parameters.',
+    version: '1.1.0',
+    system: 'You are an expert ATS optimization assistant. Rewrite resume bullet points to maximize impact, clarity, and professionalism while strictly preserving all factual achievements and metrics.',
     template: (input, keyword) => `
-      Task: Rewrite the following resume bullet point to make it highly professional, active, and emphasize impact.
-      Original Bullet: "${input}"
+      Task: Rewrite the following resume bullet point(s) to make them highly professional, action-driven, and emphasize impact.
+      Original Input: "${input}"
       Target ATS Keyword: "${keyword || 'None'}"
       
       Requirements:
-      1. Use a strong action verb to start.
-      2. Naturally incorporate the target ATS Keyword if provided.
-      3. Quantify the achievements or business impact where possible.
-      4. Keep the output strictly to a single, powerful bullet point string without quotes, bullet symbols, or prefixes.
+      1. Start each bullet point with a strong, active past-tense verb (e.g. Engineered, Spearheaded, Architected).
+      2. Naturally incorporate the target ATS Keyword if provided and relevant.
+      3. Strictly preserve all existing metrics, numbers, percentages, and factual details from the source. Do NOT invent new numbers or achievements.
+      4. Multi-bullet preservation: If the original input contains multiple distinct bullet points or lines, rewrite EACH as its own separate bullet point prefixed with "- ". Do NOT merge multiple independent achievements into one giant sentence.
+      5. If the original input is a single bullet point, return a single polished bullet point without quotes.
+      6. Return ONLY the rewritten bullet point text without conversational preamble, quotes, or commentary.
     `
   },
   summary_rewrite: {
-    version: '1.1.0',
-    system: 'You are a professional executive resume writer and career consultant. Your top priority is strict factual accuracy: you must ONLY use verified facts provided in the candidate context. Never fabricate or extrapolate information.',
+    version: '1.2.0',
+    system: 'You are a professional executive resume writer. Your top priority is strict factual accuracy: you must ONLY use verified facts provided in the candidate context and original summary. Use standard first-person-implied resume style (e.g. "Experienced full-stack developer with...", never third-person narrative like "Fuhad is a..." or "He has..."). Never fabricate information.',
     template: (input, keywords = [], verifiedContext = {}) => {
       const safeKeywords = Array.isArray(keywords) ? keywords : [];
       const title = verifiedContext.title || '';
       const skills = Array.isArray(verifiedContext.skills) ? verifiedContext.skills.join(', ') : '';
       const experiences = Array.isArray(verifiedContext.experience)
-        ? verifiedContext.experience.map(e => `${e.position || ''} at ${e.company || ''}`).filter(Boolean).join('; ')
+        ? verifiedContext.experience.map(e => `${e.position || ''} at ${e.company || ''}`.trim()).filter(Boolean).join('; ')
         : '';
+      const education = Array.isArray(verifiedContext.education) ? verifiedContext.education.filter(Boolean).join('; ') : '';
+      const certifications = Array.isArray(verifiedContext.certifications) ? verifiedContext.certifications.filter(Boolean).join('; ') : '';
+      const projects = Array.isArray(verifiedContext.projects) ? verifiedContext.projects.filter(Boolean).join('; ') : '';
 
       return `
-      Task: Rewrite the following professional summary into a polished, compelling executive summary (2-3 sentences max).
+      Task: Rewrite the following professional summary into a compelling, polished executive resume summary (2-3 sentences max).
 
       Original Summary:
       "${input}"
 
       VERIFIED CANDIDATE CONTEXT (Only use these facts):
-      - Target/Professional Title: ${title || 'Not specified'}
-      - Verified Skills: ${skills || 'None supplied'}
+      - Target/Professional Title: ${title || 'Not specified (derive professional voice from verified background)'}
       - Verified Roles/Companies: ${experiences || 'None supplied'}
+      - Verified Degrees/Education: ${education || 'None supplied'}
+      - Verified Certifications: ${certifications || 'None supplied'}
+      - Verified Projects: ${projects || 'None supplied'}
+      - Verified Skills: ${skills || 'None supplied'}
 
-      OPTIONAL TARGET KEYWORDS (Only integrate if naturally supported by the candidate's verified skills/background):
+      OPTIONAL TARGET KEYWORDS (Only integrate if naturally supported by the candidate's verified background):
       [${safeKeywords.join(', ')}]
 
-      STRICT ANTI-FABRICATION GUARDRAILS:
-      1. DO NOT invent, hallucinate, or assume any facts, job titles, employer names, degrees, schools, certifications, metrics (percentages, revenues, headcount), projects, or technologies not explicitly listed above or in the original summary.
-      2. If the original summary is minimal or casual (e.g. "hello guys"), polish ONLY the tone and professional voice while strictly adhering to the verified candidate context provided. Do NOT invent a fake career story.
-      3. An optional target keyword is NOT proof that the candidate knows that skill; only include it if supported by verified context or original summary.
-      4. Length: Strictly 2-3 concise, powerful sentences.
-      5. Output format: Return ONLY the rewritten summary text. No introductory remarks, labels, quotes, greetings, or commentary.
+      STRICT ANTI-FABRICATION & STYLE GUARDRAILS:
+      1. DO NOT invent, hallucinate, or assume any facts, job titles, employer names, degrees, certifications, metrics (percentages, revenues, headcount), projects, or technologies not explicitly listed above or in the original summary.
+      2. Preserve the candidate's verified differentiators (degrees, certifications, specialized AI/LLM tools, high-impact projects) when present in the original summary or verified context.
+      3. Resume Style: Write in professional resume voice (e.g. "Full Stack Developer with a Bachelor of Computer Applications and hands-on experience building..."). DO NOT write in third-person narrative (e.g. DO NOT write "[Name] is a...", "He built...", "She specializes...").
+      4. If the original summary is minimal or casual (e.g. "hello guys"), polish ONLY the tone and professional voice while strictly adhering to the verified candidate context provided. Do NOT invent a fake career story.
+      5. Length: Strictly 2-3 concise, powerful sentences.
+      6. Output format: Return ONLY the rewritten summary text. No introductory remarks, labels, quotes, greetings, or commentary.
     `;
     }
   },
@@ -90,17 +99,18 @@ export const PROMPT_LIBRARY = {
     `
   },
   ats_optimization: {
-    version: '1.0.0',
-    system: 'You are a technical recruiter specialized in ATS search matching.',
-    template: (resumeText, jdText) => `
-      Task: Optimize this resume text against the target Job Description to improve ATS parsing score.
-      Resume: "${resumeText}"
-      Job Description: "${jdText}"
+    version: '1.1.0',
+    system: 'You are an expert ATS optimization resume editor. Your task is to rewrite the provided resume text to naturally incorporate target ATS keyword(s) with strict factual grounding. Return ONLY the rewritten text.',
+    template: (input, targetKeyword) => `
+      Task: Rewrite the following resume text (bullet point or summary) to naturally integrate the target ATS keyword(s) while strictly preserving the candidate's existing factual achievements.
+      Original Text: "${input}"
+      Target ATS Keyword(s): "${targetKeyword || 'None'}"
       
       Requirements:
-      1. Identify missing keyword gaps.
-      2. Suggest strategic placements of exact-match terms.
-      3. Provide a natural paragraph suggestion that blends key requirements seamlessly.
+      1. Seamlessly integrate the target ATS keyword(s) into the text only if it contextually fits without altering the underlying truth of the achievement or experience.
+      2. Do NOT invent new employers, projects, metrics, or credentials to force the keyword.
+      3. Do NOT return markdown tables, checklists, commentary, greetings, quotes, or advisory explanations.
+      4. Output format: Return ONLY the polished, rewritten text ready for direct placement in the resume.
     `
   },
   skill_suggestions: {
@@ -117,16 +127,17 @@ export const PROMPT_LIBRARY = {
     `
   },
   achievement_quantification: {
-    version: '1.0.0',
-    system: 'You are a corporate finance and metrics-driven resume editor.',
+    version: '1.1.0',
+    system: 'You are an expert resume editor specializing in high-impact achievement phrasing with strict factual integrity. You must NEVER invent or estimate numerical metrics, percentages, revenue figures, or user counts not present in the original bullet.',
     template: (input) => `
-      Task: Edit this bullet point to inject realistic, quantifiable metrics (percentages, revenues, scale sizes) to prove professional competence.
+      Task: Enhance the following resume bullet point to maximize clarity, action-orientation, and professional impact without inventing any unverified numerical data.
       Bullet: "${input}"
       
       Requirements:
-      1. Estimate a logical business benefit (e.g. reduced latency by 35%, boosted conversions by 18%).
-      2. Keep it factual-sounding and professional.
-      3. Return only the updated sentence.
+      1. If the original bullet already contains numerical metrics (e.g. percentages, latencies, dollar amounts, team sizes), PRESERVE them accurately.
+      2. If the original bullet DOES NOT contain metrics, DO NOT invent, hallucinate, or estimate any numbers, percentages, dollar figures, or scale statistics. Instead, emphasize the scope, technical complexity, business value, and qualitative results using strong active verbs.
+      3. Keep the output strictly to a single, powerful bullet point string without quotes, bullet symbols, or prefixes.
+      4. Return ONLY the enhanced bullet point text.
     `
   },
   generate_cover_letter: {
@@ -526,13 +537,15 @@ function handleMockAiResponse({ promptType, sanitizedUser, stream, sseResponse }
   let isFallback = true;
   let text = 'Enhanced professional development artifact based on CareerForge criteria.';
   if (promptType === 'bullet_rewrite') {
-    text = `Architected and spearheaded scalable enterprise pipelines, integrating target ATS keywords to maximize operational excellence by 24%.`;
+    text = `- Architected and spearheaded scalable enterprise pipelines, integrating target ATS keywords to maximize operational excellence.`;
   } else if (promptType === 'summary_rewrite') {
     text = '';
   } else if (promptType === 'experience_enhancement') {
-    text = `• Pioneered robust modular state systems, delivering an 18% lift in client-side loading metrics.\n• Standardized multi-tenant database designs, guaranteeing complete operational isolation and scaling up to 100k requests.`;
+    text = `• Pioneered robust modular state systems, significantly improving client-side loading metrics.\n• Standardized multi-tenant database designs, guaranteeing complete operational isolation and scaling to support high-throughput demands.`;
   } else if (promptType === 'achievement_quantification') {
-    text = `Spearheaded software modularization efforts, driving a 30% reduction in system latency and optimizing user conversion rate by 15%.`;
+    text = `Spearheaded software modularization efforts, driving system performance improvements and optimizing core workflow efficiency.`;
+  } else if (promptType === 'ats_optimization') {
+    text = `Engineered robust, high-performance features aligned with target ATS requirements to drive operational quality.`;
   } else if (promptType === 'generate_cover_letter') {
     text = `[Your Name]
 [Your Address]
