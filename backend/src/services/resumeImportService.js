@@ -10,6 +10,7 @@ const SUPPORTED_MIME_TYPES = new Set([
 const EMPTY_RESUME_IMPORT = {
   personalInfo: {
     fullName: '',
+    title: '',
     email: '',
     phone: '',
     location: '',
@@ -29,6 +30,32 @@ const EMPTY_RESUME_IMPORT = {
 const asString = (value) => (typeof value === 'string' ? value.trim() : '');
 const asBoolean = (value) => (typeof value === 'boolean' ? value : false);
 const asArray = (value) => (Array.isArray(value) ? value : []);
+
+const sanitizeUrl = (value) => {
+  const str = asString(value);
+  if (!str) return '';
+
+  // If formatted as markdown link: [Text](URL), extract URL
+  const mdMatch = str.match(/\[.*?\]\((https?:\/\/[^\s)]+)\)/i);
+  if (mdMatch) return mdMatch[1].trim();
+
+  // If wrapped in parentheses like (https://...), extract URL
+  const parenMatch = str.match(/\((https?:\/\/[^\s)]+)\)/i);
+  if (parenMatch) return parenMatch[1].trim();
+
+  // If it's already a clean URL or web path
+  if (/^(?:https?:\/\/|www\.)[^\s]+$/i.test(str)) {
+    return str;
+  }
+
+  // If it's a domain path like github.com/user/repo or linkedin.com/in/user
+  if (/^[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:\/[^\s]*)?$/i.test(str)) {
+    return str;
+  }
+
+  // If it has spaces (e.g. "GitHub Repository (github.com)"), it is display text, not a URL
+  return '';
+};
 
 const normalizeStringArray = (value) => asArray(value)
   .map((item) => asString(item))
@@ -76,7 +103,7 @@ export const extractResumeText = async (file) => {
   
     await parser.load();
   
-    const parsed = await parser.getText();
+    const parsed = await parser.getText({ parseHyperlinks: true });
   
     text = parsed?.text || '';
   
@@ -86,7 +113,12 @@ export const extractResumeText = async (file) => {
     text = parsed?.value || '';
   }
 
-  const cleaned = text.replace(/\u0000/g, ' ').replace(/\s+/g, ' ').trim();
+  const cleaned = text
+    .replace(/\u0000/g, ' ')
+    .replace(/\r\n/g, '\n')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
   if (!cleaned) {
     throw new Error('We could not find readable resume text in that file. Please try another PDF or DOCX.');
   }
@@ -102,12 +134,13 @@ const normalizeImportedResume = (input) => {
     personalInfo: {
       ...EMPTY_RESUME_IMPORT.personalInfo,
       fullName: asString(personal.fullName),
+      title: asString(personal.title),
       email: asString(personal.email),
       phone: asString(personal.phone),
       location: asString(personal.location),
-      website: asString(personal.website),
-      github: asString(personal.github),
-      linkedin: asString(personal.linkedin),
+      website: sanitizeUrl(personal.website),
+      github: sanitizeUrl(personal.github),
+      linkedin: sanitizeUrl(personal.linkedin),
     },
     summary: asString(raw.summary),
     experience: asArray(raw.experience).map((item) => ({
@@ -138,14 +171,14 @@ const normalizeImportedResume = (input) => {
       name: asString(item?.name),
       issuer: asString(item?.issuer),
       date: asString(item?.date),
-      url: asString(item?.url),
+      url: sanitizeUrl(item?.url),
     })),
     projects: asArray(raw.projects).map((item) => ({
       title: asString(item?.title),
       role: asString(item?.role),
       startDate: asString(item?.startDate),
       endDate: asString(item?.endDate),
-      url: asString(item?.url),
+      url: sanitizeUrl(item?.url),
       description: asString(item?.description),
     })),
     languages: asArray(raw.languages).map((item) => ({
@@ -160,7 +193,7 @@ export const parseResumeTextToSchema = async (resumeText) => {
 
 Return exactly this shape:
 {
-  "personalInfo": { "fullName": "", "email": "", "phone": "", "location": "", "website": "", "github": "", "linkedin": "" },
+  "personalInfo": { "fullName": "", "title": "", "email": "", "phone": "", "location": "", "website": "", "github": "", "linkedin": "" },
   "summary": "",
   "experience": [{ "company": "", "position": "", "location": "", "startDate": "", "endDate": "", "current": false, "description": "" }],
   "education": [{ "school": "", "degree": "", "fieldOfStudy": "", "location": "", "startDate": "", "endDate": "", "current": false, "description": "" }],
@@ -175,7 +208,9 @@ Rules:
 - Use only fields from the schema above. Do not add ids or custom sections.
 - Use empty strings, false, or empty arrays for missing values.
 - Keep descriptions readable and preserve bullet-like accomplishments as newline-separated text where helpful.
-- Group skills into logical categories with keywords arrays.`;
+- Group skills into logical categories with keywords arrays.
+- For links: When hyperlinks are formatted like [Text](URL) or URLs appear in text, extract the actual target URL into website, github, linkedin, project url, or certification url fields. If no URL is provided, use an empty string. Never fabricate URLs.
+- Extract EVERY certification, training, course, and credential listed under Certifications. Do NOT omit any certifications.`;
 
   const userMsg = `Resume text to import:\n${resumeText}`;
   let result;
