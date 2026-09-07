@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { premiumEase } from '../animations/motionVariants';
+import useFocusTrap from '../hooks/useFocusTrap';
 
 const Drawer = ({
   isOpen,
@@ -12,17 +13,12 @@ const Drawer = ({
   zIndexClass = 'z-50',
   ariaLabel = 'Navigation Drawer',
 }) => {
-  // Close on Escape key
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  const panelRef = useFocusTrap({
+    isOpen,
+    onClose,
+    closeOnEscape: true,
+    setInertBackground: true,
+  });
 
   // Lock body scroll when drawer is open
   useEffect(() => {
@@ -51,6 +47,7 @@ const Drawer = ({
 
           {/* Drawer Panel */}
           <motion.div
+            ref={panelRef}
             role="dialog"
             aria-modal="true"
             aria-label={typeof title === 'string' ? title : ariaLabel}

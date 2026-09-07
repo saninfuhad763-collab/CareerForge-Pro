@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useId, useRef } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
@@ -38,6 +38,7 @@ import { premiumEase } from '../animations/motionVariants';
 import DeleteModal from '../components/DeleteModal';
 import SettingsView from '../components/SettingsView';
 import Drawer from '../components/Drawer';
+import useFocusTrap from '../hooks/useFocusTrap';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -80,6 +81,34 @@ const Dashboard = () => {
   const [exportingCoverLetterId, setExportingCoverLetterId] = useState(null);
   const [coverLetterExportError, setCoverLetterExportError] = useState('');
   const [modalCopied, setModalCopied] = useState(false);
+
+  const createModalTitleId = useId();
+  const createModalRef = useFocusTrap({
+    isOpen: isModalOpen,
+    onClose: !actionLoading ? () => setIsModalOpen(false) : undefined,
+    closeOnEscape: !actionLoading,
+    setInertBackground: true,
+  });
+
+  const signoutModalTitleId = useId();
+  const signoutModalRef = useFocusTrap({
+    isOpen: showSignoutConfirm,
+    onClose: () => setShowSignoutConfirm(false),
+    closeOnEscape: true,
+    setInertBackground: true,
+  });
+
+  const viewCoverLetterTitleId = useId();
+  const viewCoverLetterRef = useFocusTrap({
+    isOpen: !!viewingCoverLetter,
+    onClose: () => {
+      setViewingCoverLetter(null);
+      setCoverLetterExportError('');
+      setModalCopied(false);
+    },
+    closeOnEscape: true,
+    setInertBackground: true,
+  });
 
   const loadCoverLetters = useCallback(async () => {
     if (!isProUser(user)) return;
@@ -1202,6 +1231,10 @@ const Dashboard = () => {
 
             {/* Modal Box */}
             <motion.div
+              ref={createModalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={createModalTitleId}
               className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl relative z-10 space-y-6"
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1209,7 +1242,7 @@ const Dashboard = () => {
               transition={{ duration: 0.3, ease: premiumEase }}
             >
               <div className="text-left space-y-1">
-                <h3 className="text-xl font-bold font-display text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <h3 id={createModalTitleId} className="text-xl font-bold font-display text-slate-800 dark:text-slate-100 flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-indigo-500" /> Craft New ATS Resume
                 </h3>
                 <p className="text-sm text-slate-400">Specify details to build your optimized CV.</p>
@@ -1377,6 +1410,10 @@ const Dashboard = () => {
 
             {/* Modal Box */}
             <motion.div
+              ref={signoutModalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={signoutModalTitleId}
               className="w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl relative z-10 space-y-5"
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1387,7 +1424,7 @@ const Dashboard = () => {
                 <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center">
                   <LogOut className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                 </div>
-                <h3 className="text-lg font-bold font-display text-slate-800 dark:text-slate-100 text-left">Sign Out</h3>
+                <h3 id={signoutModalTitleId} className="text-lg font-bold font-display text-slate-800 dark:text-slate-100 text-left">Sign Out</h3>
               </div>
 
               <p className="text-sm text-slate-500 dark:text-slate-400 leading-normal text-left">
@@ -1433,6 +1470,10 @@ const Dashboard = () => {
 
             {/* Modal Box */}
             <motion.div
+              ref={viewCoverLetterRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={viewCoverLetterTitleId}
               className="w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl relative z-10 space-y-6 flex flex-col max-h-[85vh]"
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1441,7 +1482,7 @@ const Dashboard = () => {
             >
               <div className="flex justify-between items-start gap-4 pb-4 border-b border-slate-100 dark:border-slate-800/60">
                 <div className="text-left">
-                  <h3 className="text-xl font-bold font-display text-slate-800 dark:text-slate-100">
+                  <h3 id={viewCoverLetterTitleId} className="text-xl font-bold font-display text-slate-800 dark:text-slate-100">
                     {viewingCoverLetter.jobTitle}
                   </h3>
                   <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 mt-1">

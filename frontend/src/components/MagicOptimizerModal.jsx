@@ -1,5 +1,7 @@
+import { useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X, Target, Loader2, Check, RotateCcw } from 'lucide-react';
+import useFocusTrap from '../hooks/useFocusTrap';
 
 const MagicOptimizerModal = ({
   isOpen,
@@ -18,6 +20,15 @@ const MagicOptimizerModal = ({
   applySuggestion,
   rollbackSuggestion,
 }) => {
+  const titleId = useId();
+
+  const modalRef = useFocusTrap({
+    isOpen,
+    onClose,
+    closeOnEscape: true,
+    setInertBackground: true,
+  });
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -28,6 +39,10 @@ const MagicOptimizerModal = ({
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 text-left"
         >
           <motion.div
+            ref={modalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
             initial={{ scale: 0.95, y: 15 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.95, y: 15 }}
@@ -38,7 +53,7 @@ const MagicOptimizerModal = ({
               <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 animate-pulse text-purple-200" />
                 <div>
-                  <h3 className="font-extrabold text-sm tracking-wide">
+                  <h3 id={titleId} className="font-extrabold text-sm tracking-wide">
                     CareerForge AI Spark Assistant
                   </h3>
                   <p className="text-[10px] text-indigo-100 font-medium">

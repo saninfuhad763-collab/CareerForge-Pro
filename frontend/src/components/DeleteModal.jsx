@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, Loader2, Info } from 'lucide-react';
 import { premiumEase } from '../animations/motionVariants';
+import useFocusTrap from '../hooks/useFocusTrap';
 
 const DeleteModal = ({ 
   isOpen, 
@@ -18,6 +19,15 @@ const DeleteModal = ({
   IconComponent = AlertCircle
 }) => {
   const [isDeleting, setIsDeleting] = useState(false);
+  const titleId = useId();
+  const descId = useId();
+
+  const modalRef = useFocusTrap({
+    isOpen,
+    onClose: !isDeleting ? onClose : undefined,
+    closeOnEscape: !isDeleting,
+    setInertBackground: true,
+  });
 
   const handleConfirm = async () => {
     if (!onConfirm) {
@@ -47,6 +57,11 @@ const DeleteModal = ({
 
           {/* Modal Box */}
           <motion.div
+            ref={modalRef}
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            aria-describedby={descId}
             className="w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl relative z-10 space-y-5"
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -57,10 +72,10 @@ const DeleteModal = ({
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${iconBgClass}`}>
                 <IconComponent className="w-5 h-5" />
               </div>
-              <h3 className="text-lg font-bold font-display text-slate-800 dark:text-slate-100 text-left">{title}</h3>
+              <h3 id={titleId} className="text-lg font-bold font-display text-slate-800 dark:text-slate-100 text-left">{title}</h3>
             </div>
             
-            <p className="text-sm text-slate-500 dark:text-slate-400 leading-normal text-left whitespace-pre-wrap">
+            <p id={descId} className="text-sm text-slate-500 dark:text-slate-400 leading-normal text-left whitespace-pre-wrap">
               {description}
             </p>
 
