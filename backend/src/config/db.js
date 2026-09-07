@@ -6,7 +6,11 @@ const DB_FILE = path.join(process.cwd(), 'db.json');
 
 const memoryStore = {
   User: [],
-  Resume: []
+  Resume: [],
+  JobDescription: [],
+  CoverLetter: [],
+  HistoryLog: [],
+  ContactMessage: [],
 };
 
 // Check if string is a valid bcrypt hash
@@ -22,16 +26,28 @@ const loadMemoryStore = () => {
       const parsed = JSON.parse(data);
       memoryStore.User = parsed.User || [];
       memoryStore.Resume = parsed.Resume || [];
+      memoryStore.JobDescription = parsed.JobDescription || [];
+      memoryStore.CoverLetter = parsed.CoverLetter || [];
+      memoryStore.HistoryLog = parsed.HistoryLog || [];
+      memoryStore.ContactMessage = parsed.ContactMessage || [];
       console.log(`[MongoDB Fallback] Loaded persistent mock database from: ${DB_FILE} (${memoryStore.User.length} users, ${memoryStore.Resume.length} resumes)`);
     } else {
       memoryStore.User = [];
       memoryStore.Resume = [];
+      memoryStore.JobDescription = [];
+      memoryStore.CoverLetter = [];
+      memoryStore.HistoryLog = [];
+      memoryStore.ContactMessage = [];
       console.log(`[MongoDB Fallback] No persistent db.json found. Initialized clean mock database state.`);
     }
   } catch (error) {
     console.error(`[MongoDB Fallback] Error loading persistent mock database: ${error.message}`);
     memoryStore.User = [];
     memoryStore.Resume = [];
+    memoryStore.JobDescription = [];
+    memoryStore.CoverLetter = [];
+    memoryStore.HistoryLog = [];
+    memoryStore.ContactMessage = [];
   }
 };
 
@@ -342,6 +358,13 @@ const activateMockMongoose = () => {
 };
 
 const connectDB = async () => {
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  if (isProduction && !process.env.MONGODB_URI) {
+    console.error('[MongoDB Fatal] MONGODB_URI environment variable is not defined in production.');
+    process.exit(1);
+  }
+
   try {
     console.log('[MongoDB] Attempting to connect to database...');
     // Register error handler before connect to swallow any unhandled Mongoose events
@@ -353,8 +376,15 @@ const connectDB = async () => {
     });
     console.log(`[MongoDB] Connected successfully to host: ${conn.connection.host}`);
   } catch (error) {
+    if (isProduction) {
+      console.error(`[MongoDB Fatal] Production connection to MongoDB failed: ${error.message}`);
+      console.error('[MongoDB Fatal] Silent in-memory/mock persistence (db.json) is disabled in production.');
+      console.error('[MongoDB Fatal] Terminating process to prevent silent data loss.');
+      process.exit(1);
+    }
+
     console.warn(`[MongoDB Warning] Connection failed: ${error.message}`);
-    console.warn(`[MongoDB Fallback] Activating ultra-reliable, high-performance In-Memory database mode...`);
+    console.warn(`[MongoDB Fallback] Activating In-Memory database mode for development...`);
     activateMockMongoose();
     console.log(`[MongoDB] In-Memory mock database successfully initialized.`);
   }

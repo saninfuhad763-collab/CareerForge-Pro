@@ -33,6 +33,10 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    resumeImportCount: {
+      type: Number,
+      default: 0,
+    },
     stripeCustomerId: {
       type: String,
       default: null,

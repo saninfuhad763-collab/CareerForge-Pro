@@ -2,7 +2,7 @@ import JobDescription from '../models/JobDescription.js';
 import Resume from '../models/Resume.js';
 import HistoryLog from '../models/HistoryLog.js';
 import User from '../models/User.js';
-import { isProPlan } from '../utils/planConstants.js';
+import { isProPlan, FREE_RESUME_IMPORT_LIMIT, FREE_JD_ANALYSIS_LIMIT } from '../utils/planConstants.js';
 import { executeAiChain, analyzeJobDescription, PROMPT_LIBRARY, getEmbeddingVector } from '../services/aiService.js';
 import { calculateAtsScore } from '../services/atsService.js';
 
@@ -137,6 +137,18 @@ export const analyzeJdAndScoreResume = async (req, res, next) => {
       jobDescriptionId = existingJd._id;
       isFallback = false;
     } else {
+      // Check quota before triggering expensive LLM Job Description analysis
+      if (!isProPlan(req.user)) {
+        const jdCount = await JobDescription.countDocuments({ userId: req.user._id });
+        if (jdCount >= FREE_JD_ANALYSIS_LIMIT) {
+          return res.status(403).json({
+            success: false,
+            message: `Free tier is limited to ${FREE_JD_ANALYSIS_LIMIT} target job description analyses. Upgrade to Pro for unlimited ATS optimizations!`,
+            requiresUpgrade: true,
+          });
+        }
+      }
+
       // 1. Analyze Job Description via LangChain/Groq Agent
       const analysisResult = await analyzeJobDescription(jdText);
       if (!analysisResult.success) {
@@ -441,6 +453,7 @@ export const getPlanStats = async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
     const resumeCount = await Resume.countDocuments({ userId: req.user._id });
+    const jdAnalysisCount = await JobDescription.countDocuments({ userId: req.user._id });
     const isPro = isProPlan(user);
 
     res.status(200).json({
@@ -450,6 +463,10 @@ export const getPlanStats = async (req, res, next) => {
       resumeCount,
       resumeLimit: isPro ? 'unlimited' : 1,
       aiLimit: isPro ? 'unlimited' : 10,
+      resumeImportCount: user.resumeImportCount || 0,
+      resumeImportLimit: isPro ? 'unlimited' : FREE_RESUME_IMPORT_LIMIT,
+      jdAnalysisCount,
+      jdAnalysisLimit: isPro ? 'unlimited' : FREE_JD_ANALYSIS_LIMIT,
     });
   } catch (error) {
     next(error);

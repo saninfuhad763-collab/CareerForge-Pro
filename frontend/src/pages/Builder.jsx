@@ -809,10 +809,14 @@ const Builder = () => {
           userMsg = data.message || 'Invalid request. Please ensure the job description text is not empty.';
           setAtsError({ type: 'validation', message: userMsg });
           setSaveStatus('ATS analysis failed — invalid request.');
-        } else if (response.status === 401 || response.status === 403) {
+        } else if (response.status === 401) {
           userMsg = 'Your session has expired. Please log in again to run ATS analysis.';
           setAtsError({ type: 'auth', message: userMsg });
           setSaveStatus('ATS analysis failed — authentication required.');
+        } else if (response.status === 403) {
+          userMsg = data.message || 'Free tier limit reached. Upgrade to Pro for unlimited Job Description analyses.';
+          setAtsError({ type: 'plan', message: userMsg });
+          setSaveStatus('ATS analysis limit reached.');
         } else if (response.status === 404) {
           userMsg = 'Resume not found. Please refresh the page and try again.';
           setAtsError({ type: 'notfound', message: userMsg });

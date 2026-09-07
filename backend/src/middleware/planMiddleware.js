@@ -1,5 +1,5 @@
 import Resume from '../models/Resume.js';
-import { isPremiumTemplate, isProPlan } from '../utils/planConstants.js';
+import { isPremiumTemplate, isProPlan, FREE_RESUME_IMPORT_LIMIT } from '../utils/planConstants.js';
 
 /**
  * Feature gate middleware to enforce maximum resume limits based on subscription plan
@@ -42,6 +42,30 @@ export const checkAiRewriteLimit = async (req, res, next) => {
       }
     }
     
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Feature gate middleware to enforce AI resume import limits based on subscription plan
+ */
+export const checkResumeImportLimit = async (req, res, next) => {
+  try {
+    const user = req.user; // Set by protect middleware
+
+    if (!isProPlan(user)) {
+      const importCount = user.resumeImportCount || 0;
+      if (importCount >= FREE_RESUME_IMPORT_LIMIT) {
+        return res.status(403).json({
+          success: false,
+          message: `You have reached the maximum free limit of ${FREE_RESUME_IMPORT_LIMIT} AI resume imports. Upgrade to Pro for unlimited AI resume parsing!`,
+          requiresUpgrade: true,
+        });
+      }
+    }
+
     next();
   } catch (error) {
     next(error);

@@ -4,6 +4,9 @@ export const ALL_TEMPLATES = [...FREE_TEMPLATES, ...PREMIUM_TEMPLATES];
 
 export const isPremiumTemplate = (templateId) => PREMIUM_TEMPLATES.includes(templateId);
 
+export const FREE_RESUME_IMPORT_LIMIT = 3;
+export const FREE_JD_ANALYSIS_LIMIT = 5;
+
 export const isProPlan = (user) => {
   if (!user) return false;
   if (user.plan === 'PRO') return true;

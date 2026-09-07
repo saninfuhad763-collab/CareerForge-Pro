@@ -2,6 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import { importResume } from '../controllers/resumeImportController.js';
 import { protect } from '../middleware/authMiddleware.js';
+import { checkResumeImportLimit } from '../middleware/planMiddleware.js';
 import { isSupportedResumeFile } from '../services/resumeImportService.js';
 
 const router = express.Router();
@@ -29,6 +30,6 @@ const handleUploadErrors = (req, res, next) => {
   });
 };
 
-router.post('/resume', protect, handleUploadErrors, importResume);
+router.post('/resume', protect, checkResumeImportLimit, handleUploadErrors, importResume);
 
 export default router;

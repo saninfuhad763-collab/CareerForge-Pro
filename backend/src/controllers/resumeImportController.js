@@ -1,4 +1,5 @@
 import { importResumeFile } from '../services/resumeImportService.js';
+import User from '../models/User.js';
 
 export const importResume = async (req, res) => {
   try {
@@ -10,6 +11,9 @@ export const importResume = async (req, res) => {
     }
 
     const result = await importResumeFile(req.file);
+
+    // Track successful resume import count on user document (no double counting on failures)
+    await User.findByIdAndUpdate(req.user._id, { $inc: { resumeImportCount: 1 } });
 
     res.status(200).json({
       success: true,
