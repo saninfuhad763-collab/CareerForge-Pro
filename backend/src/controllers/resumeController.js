@@ -5,7 +5,7 @@ import { isPremiumTemplate, isProPlan, resolveTemplateForUser } from '../utils/p
 // @desc    Get all resumes for the authenticated user
 // @route   GET /api/resumes
 // @access  Private
-export const getResumes = async (req, res) => {
+export const getResumes = async (req, res, next) => {
   try {
     // Return sorted by updated date (newest first)
     const resumes = await Resume.find({ userId: req.user._id })
@@ -17,14 +17,14 @@ export const getResumes = async (req, res) => {
       data: resumes,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
 // @desc    Get a single resume by ID
 // @route   GET /api/resumes/:id
 // @access  Private
-export const getResumeById = async (req, res) => {
+export const getResumeById = async (req, res, next) => {
   try {
     const resume = await Resume.findById(req.params.id);
 
@@ -42,14 +42,14 @@ export const getResumeById = async (req, res) => {
       data: resume,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
 // @desc    Create a new resume
 // @route   POST /api/resumes
 // @access  Private
-export const createResume = async (req, res) => {
+export const createResume = async (req, res, next) => {
   try {
     const { title, templateId } = req.body;
     const safeTemplateId = resolveTemplateForUser(templateId, req.user);
@@ -100,14 +100,14 @@ export const createResume = async (req, res) => {
       data: savedResume,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
 // @desc    Update an existing resume
 // @route   PUT /api/resumes/:id
 // @access  Private
-export const updateResume = async (req, res) => {
+export const updateResume = async (req, res, next) => {
   try {
     const resume = await Resume.findById(req.params.id);
 
@@ -173,14 +173,14 @@ export const updateResume = async (req, res) => {
       data: updatedResume,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
 // @desc    Delete a resume
 // @route   DELETE /api/resumes/:id
 // @access  Private
-export const deleteResume = async (req, res) => {
+export const deleteResume = async (req, res, next) => {
   try {
     const resume = await Resume.findById(req.params.id);
 
@@ -197,14 +197,14 @@ export const deleteResume = async (req, res) => {
     res.json({ success: true, message: 'Resume removed' });
 
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
 // @desc    Export resume as PDF
 // @route   POST /api/resumes/:id/export-pdf
 // @access  Private
-export const exportResumePdf = async (req, res) => {
+export const exportResumePdf = async (req, res, next) => {
   try {
     const resume = await Resume.findById(req.params.id);
 
@@ -233,10 +233,6 @@ export const exportResumePdf = async (req, res) => {
     res.setHeader('Content-Length', pdfBuffer.length);
     res.status(200).send(pdfBuffer);
   } catch (error) {
-    console.error('[PDF Export] Failed:', error.message);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to generate PDF export.',
-    });
+    next(error);
   }
 };

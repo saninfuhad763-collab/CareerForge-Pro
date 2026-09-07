@@ -7,6 +7,7 @@ import {
 } from '../controllers/coverLetterPersistenceController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { checkCoverLetterAccess } from '../middleware/planMiddleware.js';
+import { pdfExportGuard } from '../middleware/pdfExportGuard.js';
 
 const router = express.Router();
 
@@ -18,7 +19,7 @@ router.route('/')
   .post(saveCoverLetter)
   .get(getCoverLetters);
 
-router.post('/:id/export-pdf', exportCoverLetterPdf);
+router.post('/:id/export-pdf', pdfExportGuard, exportCoverLetterPdf);
 
 router.route('/:id')
   .delete(deleteCoverLetter);

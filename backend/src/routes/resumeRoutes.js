@@ -10,6 +10,7 @@ import {
 import { protect } from '../middleware/authMiddleware.js';
 import { validateResume } from '../middleware/validationMiddleware.js';
 import { checkResumeLimit, checkPremiumTemplate } from '../middleware/planMiddleware.js';
+import { pdfExportGuard } from '../middleware/pdfExportGuard.js';
 
 const router = express.Router();
 
@@ -17,7 +18,7 @@ router.route('/')
   .get(protect, getResumes)
   .post(protect, checkResumeLimit, checkPremiumTemplate, validateResume, createResume);
 
-router.post('/:id/export-pdf', protect, exportResumePdf);
+router.post('/:id/export-pdf', protect, pdfExportGuard, exportResumePdf);
 
 router.route('/:id')
   .get(protect, getResumeById)

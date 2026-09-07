@@ -29,27 +29,47 @@ const app = express();
 app.use(helmet());
 
 // Cross-Origin Resource Sharing
-const allowedOrigins = [
+const devOrigins = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
   'http://localhost:5174',
   'http://127.0.0.1:5174',
   'http://localhost:3000',
-  'http://127.0.0.1:3000'
+  'http://127.0.0.1:3000',
 ];
+
+const isProduction = process.env.NODE_ENV === 'production';
+
+const getConfiguredOrigins = () => {
+  if (!process.env.CLIENT_URL) return [];
+  return process.env.CLIENT_URL.split(',').map((url) => url.trim()).filter(Boolean);
+};
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, curl, postman)
+    // Allow requests with no origin (like mobile apps, curl, postman, server-to-server)
     if (!origin) return callback(null, true);
-    
-    // Check if the origin is in the allowed list or matches production CLIENT_URL
-    const clientUrl = process.env.CLIENT_URL;
-    if (allowedOrigins.includes(origin) || (clientUrl && origin === clientUrl)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+
+    const configuredOrigins = getConfiguredOrigins();
+
+    if (isProduction) {
+      // In production, reject localhost/127.0.0.1 origins unconditionally
+      const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
+      if (isLocalhost) {
+        return callback(new Error('Not allowed by CORS'));
+      }
+      if (configuredOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS'));
     }
+
+    // Development / non-production: allow dev origins or configured origins
+    if (devOrigins.includes(origin) || configuredOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   optionsSuccessStatus: 200,

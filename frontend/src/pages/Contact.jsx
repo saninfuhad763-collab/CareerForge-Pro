@@ -4,7 +4,7 @@ import { Mail, Github, Linkedin, Globe, Send, ArrowRight, Loader2, CheckCircle2,
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const Contact = () => {
   const { user } = useAuthStore();

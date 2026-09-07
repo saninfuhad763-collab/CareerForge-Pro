@@ -97,7 +97,7 @@ export const deleteCoverLetter = async (req, res, next) => {
  * @route   POST /api/cover-letters/:id/export-pdf
  * @access  Private
  */
-export const exportCoverLetterPdf = async (req, res) => {
+export const exportCoverLetterPdf = async (req, res, next) => {
   try {
     const coverLetter = await CoverLetter.findOne({
       _id: req.params.id,
@@ -134,10 +134,6 @@ export const exportCoverLetterPdf = async (req, res) => {
     res.setHeader('Content-Length', pdfBuffer.length);
     res.status(200).send(pdfBuffer);
   } catch (error) {
-    console.error('[Cover Letter PDF Export] Failed:', error.message);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to generate cover letter PDF.',
-    });
+    next(error);
   }
 };
