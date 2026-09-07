@@ -1984,14 +1984,14 @@ const Builder = () => {
             {isJdOpen && (
               <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800/80">
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Target Job Description</label>
                     <div className="flex items-center gap-1">
-                      <span className="text-[9px] text-slate-400 font-bold">Preset:</span>
+                      <span className="text-[9px] text-slate-400 font-bold shrink-0">Preset:</span>
                       <select
                         value={selectedJdPreset}
                         onChange={(e) => handlePresetChange(e.target.value)}
-                        className="px-2 py-0.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-[10px] font-extrabold rounded-lg text-indigo-600 dark:text-indigo-400 focus:outline-none cursor-pointer"
+                        className="w-full sm:w-auto px-2 py-0.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-[10px] font-extrabold rounded-lg text-indigo-600 dark:text-indigo-400 focus:outline-none cursor-pointer"
                       >
                         <option value="">-- Choose Job --</option>
                         <option value="mern">MERN Stack Developer</option>

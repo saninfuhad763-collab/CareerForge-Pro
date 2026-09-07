@@ -1270,7 +1270,7 @@ const Dashboard = () => {
                 {/* Templates Selector Grid */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Target Template</label>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     {[
                       { id: 'modern', name: 'Modern', desc: 'Elegant typography' },
                       { id: 'classic', name: 'Classic', desc: 'Standard layout' },
@@ -1288,21 +1288,22 @@ const Dashboard = () => {
                           }
                           setSelectedTemplate(tpl.id);
                         }}
-                        className={`p-3 text-left border rounded-xl flex flex-col justify-between transition-all ${
+                        className={`p-2 sm:p-3 text-left border rounded-xl flex flex-col justify-between transition-all min-w-0 ${
                           locked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
                         } ${
                           selectedTemplate === tpl.id
                             ? templateThemes[tpl.id]?.cardSelected || 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20'
                             : 'border-slate-200 dark:border-slate-800 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-950/50'
                         }`}
+                        title={tpl.name}
                       >
-                        <span className={`text-xs font-bold transition-colors flex items-center gap-1 ${
+                        <span className={`text-xs font-bold transition-colors flex items-center gap-1 min-w-0 ${
                           selectedTemplate === tpl.id
                             ? 'text-indigo-600 dark:text-indigo-400'
                             : 'text-slate-700 dark:text-slate-300'
                         }`}>
-                          {tpl.name}
-                          {locked && <Lock className="w-3 h-3 text-amber-500" />}
+                          <span className="min-w-0 truncate">{tpl.name}</span>
+                          {locked && <Lock className="w-3 h-3 text-amber-500 shrink-0" />}
                         </span>
                         <span className="text-[9px] text-slate-400 truncate mt-1 leading-none">
                           {locked ? 'Pro only' : tpl.desc}
