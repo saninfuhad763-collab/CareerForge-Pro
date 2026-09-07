@@ -1914,10 +1914,7 @@ const Builder = () => {
           {!autoSaveEnabled && (
             <button
               type="button"
-              onClick={() => {
-                handleForceSave();
-                setIsActionDrawerOpen(false);
-              }}
+              onClick={handleForceSave}
               disabled={saving}
               className="w-full flex items-center justify-center gap-2 bg-slate-900 dark:bg-slate-100 hover:bg-slate-800 dark:hover:bg-white text-white dark:text-slate-900 px-4 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-50 cursor-pointer active:scale-95"
             >
@@ -1930,7 +1927,6 @@ const Builder = () => {
           <button
             type="button"
             onClick={async () => {
-              setIsActionDrawerOpen(false);
               setIsExportingPdf(true);
               const success = await exportResumePdf(id, currentResume?.title || 'resume');
               setIsExportingPdf(false);
@@ -2297,7 +2293,9 @@ const Builder = () => {
                 {/* Requirement Alignment (Fix 5 & Fix 6) */}
                 <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-800/80">
                   <div className="flex items-center justify-between">
-                    <h6 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Requirement Alignment</h6>
+                    <h6 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                      <span>Requirement Alignment</span>
+                    </h6>
                     <input
                       type="text"
                       placeholder="Filter requirements..."
@@ -2307,74 +2305,82 @@ const Builder = () => {
                       className="px-2 py-0.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-[9px] focus:outline-none focus:border-indigo-500 w-28 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                     />
                   </div>
-                  <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
-                    {(() => {
-                      let allReqs = [];
-                      if (dynamicAtsData.requirementEvidence && dynamicAtsData.requirementEvidence.length > 0) {
-                        allReqs = dynamicAtsData.requirementEvidence.map(e => ({
-                          name: e.canonicalName,
-                          status: (e.matchType === 'EXACT' || e.matchType === 'ALIAS')
-                            ? 'matched'
-                            : e.matchType === 'PARTIAL'
-                            ? 'partial'
-                            : 'missing',
-                        }));
-                      } else {
-                        const partialSet = new Set(dynamicAtsData.partialMatches || []);
-                        allReqs = [
-                          ...dynamicAtsData.matchedKeywords.map(k => ({ name: k, status: 'matched' })),
-                          ...(dynamicAtsData.partialMatches || []).map(k => ({ name: k, status: 'partial' })),
-                          ...dynamicAtsData.missingKeywords.filter(k => !partialSet.has(k)).map(k => ({ name: k, status: 'missing' })),
-                        ];
-                      }
-                      const filtered = allReqs.filter(k => k.name.toLowerCase().includes(keywordSearch.toLowerCase()));
-                      
-                      if (filtered.length === 0) {
-                        return <span className="text-[9px] text-slate-400">No matching requirements found.</span>;
-                      }
+                  <div className="relative">
+                    <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1 pb-3">
+                      {(() => {
+                        let allReqs = [];
+                        if (dynamicAtsData.requirementEvidence && dynamicAtsData.requirementEvidence.length > 0) {
+                          allReqs = dynamicAtsData.requirementEvidence.map(e => ({
+                            name: e.canonicalName,
+                            status: (e.matchType === 'EXACT' || e.matchType === 'ALIAS')
+                              ? 'matched'
+                              : e.matchType === 'PARTIAL'
+                              ? 'partial'
+                              : 'missing',
+                          }));
+                        } else {
+                          const partialSet = new Set(dynamicAtsData.partialMatches || []);
+                          allReqs = [
+                            ...dynamicAtsData.matchedKeywords.map(k => ({ name: k, status: 'matched' })),
+                            ...(dynamicAtsData.partialMatches || []).map(k => ({ name: k, status: 'partial' })),
+                            ...dynamicAtsData.missingKeywords.filter(k => !partialSet.has(k)).map(k => ({ name: k, status: 'missing' })),
+                          ];
+                        }
+                        const filtered = allReqs.filter(k => k.name.toLowerCase().includes(keywordSearch.toLowerCase()));
 
-                      return filtered.map((item) => (
-                        <span
-                          key={item.name}
-                          onClick={() => {
-                            if (item.status === 'missing' || item.status === 'partial') {
-                              openMagicOptimizer('bullet', '', (newVal) => {
-                                setAlertModalTitle('Suggestion Ready');
-                                setAlertModalContent(`Suggested optimized sentence to inject:\n\n${newVal}`);
-                                setAlertModalOpen(true);
-                              });
+                        if (filtered.length === 0) {
+                          return <span className="text-[9px] text-slate-400">No matching requirements found.</span>;
+                        }
+
+                        return filtered.map((item) => (
+                          <span
+                            key={item.name}
+                            onClick={() => {
+                              if (item.status === 'missing' || item.status === 'partial') {
+                                openMagicOptimizer('bullet', '', (newVal) => {
+                                  setAlertModalTitle('Suggestion Ready');
+                                  setAlertModalContent(`Suggested optimized sentence to inject:\n\n${newVal}`);
+                                  setAlertModalOpen(true);
+                                });
+                              }
+                            }}
+                            className={`px-2 py-0.5 rounded-lg text-[9px] font-bold border flex items-center gap-1 transition-colors ${
+                              item.status === 'matched'
+                                ? 'bg-emerald-50/60 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30'
+                                : item.status === 'partial'
+                                ? 'bg-amber-50/60 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border-amber-200/50 dark:border-amber-900/40 cursor-pointer hover:border-amber-500'
+                                : 'bg-rose-50/60 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 border-rose-200/50 dark:border-rose-900/40 cursor-pointer hover:border-indigo-500'
+                            }`}
+                            title={
+                              item.status === 'matched'
+                                ? 'Requirement verified'
+                                : item.status === 'partial'
+                                ? 'Partial evidence — click to optimize'
+                                : 'No verified evidence — click to optimize'
                             }
-                          }}
-                          className={`px-2 py-0.5 rounded-lg text-[9px] font-bold border flex items-center gap-1 transition-colors ${
-                            item.status === 'matched'
-                              ? 'bg-emerald-50/60 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30'
-                              : item.status === 'partial'
-                              ? 'bg-amber-50/60 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border-amber-200/50 dark:border-amber-900/40 cursor-pointer hover:border-amber-500'
-                              : 'bg-rose-50/60 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 border-rose-200/50 dark:border-rose-900/40 cursor-pointer hover:border-indigo-500'
-                          }`}
-                          title={
-                            item.status === 'matched'
-                              ? 'Requirement verified'
-                              : item.status === 'partial'
-                              ? 'Partial evidence — click to optimize'
-                              : 'No verified evidence — click to optimize'
-                          }
-                        >
-                          <span className={`w-1.5 h-1.5 rounded-full ${
-                            item.status === 'matched'
-                              ? 'bg-emerald-500'
-                              : item.status === 'partial'
-                              ? 'bg-amber-500'
-                              : 'bg-rose-500 animate-pulse'
-                          }`} />
-                          {item.name}
-                          {item.status === 'partial' && (
-                            <span className="text-[7.5px] uppercase font-extrabold tracking-wider ml-0.5 opacity-80">(Partial)</span>
-                          )}
-                        </span>
-                      ));
-                    })()}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${
+                              item.status === 'matched'
+                                ? 'bg-emerald-500'
+                                : item.status === 'partial'
+                                ? 'bg-amber-500'
+                                : 'bg-rose-500 animate-pulse'
+                            }`} />
+                            {item.name}
+                            {item.status === 'partial' && (
+                              <span className="text-[7.5px] uppercase font-extrabold tracking-wider ml-0.5 opacity-80">(Partial)</span>
+                            )}
+                          </span>
+                        ));
+                      })()}
+                    </div>
+                    {/* Visual overflow scroll gradient cue */}
+                    <div
+                      className="pointer-events-none absolute bottom-0 inset-x-0 h-4 bg-gradient-to-t from-slate-50 dark:from-slate-950 to-transparent"
+                      aria-hidden="true"
+                    />
                   </div>
+
                 </div>
               </>
             )}

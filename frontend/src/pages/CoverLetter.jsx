@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useResumeStore } from '../store/resumeStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, Sparkles, Copy, Check, Briefcase, Building, AlertCircle, ArrowLeft, LogOut, Compass, CreditCard, Save, Loader2, Download, FileSignature, Gauge, Settings } from 'lucide-react';
+import { FileText, Sparkles, Copy, Check, Briefcase, Building, AlertCircle, ArrowLeft, LogOut, Compass, CreditCard, Save, Loader2, Download, FileSignature, Gauge, Settings, Menu } from 'lucide-react';
 import { isProUser } from '../utils/planConstants';
 
 import { sidebarItemVariant } from '../animations/dashboardAnimations';
@@ -11,6 +11,7 @@ import { premiumEase } from '../animations/motionVariants';
 import { staggerContainer, staggerItem } from '../animations/staggerAnimations';
 import { buttonScale, professionalCardVariant } from '../animations/cardAnimations';
 import DeleteModal from '../components/DeleteModal';
+import Drawer from '../components/Drawer';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -21,7 +22,9 @@ const CoverLetter = () => {
   const { resumes, loadResumes, loading: resumesLoading } = useResumeStore();
   const navigate = useNavigate();
   const activeTab = 'cover-letters';
+  const isPro = isProUser(user);
 
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [selectedResumeId, setSelectedResumeId] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [jobTitle, setJobTitle] = useState('');
@@ -266,8 +269,6 @@ const CoverLetter = () => {
     navigate('/billing');
   };
 
-  const isPro = isProUser(user);
-
   if (user && !isPro) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
@@ -304,182 +305,229 @@ const CoverLetter = () => {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col md:flex-row text-slate-800 dark:text-slate-100">
-      {/* Sidebar Navigation */}
-      <aside className="w-full md:w-64 bg-white dark:bg-slate-900 border-b md:border-r border-slate-200/50 dark:border-slate-800/50 flex flex-col p-4 py-5 shrink-0 md:sticky md:top-0 md:h-screen z-20">
-        <div className="space-y-5 shrink-0">
-          {/* Logo brand */}
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-linear-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-bold font-display">
-              CF
-            </div>
-            <span className="font-bold text-lg font-display text-slate-800 dark:text-slate-100">
-              CareerForge Pro
-            </span>
+  const renderSidebarContent = (onItemClick) => (
+    <div className="flex flex-col h-full justify-between">
+      <div className="space-y-5 shrink-0">
+        {/* Logo brand */}
+        <div className="hidden lg:flex items-center gap-2">
+          <div className="w-9 h-9 rounded-xl bg-linear-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-bold font-display">
+            CF
           </div>
+          <span className="font-bold text-lg font-display text-slate-800 dark:text-slate-100">
+            CareerForge Pro
+          </span>
+        </div>
 
-          {/* User Bio Card */}
-          <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl flex items-center gap-3 border border-slate-100 dark:border-slate-800">
-            <div className="w-9 h-9 rounded-lg bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 flex items-center justify-center font-bold text-sm">
-              {user?.name?.slice(0, 2).toUpperCase()}
+        {/* User Bio Card */}
+        <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl flex items-center gap-3 border border-slate-100 dark:border-slate-800">
+          <div className="w-9 h-9 rounded-lg bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 flex items-center justify-center font-bold text-sm">
+            {user?.name?.slice(0, 2).toUpperCase()}
+          </div>
+          <div className="text-left overflow-hidden">
+            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{user?.name}</p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <p className="text-[10px] text-slate-400 truncate max-w-21.25">{user?.email}</p>
+              <span className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded leading-none shrink-0 uppercase tracking-wider ${
+                user?.plan === 'PRO'
+                  ? 'bg-amber-400 text-slate-900 shadow-sm'
+                  : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
+              }`}>
+                {user?.plan || 'FREE'}
+              </span>
             </div>
-            <div className="text-left overflow-hidden">
-              <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{user?.name}</p>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <p className="text-[10px] text-slate-400 truncate max-w-21.25">{user?.email}</p>
-                <span className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded leading-none shrink-0 uppercase tracking-wider ${
-                  user?.plan === 'PRO' 
-                    ? 'bg-amber-400 text-slate-900 shadow-sm' 
-                    : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
-                }`}>
-                  {user?.plan || 'FREE'}
+          </div>
+        </div>
+
+        {/* Sidebar Menu Links */}
+        <nav className="space-y-0.5 text-left mt-6">
+          <motion.button
+            onClick={() => {
+              onItemClick?.();
+              navigate('/');
+            }}
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-lg transition-colors cursor-pointer"
+            whileHover="hover"
+            variants={sidebarItemVariant}
+          >
+            <Compass className="w-4.5 h-4.5" />
+            <span>Back to Home</span>
+          </motion.button>
+          <motion.button
+            onClick={() => {
+              onItemClick?.();
+              navigate('/dashboard?tab=resumes');
+            }}
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-lg transition-all cursor-pointer"
+            whileHover="hover"
+            variants={sidebarItemVariant}
+          >
+            <FileText className="w-4.5 h-4.5" />
+            <span>Resumes</span>
+          </motion.button>
+          <motion.button
+            onClick={() => {
+              onItemClick?.();
+              navigate('/dashboard?tab=ai-scoring');
+            }}
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-lg transition-all cursor-pointer"
+            whileHover="hover"
+            variants={sidebarItemVariant}
+          >
+            <Gauge className="w-4.5 h-4.5" />
+            <span>AI Scoring</span>
+          </motion.button>
+          <motion.button
+            onClick={() => {
+              onItemClick?.();
+              navigate('/dashboard?tab=cover-letters');
+            }}
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-semibold rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 shadow-sm shadow-indigo-100 dark:shadow-none cursor-pointer"
+            whileHover="hover"
+            variants={sidebarItemVariant}
+          >
+            <FileSignature className="w-4.5 h-4.5" />
+            <span>Cover Letters</span>
+          </motion.button>
+          <motion.button
+            onClick={() => {
+              onItemClick?.();
+              navigate('/dashboard?tab=settings');
+            }}
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-lg transition-all cursor-pointer"
+            whileHover="hover"
+            variants={sidebarItemVariant}
+          >
+            <Settings className="w-4.5 h-4.5" />
+            <span>Settings</span>
+          </motion.button>
+        </nav>
+      </div>
+
+      {/* Sidebar Footer Operations */}
+      <div className="mt-auto pt-4 space-y-2 shrink-0">
+        {user?.plan === 'PRO' || isPro ? (
+          <motion.div
+            whileHover={{ y: -2, scale: 1.01 }}
+            transition={{ duration: 0.2 }}
+            className="p-3.5 rounded-xl bg-linear-to-br from-indigo-500 via-indigo-600 to-purple-600 text-white relative overflow-hidden shadow-sm shadow-indigo-500/20 text-left group"
+          >
+            <div className="absolute -right-4 -bottom-4 w-16 h-16 rounded-full bg-white/10 blur-xl pointer-events-none transition-transform group-hover:scale-150" />
+            <div className="relative z-10">
+              <div className="mb-1.5">
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-400 text-slate-900 font-bold text-[8px] rounded uppercase tracking-wider shadow-sm">
+                  <Sparkles className="w-2 h-2 fill-slate-900" /> PRO MEMBER
                 </span>
               </div>
+              <h4 className="font-bold text-xs mb-1">Pro Plan Active</h4>
+              <div className="text-[10px] text-indigo-100 mb-2.5 leading-tight space-y-0.5">
+                <p>Unlimited resumes</p>
+                <p>Unlimited AI rewrites</p>
+                <p>Premium templates unlocked</p>
+              </div>
+              <button
+                onClick={() => {
+                  onItemClick?.();
+                  navigate('/billing');
+                }}
+                className="w-full bg-white/20 hover:bg-white/30 text-white transition-colors py-1.5 rounded-lg text-[11px] font-bold shadow-sm shadow-indigo-950/10 cursor-pointer"
+              >
+                View Plan
+              </button>
             </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            whileHover={{ y: -2, scale: 1.01 }}
+            transition={{ duration: 0.2 }}
+            className="p-3.5 rounded-xl bg-linear-to-br from-indigo-500 via-indigo-600 to-purple-600 text-white relative overflow-hidden shadow-sm shadow-indigo-500/20 text-left group"
+          >
+            <div className="absolute -right-4 -bottom-4 w-16 h-16 rounded-full bg-white/10 blur-xl pointer-events-none transition-transform group-hover:scale-150" />
+            <div className="relative z-10">
+              <div className="mb-1.5">
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-400 text-slate-900 font-bold text-[8px] rounded uppercase tracking-wider shadow-sm">
+                  <Sparkles className="w-2 h-2 fill-slate-900" /> PREMIUM
+                </span>
+              </div>
+              <h4 className="font-bold text-xs mb-1">Upgrade to Pro Plan</h4>
+              <p className="text-[10px] text-indigo-100 mb-2.5 leading-tight">
+                Unlock unlimited resume generation, keyword analytics, and premium templates!
+              </p>
+              <button
+                onClick={() => {
+                  onItemClick?.();
+                  handleUpgrade();
+                }}
+                className="w-full bg-white hover:bg-slate-50 text-indigo-600 transition-colors py-1.5 rounded-lg text-[11px] font-bold shadow-md shadow-indigo-950/20 cursor-pointer"
+              >
+                Upgrade to Pro
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        <button
+          onClick={() => {
+            onItemClick?.();
+            navigate('/billing/details');
+          }}
+          className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-lg transition-colors cursor-pointer"
+        >
+          <CreditCard className="w-4.5 h-4.5" />
+          <span>Billing</span>
+        </button>
+
+        <button
+          onClick={() => {
+            onItemClick?.();
+            setShowSignoutConfirm(true);
+          }}
+          className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors cursor-pointer"
+        >
+          <LogOut className="w-4.5 h-4.5" />
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col lg:flex-row text-slate-800 dark:text-slate-100">
+      {/* Mobile/Tablet Header Bar (< 1024px) */}
+      <header className="lg:hidden sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-800/60 px-4 py-3 flex items-center justify-between shadow-xs">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-linear-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center shadow-md shadow-indigo-500/20 text-white font-bold text-xs font-display">
+            CF
           </div>
-
-          {/* Sidebar Menu Links */}
-          <nav className="space-y-0.5 text-left mt-6">
-            <motion.button 
-              onClick={() => navigate('/')}
-              className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-lg transition-colors cursor-pointer"
-              whileHover="hover"
-              variants={sidebarItemVariant}
-            >
-              <Compass className="w-4.5 h-4.5" />
-              <span>Back to Home</span>
-            </motion.button>
-            <motion.button 
-              onClick={() => navigate('/dashboard?tab=resumes')}
-              className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${
-                activeTab === 'resumes'
-                  ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 font-semibold shadow-sm shadow-indigo-100 dark:shadow-none'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/40'
-              }`}
-              whileHover="hover"
-              variants={sidebarItemVariant}
-            >
-              <FileText className="w-4.5 h-4.5" />
-              <span>Resumes</span>
-            </motion.button>
-             <motion.button 
-              onClick={() => navigate('/dashboard?tab=ai-scoring')}
-              className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${
-                activeTab === 'ai-scoring'
-                  ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 font-semibold shadow-sm shadow-indigo-100 dark:shadow-none'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/40'
-              }`}
-              whileHover="hover"
-              variants={sidebarItemVariant}
-            >
-              <Gauge className="w-4.5 h-4.5" />
-              <span>AI Scoring</span>
-            </motion.button>
-            <motion.button 
-              onClick={() => navigate('/dashboard?tab=cover-letters')}
-              className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${
-                activeTab === 'cover-letters'
-                  ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 font-semibold shadow-sm shadow-indigo-100 dark:shadow-none'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/40'
-              }`}
-              whileHover="hover"
-              variants={sidebarItemVariant}
-            >
-              <FileSignature className="w-4.5 h-4.5" />
-              <span>Cover Letters</span>
-            </motion.button>
-            <motion.button 
-              onClick={() => navigate('/dashboard?tab=settings')}
-              className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${
-                activeTab === 'settings'
-                  ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 font-semibold shadow-sm shadow-indigo-100 dark:shadow-none'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/40'
-              }`}
-              whileHover="hover"
-              variants={sidebarItemVariant}
-            >
-              <Settings className="w-4.5 h-4.5" />
-              <span>Settings</span>
-            </motion.button>
-          </nav>
+          <span className="font-bold text-base font-display text-slate-800 dark:text-slate-100">
+            CareerForge <span className="text-indigo-600 dark:text-indigo-400">Pro</span>
+          </span>
         </div>
 
-        {/* Sidebar Footer Operations */}
-        <div className="mt-auto pt-4 space-y-2 shrink-0">
-          {user?.plan === 'PRO' || isPro ? (
-            <motion.div 
-              whileHover={{ y: -2, scale: 1.01 }}
-              transition={{ duration: 0.2 }}
-              className="p-3.5 rounded-xl bg-linear-to-br from-indigo-500 via-indigo-600 to-purple-600 text-white relative overflow-hidden shadow-sm shadow-indigo-500/20 text-left group"
-            >
-              <div className="absolute -right-4 -bottom-4 w-16 h-16 rounded-full bg-white/10 blur-xl pointer-events-none transition-transform group-hover:scale-150" />
-              <div className="relative z-10">
-                <div className="mb-1.5">
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-400 text-slate-900 font-bold text-[8px] rounded uppercase tracking-wider shadow-sm">
-                    <Sparkles className="w-2 h-2 fill-slate-900" /> PRO MEMBER
-                  </span>
-                </div>
-                <h4 className="font-bold text-xs mb-1">Pro Plan Active</h4>
-                <div className="text-[10px] text-indigo-100 mb-2.5 leading-tight space-y-0.5">
-                  <p>Unlimited resumes</p>
-                  <p>Unlimited AI rewrites</p>
-                  <p>Premium templates unlocked</p>
-                </div>
-                <button
-                  onClick={() => navigate('/billing')}
-                  className="w-full bg-white/20 hover:bg-white/30 text-white transition-colors py-1.5 rounded-lg text-[11px] font-bold shadow-sm shadow-indigo-950/10 cursor-pointer"
-                >
-                  View Plan
-                </button>
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div 
-              whileHover={{ y: -2, scale: 1.01 }}
-              transition={{ duration: 0.2 }}
-              className="p-3.5 rounded-xl bg-linear-to-br from-indigo-500 via-indigo-600 to-purple-600 text-white relative overflow-hidden shadow-sm shadow-indigo-500/20 text-left group"
-            >
-              <div className="absolute -right-4 -bottom-4 w-16 h-16 rounded-full bg-white/10 blur-xl pointer-events-none transition-transform group-hover:scale-150" />
-              <div className="relative z-10">
-                <div className="mb-1.5">
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-400 text-slate-900 font-bold text-[8px] rounded uppercase tracking-wider shadow-sm">
-                    <Sparkles className="w-2 h-2 fill-slate-900" /> PREMIUM
-                  </span>
-                </div>
-                <h4 className="font-bold text-xs mb-1">Upgrade to Pro Plan</h4>
-                <p className="text-[10px] text-indigo-100 mb-2.5 leading-tight">
-                  Unlock unlimited resume generation, keyword analytics, and premium templates!
-                </p>
-                <button
-                  onClick={handleUpgrade}
-                  className="w-full bg-white hover:bg-slate-50 text-indigo-600 transition-colors py-1.5 rounded-lg text-[11px] font-bold shadow-md shadow-indigo-950/20 cursor-pointer"
-                >
-                  Upgrade to Pro
-                </button>
-              </div>
-            </motion.div>
-          )}
+        <button
+          type="button"
+          onClick={() => setIsMobileNavOpen(true)}
+          aria-label="Open navigation menu"
+          className="p-2 -mr-1 rounded-xl text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      </header>
 
-          <button
-            onClick={() => navigate('/billing/details')}
-            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-lg transition-colors cursor-pointer"
-          >
-            <CreditCard className="w-4.5 h-4.5" />
-            <span>Billing</span>
-          </button>
+      {/* Mobile Navigation Right-side Drawer (< 1024px) */}
+      <Drawer
+        isOpen={isMobileNavOpen}
+        onClose={() => setIsMobileNavOpen(false)}
+        title="Navigation Menu"
+        ariaLabel="Navigation Menu"
+      >
+        {renderSidebarContent(() => setIsMobileNavOpen(false))}
+      </Drawer>
 
-          <button
-            onClick={() => {
-              setShowSignoutConfirm(true);
-            }}
-            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors cursor-pointer"
-          >
-            <LogOut className="w-4.5 h-4.5" />
-            <span>Sign Out</span>
-          </button>
-        </div>
+      {/* Dynamic Desktop Sidebar Navigation (>= 1024px) */}
+      <aside className="hidden lg:flex lg:w-64 bg-white dark:bg-slate-900 border-r border-slate-200/50 dark:border-slate-800/50 flex-col p-4 py-5 shrink-0 lg:sticky lg:top-0 lg:h-screen">
+        {renderSidebarContent()}
       </aside>
+
 
       {/* Main Panel Content Area */}
       <motion.main 
