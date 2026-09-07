@@ -1272,9 +1272,9 @@ const Dashboard = () => {
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Target Template</label>
                   <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     {[
-                      { id: 'modern', name: 'Modern', desc: 'Elegant typography' },
-                      { id: 'classic', name: 'Classic', desc: 'Standard layout' },
-                      { id: 'minimalist', name: 'Minimal', desc: 'Ultra clean space' },
+                      { id: 'modern', name: 'Modern', desc: 'Clean type' },
+                      { id: 'classic', name: 'Classic', desc: 'Standard' },
+                      { id: 'minimalist', name: 'Minimal', desc: 'Simple' },
                     ].map((tpl) => {
                       const locked = isPremiumTemplate(tpl.id) && !isPro;
                       return (
