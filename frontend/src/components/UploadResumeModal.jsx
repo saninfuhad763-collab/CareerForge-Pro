@@ -35,11 +35,13 @@ const UploadResumeModal = ({
                 </div>
               </div>
               <button
+                type="button"
                 onClick={onClose}
                 disabled={isImportingResume}
+                aria-label="Close dialog"
                 className="text-white/80 hover:text-white transition-colors cursor-pointer disabled:opacity-50"
               >
-                <X className="w-5 h-5" />
+                <X aria-hidden="true" className="w-5 h-5" />
               </button>
             </div>
 

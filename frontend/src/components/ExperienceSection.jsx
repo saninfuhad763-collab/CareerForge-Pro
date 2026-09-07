@@ -37,10 +37,12 @@ const ExperienceSection = ({
               {experience.map((exp, idx) => (
                 <div key={idx} className="space-y-4 p-4 bg-slate-50/50 dark:bg-slate-950/30 rounded-xl relative border border-slate-100 dark:border-slate-800">
                   <button
+                    type="button"
                     onClick={() => handleRemoveExperience(idx)}
+                    aria-label={`Delete experience position ${idx + 1}`}
                     className="absolute top-3 right-3 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4" aria-hidden="true" />
                   </button>
                   
                   <h6 className="text-xs font-bold text-indigo-600 dark:text-indigo-400">Position #{idx + 1}</h6>
@@ -130,7 +132,7 @@ const ExperienceSection = ({
                           className="inline-flex items-center gap-1 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-950 text-amber-700 dark:text-amber-400 text-[9px] font-bold px-2.5 py-1.5 rounded-md border border-amber-200/50 dark:border-amber-900/40 cursor-pointer hover:-translate-y-0.5 active:scale-95 active:translate-y-0 transition-all duration-150"
                           title={`Undo bullet optimization (${bulletHistory[idx].length} in history)`}
                         >
-                          <RotateCcw className="w-2.5 h-2.5" />
+                          <RotateCcw className="w-2.5 h-2.5" aria-hidden="true" />
                           <span>Undo</span>
                         </button>
                       )}
@@ -141,7 +143,7 @@ const ExperienceSection = ({
                         title={!exp.description.trim() ? "Please write a draft bullet first to enable AI optimization." : undefined}
                         className="inline-flex items-center gap-1 bg-linear-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-[9px] font-bold px-2.5 py-1.5 rounded-md shadow-sm shadow-indigo-500/25 cursor-pointer hover:-translate-y-0.5 active:scale-95 active:translate-y-0 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100"
                       >
-                        <Sparkles className="w-2.5 h-2.5" />
+                        <Sparkles className="w-2.5 h-2.5" aria-hidden="true" />
                         <span>Optimize Bullets</span>
                       </button>
                     </div>
@@ -154,7 +156,7 @@ const ExperienceSection = ({
                 onClick={handleAddExperience}
                 className="w-full py-2 border border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-500 rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold text-slate-500 hover:text-indigo-600 transition-all cursor-pointer"
               >
-                <Plus className="w-4 h-4" /> Add Experience
+                <Plus className="w-4 h-4" aria-hidden="true" /> Add Experience
               </button>
             </div>
           </motion.div>

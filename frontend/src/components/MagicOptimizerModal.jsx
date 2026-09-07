@@ -51,7 +51,7 @@ const MagicOptimizerModal = ({
             {/* Header */}
             <div className="bg-linear-to-r from-indigo-500 via-indigo-600 to-purple-600 px-6 py-4 flex items-center justify-between text-white shrink-0">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 animate-pulse text-purple-200" />
+                <Sparkles aria-hidden="true" className="w-5 h-5 animate-pulse text-purple-200" />
                 <div>
                   <h3 id={titleId} className="font-extrabold text-sm tracking-wide">
                     CareerForge AI Spark Assistant
@@ -62,10 +62,12 @@ const MagicOptimizerModal = ({
                 </div>
               </div>
               <button
+                type="button"
                 onClick={onClose}
+                aria-label="Close dialog"
                 className="text-white/80 hover:text-white transition-colors cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X aria-hidden="true" className="w-5 h-5" />
               </button>
             </div>
 
@@ -74,8 +76,9 @@ const MagicOptimizerModal = ({
               {/* Configuration panel */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Optimize Action</label>
+                  <label htmlFor="magic-optimizer-action" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Optimize Action</label>
                   <select
+                    id="magic-optimizer-action"
                     value={magicPromptType}
                     onChange={(e) => setMagicPromptType(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:border-indigo-500"
@@ -88,10 +91,11 @@ const MagicOptimizerModal = ({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                    <Target className="w-3.5 h-3.5 text-indigo-500" /> Focus Keyword (Optional)
+                  <label htmlFor="magic-optimizer-keyword" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                    <Target aria-hidden="true" className="w-3.5 h-3.5 text-indigo-500" /> Focus Keyword (Optional)
                   </label>
                   <input
+                    id="magic-optimizer-keyword"
                     type="text"
                     placeholder="e.g. AWS, React, Kubernetes..."
                     value={targetKeyword}
@@ -113,12 +117,13 @@ const MagicOptimizerModal = ({
 
               {/* Live stream block */}
               <div className="space-y-1 relative">
-                <label className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider flex items-center gap-1">
-                  <Sparkles className="w-3.5 h-3.5 animate-spin" /> AI Generated Suggestion
+                <label htmlFor="magic-optimizer-suggestion" className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider flex items-center gap-1">
+                  <Sparkles aria-hidden="true" className="w-3.5 h-3.5 animate-spin" /> AI Generated Suggestion
                 </label>
                 
                 <div className="relative">
                   <textarea
+                    id="magic-optimizer-suggestion"
                     rows={6}
                     readOnly
                     placeholder="Click 'Generate Suggestions' to initiate the streaming optimizer. The model will draft modern, impact-driven sentences in real time."
@@ -128,7 +133,7 @@ const MagicOptimizerModal = ({
                   {isOptimizing && (
                     <div className="absolute inset-0 bg-slate-900/5 dark:bg-slate-950/10 backdrop-blur-[0.5px] rounded-2xl flex items-center justify-center">
                       <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border rounded-xl shadow-lg">
-                        <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />
+                        <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin text-indigo-500" />
                         <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Streaming tokens...</span>
                       </div>
                     </div>
@@ -160,7 +165,7 @@ const MagicOptimizerModal = ({
                       onClick={startStreamOptimization}
                       className="px-3 sm:px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
                     >
-                      <Sparkles className="w-3.5 h-3.5" />
+                      <Sparkles aria-hidden="true" className="w-3.5 h-3.5" />
                       <span>Generate Optimizations</span>
                     </button>
                   )}
@@ -170,7 +175,7 @@ const MagicOptimizerModal = ({
                     onClick={applySuggestion}
                     className="px-3 sm:px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-500/20 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
                   >
-                    <Check className="w-3.5 h-3.5" />
+                    <Check aria-hidden="true" className="w-3.5 h-3.5" />
                     <span>Apply Changes</span>
                   </button>
                 </div>
@@ -206,7 +211,7 @@ const MagicOptimizerModal = ({
                             onClick={() => rollbackSuggestion(log._id)}
                             className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-950 text-amber-700 dark:text-amber-400 rounded-lg text-[10px] font-bold border border-amber-200/40 dark:border-amber-900/40 cursor-pointer"
                           >
-                            <RotateCcw className="w-3 h-3" />
+                            <RotateCcw aria-hidden="true" className="w-3 h-3" />
                             <span>Undo</span>
                           </button>
                         )}

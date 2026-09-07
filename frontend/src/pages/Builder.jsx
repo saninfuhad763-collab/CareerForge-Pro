@@ -1613,7 +1613,7 @@ const Builder = () => {
             className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
             aria-label="Open builder actions menu"
           >
-            <Menu className="w-5 h-5" />
+            <Menu aria-hidden="true" className="w-5 h-5" />
           </button>
         </div>
 
@@ -1646,6 +1646,10 @@ const Builder = () => {
               {autoSaveEnabled ? 'ON' : 'OFF'}
             </span>
             <button
+              type="button"
+              role="switch"
+              aria-checked={autoSaveEnabled}
+              aria-label="Toggle auto save"
               onClick={handleToggleAutoSave}
               className={`relative inline-flex h-4.5 sm:h-5 w-8 sm:w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                 autoSaveEnabled ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
@@ -1732,10 +1736,12 @@ const Builder = () => {
                     Classic &amp; Minimalist templates require Pro.
                   </p>
                   <button
+                    type="button"
                     onClick={() => setShowProBanner(false)}
+                    aria-label="Dismiss message"
                     className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer shrink-0"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <X aria-hidden="true" className="w-3.5 h-3.5" />
                   </button>
                 </div>
                 <button
@@ -1826,6 +1832,9 @@ const Builder = () => {
               </span>
               <button
                 type="button"
+                role="switch"
+                aria-checked={autoSaveEnabled}
+                aria-label="Toggle auto save"
                 onClick={handleToggleAutoSave}
                 className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                   autoSaveEnabled ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
@@ -1895,9 +1904,10 @@ const Builder = () => {
                   <button
                     type="button"
                     onClick={() => setShowProBanner(false)}
+                    aria-label="Dismiss message"
                     className="text-amber-400 hover:text-amber-600 dark:hover:text-amber-200"
                   >
-                    <X className="w-3 h-3" />
+                    <X aria-hidden="true" className="w-3 h-3" />
                   </button>
                 </div>
                 <button
@@ -2064,7 +2074,7 @@ const Builder = () => {
                       className="text-inherit opacity-50 hover:opacity-100 transition-opacity cursor-pointer shrink-0"
                       aria-label="Dismiss error"
                     >
-                      <X className="w-3 h-3" />
+                      <X aria-hidden="true" className="w-3 h-3" />
                     </button>
                   </div>
                 )}
@@ -2551,17 +2561,19 @@ const Builder = () => {
                                 type="button"
                                 disabled={idx === 0}
                                 onClick={() => moveSection(idx, -1)}
+                                aria-label={`Move ${sectionName} section up`}
                                 className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
                               >
-                                <ArrowUp className="w-3.5 h-3.5" />
+                                <ArrowUp aria-hidden="true" className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 type="button"
                                 disabled={idx === sectionOrder.length - 1}
                                 onClick={() => moveSection(idx, 1)}
+                                aria-label={`Move ${sectionName} section down`}
                                 className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
                               >
-                                <ArrowDown className="w-3.5 h-3.5" />
+                                <ArrowDown aria-hidden="true" className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </div>

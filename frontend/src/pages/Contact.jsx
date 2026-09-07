@@ -184,8 +184,9 @@ const Contact = () => {
               <h3 className="text-xl font-bold font-display text-slate-800 dark:text-slate-100 mb-4">Send a Message</h3>
               
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Full Name</label>
+                <label htmlFor="contact-name" className="text-xs font-bold text-slate-500 uppercase tracking-wider">Full Name</label>
                 <input 
+                  id="contact-name"
                   type="text" 
                   name="name"
                   value={formData.name}
@@ -198,8 +199,9 @@ const Contact = () => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Email Address</label>
+                <label htmlFor="contact-email" className="text-xs font-bold text-slate-500 uppercase tracking-wider">Email Address</label>
                 <input 
+                  id="contact-email"
                   type="email" 
                   name="email"
                   value={formData.email}
@@ -212,8 +214,9 @@ const Contact = () => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Subject</label>
+                <label htmlFor="contact-subject" className="text-xs font-bold text-slate-500 uppercase tracking-wider">Subject</label>
                 <input 
+                  id="contact-subject"
                   type="text" 
                   name="subject"
                   value={formData.subject}
@@ -226,8 +229,9 @@ const Contact = () => {
               </div>
 
               <div className="space-y-1.5 flex-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Message</label>
+                <label htmlFor="contact-message" className="text-xs font-bold text-slate-500 uppercase tracking-wider">Message</label>
                 <textarea 
+                  id="contact-message"
                   name="message"
                   value={formData.message}
                   onChange={handleChange}
@@ -246,12 +250,12 @@ const Contact = () => {
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" />
                     Sending...
                   </>
                 ) : (
                   <>
-                    <Send className="w-4 h-4" />
+                    <Send aria-hidden="true" className="w-4 h-4" />
                     Send Message
                   </>
                 )}
@@ -303,20 +307,22 @@ const Contact = () => {
               <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-indigo-500 to-indigo-600" />
               
               <button 
+                type="button"
                 onClick={() => setModalState({ ...modalState, isOpen: false })}
+                aria-label="Close dialog"
                 className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X aria-hidden="true" className="w-5 h-5" />
               </button>
 
               <div className="flex flex-col items-center text-center space-y-4 pt-4">
                 {modalState.type === 'success' ? (
                   <div className="w-16 h-16 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-500">
-                    <CheckCircle2 className="w-8 h-8" />
+                    <CheckCircle2 aria-hidden="true" className="w-8 h-8" />
                   </div>
                 ) : (
                   <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center text-red-500">
-                    <XCircle className="w-8 h-8" />
+                    <XCircle aria-hidden="true" className="w-8 h-8" />
                   </div>
                 )}
                 

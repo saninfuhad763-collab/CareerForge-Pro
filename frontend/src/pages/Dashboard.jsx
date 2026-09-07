@@ -742,22 +742,26 @@ const Dashboard = () => {
                             </div>
                             <div className="flex items-center gap-2">
                               <button
+                                type="button"
                                 onClick={(e) => handleDownloadPdf(resume, e)}
                                 disabled={downloadLoadingId === resume._id}
                                 className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-50 dark:bg-slate-900 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/20 opacity-30 group-hover:opacity-100 focus:opacity-100 transition-all duration-300 cursor-pointer disabled:opacity-50"
                                 title="Download PDF"
+                                aria-label={`Download ${resume.title} PDF`}
                               >
-                                <Download className="w-4.5 h-4.5" />
+                                <Download aria-hidden="true" className="w-4.5 h-4.5" />
                               </button>
                               <button
+                                type="button"
                                 onClick={(e) => handleDelete(resume._id, e)}
                                 className="p-2 text-slate-400 hover:text-red-500 dark:hover:text-red-400 bg-slate-50 dark:bg-slate-900 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 opacity-30 group-hover:opacity-100 focus:opacity-100 translate-x-1 group-hover:translate-x-0 transition-all duration-300 cursor-pointer"
                                 title="Delete Resume"
+                                aria-label={`Delete ${resume.title}`}
                               >
-                                <Trash2 className="w-4.5 h-4.5" />
+                                <Trash2 aria-hidden="true" className="w-4.5 h-4.5" />
                               </button>
                               <span className="p-2 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 bg-slate-50 dark:bg-slate-900 rounded-lg group-hover:bg-indigo-50 dark:group-hover:bg-indigo-950/20 -translate-x-0.5 group-hover:translate-x-0 transition-all duration-300">
-                                <ChevronRight className="w-4 h-4" />
+                                <ChevronRight aria-hidden="true" className="w-4 h-4" />
                               </span>
                             </div>
                           </div>
@@ -929,36 +933,42 @@ const Dashboard = () => {
                             </span>
                             <div className="flex items-center gap-1">
                               <button
+                                type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setViewingCoverLetter(letter);
                                 }}
                                 className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 bg-slate-50 dark:bg-slate-900 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 opacity-30 group-hover:opacity-100 focus:opacity-100 transition-all duration-300 cursor-pointer"
                                 title="Open / Preview"
+                                aria-label={`View cover letter for ${letter.jobTitle}`}
                               >
-                                <Eye className="w-4.5 h-4.5" />
+                                <Eye aria-hidden="true" className="w-4.5 h-4.5" />
                               </button>
                               <button
+                                type="button"
                                 onClick={(e) => handleExportCoverLetterPdf(letter, e)}
                                 disabled={exportingCoverLetterId === letter._id}
                                 className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-50 dark:bg-slate-900 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/20 opacity-30 group-hover:opacity-100 focus:opacity-100 transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Export PDF"
+                                aria-label={`Export PDF for ${letter.jobTitle}`}
                               >
                                 {exportingCoverLetterId === letter._id ? (
-                                  <Loader2 className="w-4.5 h-4.5 animate-spin" />
+                                  <Loader2 aria-hidden="true" className="w-4.5 h-4.5 animate-spin" />
                                 ) : (
-                                  <Download className="w-4.5 h-4.5" />
+                                  <Download aria-hidden="true" className="w-4.5 h-4.5" />
                                 )}
                               </button>
                               <button
+                                type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleDeleteCoverLetterClick(letter._id, e);
                                 }}
                                 className="p-2 text-slate-400 hover:text-red-500 dark:hover:text-red-400 bg-slate-50 dark:bg-slate-900 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 opacity-30 group-hover:opacity-100 focus:opacity-100 translate-x-1 group-hover:translate-x-0 transition-all duration-300 cursor-pointer"
                                 title="Delete Cover Letter"
+                                aria-label={`Delete cover letter for ${letter.jobTitle}`}
                               >
-                                <Trash2 className="w-4.5 h-4.5" />
+                                <Trash2 aria-hidden="true" className="w-4.5 h-4.5" />
                               </button>
                             </div>
                           </div>
@@ -1287,8 +1297,9 @@ const Dashboard = () => {
 
                 {/* Title */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider transition-colors duration-300 text-indigo-500">Resume Title</label>
+                  <label htmlFor="create-resume-title" className="text-xs font-bold uppercase tracking-wider transition-colors duration-300 text-indigo-500">Resume Title</label>
                   <input
+                     id="create-resume-title"
                      type="text"
                      required
                      placeholder="e.g. Software Engineer Resume"

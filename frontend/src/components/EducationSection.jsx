@@ -34,10 +34,12 @@ const EducationSection = ({
               {education.map((edu, idx) => (
                 <div key={idx} className="space-y-4 p-4 bg-slate-50/50 dark:bg-slate-950/30 rounded-xl relative border border-slate-100 dark:border-slate-800">
                   <button
+                    type="button"
                     onClick={() => handleRemoveEducation(idx)}
+                    aria-label={`Delete education ${idx + 1}`}
                     className="absolute top-3 right-3 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 aria-hidden="true" className="w-4 h-4" />
                   </button>
                   
                   <h6 className="text-xs font-bold text-indigo-600 dark:text-indigo-400">School #{idx + 1}</h6>

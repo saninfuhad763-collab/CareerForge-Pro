@@ -509,7 +509,7 @@ const CoverLetter = () => {
           aria-label="Open navigation menu"
           className="p-2 -mr-1 rounded-xl text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
         >
-          <Menu className="w-5 h-5" />
+          <Menu aria-hidden="true" className="w-5 h-5" />
         </button>
       </header>
 
@@ -558,7 +558,7 @@ const CoverLetter = () => {
             onClick={() => navigate('/dashboard?tab=cover-letters')}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md transition-all shadow-sm hover:shadow hover:-translate-y-0.5 cursor-pointer"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
+            <ArrowLeft aria-hidden="true" className="w-3.5 h-3.5" />
             <span>Cover Letter History</span>
           </button>
         </motion.div>
@@ -566,7 +566,7 @@ const CoverLetter = () => {
         {/* Banner Header */}
         <motion.div variants={staggerItem} className="space-y-1.5 shrink-0 mb-6 md:mb-8">
           <h1 className="text-2xl font-bold font-display text-slate-800 dark:text-slate-100 flex items-center gap-2.5 tracking-tight">
-            <Sparkles className="w-5 h-5 text-indigo-500 animate-pulse" />
+            <Sparkles aria-hidden="true" className="w-5 h-5 text-indigo-500 animate-pulse" />
             <span>AI Cover Letter Generator</span>
           </h1>
           <p className="text-[13px] text-slate-500 dark:text-slate-400 max-w-2xl">
@@ -602,7 +602,7 @@ const CoverLetter = () => {
               <form onSubmit={handleGenerate} className="flex-1 flex flex-col min-h-0 gap-3 md:gap-4">
                 {/* Resume Selector */}
                 <div className="space-y-1.5 shrink-0">
-                  <label className="text-[11px] font-bold text-indigo-500 uppercase tracking-wider">Select Resume Profile</label>
+                  <label htmlFor="cover-letter-resume" className="text-[11px] font-bold text-indigo-500 uppercase tracking-wider">Select Resume Profile</label>
                   <div className="relative">
                     {resumesLoading ? (
                       <div className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm text-slate-400">
@@ -621,6 +621,7 @@ const CoverLetter = () => {
                       </div>
                     ) : (
                       <select
+                        id="cover-letter-resume"
                         value={selectedResumeId}
                         onChange={(e) => setSelectedResumeId(e.target.value)}
                         className="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-lg text-sm text-slate-800 dark:text-slate-100 outline-none transition-all duration-300 focus:shadow-md focus:shadow-indigo-500/10 cursor-pointer"
@@ -638,10 +639,11 @@ const CoverLetter = () => {
                 {/* Company & Title Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 shrink-0">
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                      <Building className="w-3.5 h-3.5" /> Target Company
+                    <label htmlFor="cover-letter-company" className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <Building aria-hidden="true" className="w-3.5 h-3.5" /> Target Company
                     </label>
                     <input
+                      id="cover-letter-company"
                       type="text"
                       required
                       placeholder="e.g. Google"
@@ -651,10 +653,11 @@ const CoverLetter = () => {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                      <Briefcase className="w-3.5 h-3.5" /> Target Job Title
+                    <label htmlFor="cover-letter-job-title" className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <Briefcase aria-hidden="true" className="w-3.5 h-3.5" /> Target Job Title
                     </label>
                     <input
+                      id="cover-letter-job-title"
                       type="text"
                       required
                       placeholder="e.g. Senior Frontend Engineer"
@@ -667,8 +670,9 @@ const CoverLetter = () => {
 
                 {/* Job Description Textarea */}
                 <div className="space-y-1.5 flex-1 flex flex-col min-h-0">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0">Job Description (Recommended)</label>
+                  <label htmlFor="cover-letter-job-desc" className="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0">Job Description (Recommended)</label>
                   <textarea
+                    id="cover-letter-job-desc"
                     placeholder="Paste the target job description to match skills and criteria..."
                     value={jobDescription}
                     onChange={(e) => setJobDescription(e.target.value)}
@@ -692,7 +696,7 @@ const CoverLetter = () => {
                       </>
                     ) : (
                       <>
-                        <Sparkles className="w-4 h-4" />
+                        <Sparkles aria-hidden="true" className="w-4 h-4" />
                         <span>Generate Cover Letter</span>
                       </>
                     )}
@@ -729,13 +733,13 @@ const CoverLetter = () => {
                       }`}
                     >
                       {saving ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <Loader2 aria-hidden="true" className="w-3.5 h-3.5 animate-spin" />
                       ) : saveSuccess ? (
                         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ duration: 0.2 }}>
-                          <Check className="w-3.5 h-3.5 text-emerald-500" />
+                          <Check aria-hidden="true" className="w-3.5 h-3.5 text-emerald-500" />
                         </motion.div>
                       ) : (
-                        <Save className="w-3.5 h-3.5" />
+                        <Save aria-hidden="true" className="w-3.5 h-3.5" />
                       )}
                       <span>{saveSuccess ? 'Saved!' : 'Save to History'}</span>
                     </motion.button>
@@ -758,13 +762,13 @@ const CoverLetter = () => {
                       } ${exportingPdf ? 'disabled:bg-indigo-600/50' : ''}`}
                     >
                       {exportingPdf ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <Loader2 aria-hidden="true" className="w-3.5 h-3.5 animate-spin" />
                       ) : exportSuccess ? (
                         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ duration: 0.2 }}>
-                          <Check className="w-3.5 h-3.5" />
+                          <Check aria-hidden="true" className="w-3.5 h-3.5" />
                         </motion.div>
                       ) : (
-                        <Download className="w-3.5 h-3.5" />
+                        <Download aria-hidden="true" className="w-3.5 h-3.5" />
                       )}
                       <span>{exportingPdf ? 'Exporting...' : exportSuccess ? 'Exported' : 'Export PDF'}</span>
                     </motion.button>
@@ -779,13 +783,13 @@ const CoverLetter = () => {
                       {copied ? (
                         <>
                           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ duration: 0.2 }}>
-                            <Check className="w-3.5 h-3.5 text-emerald-500" />
+                            <Check aria-hidden="true" className="w-3.5 h-3.5 text-emerald-500" />
                           </motion.div>
                           <span className="text-emerald-500">Copied!</span>
                         </>
                       ) : (
                         <>
-                          <Copy className="w-3.5 h-3.5" />
+                          <Copy aria-hidden="true" className="w-3.5 h-3.5" />
                           <span>Copy Letter</span>
                         </>
                       )}

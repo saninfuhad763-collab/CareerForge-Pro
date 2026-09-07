@@ -34,10 +34,12 @@ const ProjectsSection = ({
               {projects.map((proj, idx) => (
                 <div key={idx} className="space-y-4 p-4 bg-slate-50/50 dark:bg-slate-950/30 rounded-xl relative border border-slate-100 dark:border-slate-800">
                   <button
+                    type="button"
                     onClick={() => handleRemoveProject(idx)}
+                    aria-label={`Delete project ${idx + 1}`}
                     className="absolute top-3 right-3 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4" aria-hidden="true" />
                   </button>
                   
                   <h6 className="text-xs font-bold text-indigo-600 dark:text-indigo-400">Project #{idx + 1}</h6>
@@ -106,7 +108,7 @@ const ProjectsSection = ({
                 onClick={handleAddProject}
                 className="w-full py-2 border border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-500 rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold text-slate-500 hover:text-indigo-600 transition-all cursor-pointer"
               >
-                <Plus className="w-4 h-4" /> Add Project
+                <Plus className="w-4 h-4" aria-hidden="true" /> Add Project
               </button>
             </div>
           </motion.div>

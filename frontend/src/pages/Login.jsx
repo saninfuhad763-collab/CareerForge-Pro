@@ -176,7 +176,7 @@ const Login = () => {
                   exit={{ opacity: 0 }}
                   className="mb-5 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-300 flex gap-3 text-sm"
                 >
-                  <AlertCircle className="w-5 h-5 shrink-0" />
+                  <AlertCircle aria-hidden="true" className="w-5 h-5 shrink-0" />
                   <span>{serverError || authError}</span>
                 </motion.div>
               )}
@@ -187,16 +187,19 @@ const Login = () => {
               className="space-y-5"
             >
               <div>
-                <label className="text-sm text-slate-300 mb-2 block">
+                <label htmlFor="login-email" className="text-sm text-slate-300 mb-2 block">
                   Email Address
                 </label>
 
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                  <Mail aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
 
                   <input
+                    id="login-email"
                     type="email"
                     placeholder="you@example.com"
+                    aria-invalid={!!errors.email}
+                    aria-describedby={errors.email ? 'login-email-error' : undefined}
                     className={`w-full h-14 pl-12 pr-4 rounded-2xl bg-white/5 border ${
                       errors.email
                         ? 'border-red-500'
@@ -209,23 +212,26 @@ const Login = () => {
                 </div>
 
                 {errors.email && (
-                  <p className="text-red-400 text-xs mt-2">
+                  <p id="login-email-error" className="text-red-400 text-xs mt-2">
                     {errors.email.message}
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="text-sm text-slate-300 mb-2 block">
+                <label htmlFor="login-password" className="text-sm text-slate-300 mb-2 block">
                   Password
                 </label>
 
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                  <Lock aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
 
                   <input
+                    id="login-password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
+                    aria-invalid={!!errors.password}
+                    aria-describedby={errors.password ? 'login-password-error' : undefined}
                     className={`w-full h-14 pl-12 pr-12 rounded-2xl bg-white/5 border ${
                       errors.password
                         ? 'border-red-500'
@@ -239,18 +245,19 @@ const Login = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
                   >
                     {showPassword ? (
-                      <EyeOff className="w-5 h-5" />
+                      <EyeOff aria-hidden="true" className="w-5 h-5" />
                     ) : (
-                      <Eye className="w-5 h-5" />
+                      <Eye aria-hidden="true" className="w-5 h-5" />
                     )}
                   </button>
                 </div>
 
                 {errors.password && (
-                  <p className="text-red-400 text-xs mt-2">
+                  <p id="login-password-error" className="text-red-400 text-xs mt-2">
                     {errors.password.message}
                   </p>
                 )}
@@ -274,7 +281,7 @@ const Login = () => {
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <Loader2 aria-hidden="true" className="w-5 h-5 animate-spin" />
                     Signing In...
                   </>
                 ) : (
