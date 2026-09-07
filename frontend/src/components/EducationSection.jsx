@@ -46,7 +46,7 @@ const EducationSection = ({
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400">School/University</label>
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">School/University</label>
                       <input
                         type="text"
                         placeholder="Stanford"
@@ -56,7 +56,7 @@ const EducationSection = ({
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400">Degree & Major</label>
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Degree & Major</label>
                       <input
                         type="text"
                         placeholder="B.S. Computer Science"
@@ -69,7 +69,7 @@ const EducationSection = ({
 
                   <div className="grid grid-cols-3 gap-2">
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400">Location</label>
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Location</label>
                       <input
                         type="text"
                         placeholder="Stanford, CA"
@@ -79,7 +79,7 @@ const EducationSection = ({
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400">Start Year</label>
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Start Year</label>
                       <input
                         type="text"
                         placeholder="2020"
@@ -89,7 +89,7 @@ const EducationSection = ({
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400">End Year</label>
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">End Year</label>
                       <input
                         type="text"
                         placeholder="2024"

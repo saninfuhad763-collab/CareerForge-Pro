@@ -47,7 +47,7 @@ const SkillsSection = ({
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400">Group Name</label>
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Group Name</label>
                       <input
                         type="text"
                         placeholder="Languages"
@@ -57,7 +57,7 @@ const SkillsSection = ({
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400">Proficiency Level (Optional)</label>
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Proficiency Level (Optional)</label>
                       <input
                         type="text"
                         placeholder="Expert"
@@ -69,7 +69,7 @@ const SkillsSection = ({
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[9px] font-bold text-slate-400">Keywords (Comma Separated)</label>
+                    <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Keywords (Comma Separated)</label>
                     <input
                       type="text"
                       placeholder="React, JavaScript, HTML, CSS"
@@ -77,7 +77,7 @@ const SkillsSection = ({
                       onChange={(e) => handleUpdateSkillCategory(idx, 'keywords', e.target.value)}
                       className="w-full px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 rounded-lg text-xs text-slate-800 dark:text-slate-100 focus:outline-none"
                     />
-                    <p className="text-[9px] text-slate-400">Separate keywords with commas. Essential for ATS matching filters.</p>
+                    <p className="text-[9px] text-slate-500 dark:text-slate-400">Separate keywords with commas. Essential for ATS matching filters.</p>
                   </div>
                 </div>
               ))}

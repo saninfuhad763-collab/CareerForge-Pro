@@ -7,11 +7,11 @@ import { FileText, Sparkles, Copy, Check, Briefcase, Building, AlertCircle, Arro
 import { isProUser } from '../utils/planConstants';
 
 import { sidebarItemVariant } from '../animations/dashboardAnimations';
-import { premiumEase } from '../animations/motionVariants';
 import { staggerContainer, staggerItem } from '../animations/staggerAnimations';
 import { buttonScale, professionalCardVariant } from '../animations/cardAnimations';
 import DeleteModal from '../components/DeleteModal';
 import Drawer from '../components/Drawer';
+import SkipLink from '../components/SkipLink';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -492,6 +492,7 @@ const CoverLetter = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col lg:flex-row text-slate-800 dark:text-slate-100">
+      <SkipLink targetId="main-content" />
       {/* Mobile/Tablet Header Bar (< 1024px) */}
       <header className="lg:hidden sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-800/60 px-4 py-3 flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-2">
@@ -531,6 +532,8 @@ const CoverLetter = () => {
 
       {/* Main Panel Content Area */}
       <motion.main 
+        id="main-content"
+        tabIndex={-1}
         key="cover-letter-generator"
         initial="hidden"
         animate="visible"
@@ -593,7 +596,11 @@ const CoverLetter = () => {
             </div>
 
               {error && (
-                <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200/50 dark:border-red-800/40 rounded-xl flex items-center gap-2 text-red-600 dark:text-red-400 shrink-0">
+                <div
+                  role="alert"
+                  aria-live="assertive"
+                  className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200/50 dark:border-red-800/40 rounded-xl flex items-center gap-2 text-red-600 dark:text-red-400 shrink-0"
+                >
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <p className="text-xs font-semibold leading-normal">{error}</p>
                 </div>

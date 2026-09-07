@@ -46,7 +46,7 @@ const CertificationsSection = ({
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400">Name</label>
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Name</label>
                       <input
                         type="text"
                         placeholder="AWS Solutions Architect"
@@ -56,7 +56,7 @@ const CertificationsSection = ({
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400">Issuer</label>
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Issuer</label>
                       <input
                         type="text"
                         placeholder="Amazon Web Services"
@@ -69,7 +69,7 @@ const CertificationsSection = ({
 
                   <div className="grid grid-cols-3 gap-2">
                     <div className="space-y-1 col-span-2">
-                      <label className="text-[9px] font-bold text-slate-400">Certificate URL</label>
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Certificate URL</label>
                       <input
                         type="text"
                         placeholder="aws.cert.com/id"
@@ -79,7 +79,7 @@ const CertificationsSection = ({
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400">Issue Date</label>
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Issue Date</label>
                       <input
                         type="text"
                         placeholder="Jun 2025"

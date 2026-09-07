@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Mail, Github, Linkedin, Globe, Send, ArrowRight, Loader2, CheckCircle2, XCircle, X, ArrowLeft, Home } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
+import SkipLink from '../components/SkipLink';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -57,6 +58,7 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-100">
+      <SkipLink targetId="main-content" />
       
       {/* Simple Header */}
       <header className="fixed top-0 w-full z-50 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50">
@@ -86,6 +88,8 @@ const Contact = () => {
         </div>
       </header>
 
+      {/* Main Content Area Landmark */}
+      <main id="main-content" tabIndex={-1} className="outline-none">
       {/* Hero Section */}
       <section className="pt-32 pb-12 px-6">
         <div className="max-w-7xl mx-auto text-center space-y-4">
@@ -285,6 +289,7 @@ const Contact = () => {
           </div>
         </div>
       </section>
+      </main>
 
       {/* Success/Error Modal */}
       <AnimatePresence>

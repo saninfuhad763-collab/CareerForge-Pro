@@ -76,7 +76,7 @@ const MagicOptimizerModal = ({
               {/* Configuration panel */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label htmlFor="magic-optimizer-action" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Optimize Action</label>
+                  <label htmlFor="magic-optimizer-action" className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Optimize Action</label>
                   <select
                     id="magic-optimizer-action"
                     value={magicPromptType}
@@ -91,7 +91,7 @@ const MagicOptimizerModal = ({
                 </div>
 
                 <div className="space-y-1">
-                  <label htmlFor="magic-optimizer-keyword" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                  <label htmlFor="magic-optimizer-keyword" className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
                     <Target aria-hidden="true" className="w-3.5 h-3.5 text-indigo-500" /> Focus Keyword (Optional)
                   </label>
                   <input
@@ -108,7 +108,7 @@ const MagicOptimizerModal = ({
               {/* Original content comparison */}
               {originalText && (
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Original Text</label>
+                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Original Text</label>
                   <div className="px-3 py-2 bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/80 rounded-xl text-xs text-slate-500 dark:text-slate-400 line-clamp-3 select-none">
                     {originalText}
                   </div>
@@ -131,10 +131,14 @@ const MagicOptimizerModal = ({
                     className="w-full px-4 py-3 bg-indigo-50/20 dark:bg-indigo-950/10 border border-indigo-100 dark:border-indigo-900/60 focus:outline-none rounded-2xl text-xs leading-relaxed font-medium text-slate-800 dark:text-slate-100 resize-none shadow-inner"
                   />
                   {isOptimizing && (
-                    <div className="absolute inset-0 bg-slate-900/5 dark:bg-slate-950/10 backdrop-blur-[0.5px] rounded-2xl flex items-center justify-center">
+                    <div
+                      role="status"
+                      aria-live="polite"
+                      className="absolute inset-0 bg-slate-900/5 dark:bg-slate-950/10 backdrop-blur-[0.5px] rounded-2xl flex items-center justify-center"
+                    >
                       <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border rounded-xl shadow-lg">
                         <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin text-indigo-500" />
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Streaming tokens...</span>
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Generating suggestion...</span>
                       </div>
                     </div>
                   )}

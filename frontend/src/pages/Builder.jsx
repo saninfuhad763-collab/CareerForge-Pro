@@ -12,6 +12,7 @@ import MagicOptimizerModal from '../components/MagicOptimizerModal';
 import ATSReportModal from '../components/ATSReportModal';
 import DeleteModal from '../components/DeleteModal';
 import Drawer from '../components/Drawer';
+import SkipLink from '../components/SkipLink';
 
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useResumeStore } from '../store/resumeStore';
@@ -1564,6 +1565,7 @@ const Builder = () => {
       variants={pageTransitions}
       className="min-h-screen md:h-screen md:overflow-hidden bg-slate-50 dark:bg-slate-950 flex flex-col"
     >
+      <SkipLink targetId="main-content" label="Skip to resume editor" />
       {/* Top action header banner */}
       <header id="builder-header-banner" className="sticky top-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200/50 dark:border-slate-800/50 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-3 shadow-sm">
         <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
@@ -1592,9 +1594,14 @@ const Builder = () => {
                 className="bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-700 focus:border-indigo-500 font-bold font-display text-slate-800 dark:text-slate-100 text-base sm:text-lg focus:outline-none px-1 py-0.5 rounded transition-all w-full max-w-[160px] sm:max-w-xs md:max-w-sm truncate"
               />
             </div>
-            <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
+            <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500 dark:text-slate-400">
               <span>Status:</span>
-              <span className={`font-semibold ${saving ? 'text-indigo-600 dark:text-indigo-400' : 'text-emerald-500'}`}>
+              <span
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+                className={`font-semibold ${saving ? 'text-indigo-600 dark:text-indigo-400' : 'text-emerald-600 dark:text-emerald-400'}`}
+              >
                 {saveStatus}
               </span>
             </div>
@@ -1960,7 +1967,7 @@ const Builder = () => {
 
 
       {/* Editor Split-Screen Layout Workspace */}
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+      <main id="main-content" tabIndex={-1} className="flex-1 flex flex-col md:flex-row overflow-hidden outline-none">
         
         {/* LEFT WORKSPACE: Input Accordion Editor Panel */}
         <motion.div 
@@ -2048,7 +2055,10 @@ const Builder = () => {
 
                 {/* Inline ATS Error Banner — shown when analysis fails, no browser alerts */}
                 {atsError && (
-                  <div className={`flex items-start gap-2.5 p-3 rounded-xl border text-xs leading-relaxed ${
+                  <div
+                    role="alert"
+                    aria-live="assertive"
+                    className={`flex items-start gap-2.5 p-3 rounded-xl border text-xs leading-relaxed ${
                     atsError.type === 'server' || atsError.type === 'network' || atsError.type === 'parse'
                       ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800/40 text-red-700 dark:text-red-400'
                       : atsError.type === 'validation'
@@ -3306,7 +3316,7 @@ const Builder = () => {
 
     </motion.div>
 
-      </div>
+      </main>
 
       {/* Upload Existing Resume Dialog Overlay */}
       <UploadResumeModal

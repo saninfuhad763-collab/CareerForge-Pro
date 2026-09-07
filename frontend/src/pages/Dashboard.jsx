@@ -39,6 +39,7 @@ import DeleteModal from '../components/DeleteModal';
 import SettingsView from '../components/SettingsView';
 import Drawer from '../components/Drawer';
 import useFocusTrap from '../hooks/useFocusTrap';
+import SkipLink from '../components/SkipLink';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -477,6 +478,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col lg:flex-row">
+      <SkipLink targetId="main-content" />
       {/* Mobile/Tablet Header Bar (< 1024px) */}
       <header className="lg:hidden sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-800/60 px-4 py-3 flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-2">
@@ -514,7 +516,7 @@ const Dashboard = () => {
       </aside>
 
       {/* Main Panel Content Area */}
-      <main className="flex-1 p-6 md:p-10 space-y-8 overflow-y-auto">
+      <main id="main-content" tabIndex={-1} className="flex-1 p-6 md:p-10 space-y-8 overflow-y-auto outline-none">
         <AnimatePresence mode="wait">
           {activeTab === 'resumes' && (
             <motion.div

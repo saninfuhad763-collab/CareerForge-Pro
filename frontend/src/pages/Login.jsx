@@ -171,6 +171,8 @@ const Login = () => {
             <AnimatePresence>
               {(serverError || authError) && (
                 <motion.div
+                  role="alert"
+                  aria-live="assertive"
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}

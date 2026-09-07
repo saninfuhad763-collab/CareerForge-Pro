@@ -17,6 +17,7 @@ import { staggerContainer, staggerItem, staggerItemScale } from '../animations/s
 import { premiumCardHover, cardTiltLeft as _cardTiltLeft, cardTiltRight as _cardTiltRight, buttonScale } from '../animations/cardAnimations';
 import { scrollReveal, progressConnector as _progressConnector } from '../animations/scrollAnimations';
 import { premiumEase } from '../animations/motionVariants';
+import SkipLink from '../components/SkipLink';
 
 const Landing = () => {
   const { isAuthenticated } = useAuthStore();
@@ -37,6 +38,7 @@ const Landing = () => {
 
   return (
     <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden">
+      <SkipLink targetId="main-content" />
       {/* Decorative Blur Blobs with smooth continuous floating animations */}
       <motion.div 
         className="absolute top-[-10%] left-[-10%] w-125 h-125 bg-indigo-200/40 dark:bg-indigo-900/20 rounded-full blur-[120px] pointer-events-none"
@@ -149,8 +151,10 @@ const Landing = () => {
         </motion.nav>
       </div>
 
-      {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-6 pt-28 pb-24 md:pt-36 md:pb-32 grid md:grid-cols-12 gap-12 items-center relative z-10">
+      {/* Main Content Area Landmark */}
+      <main id="main-content" tabIndex={-1} className="outline-none">
+        {/* Hero Section */}
+        <section className="max-w-7xl mx-auto px-6 pt-28 pb-24 md:pt-36 md:pb-32 grid md:grid-cols-12 gap-12 items-center relative z-10">
         <motion.div 
           className="md:col-span-7 space-y-6 text-left"
           initial="hidden"
@@ -461,6 +465,7 @@ const Landing = () => {
           ))}
         </motion.div>
       </section>
+      </main>
 
       {/* Footer */}
       <footer className="border-t border-slate-200/50 dark:border-slate-900/50 py-12 relative z-10 text-slate-400 dark:text-slate-500 text-sm">

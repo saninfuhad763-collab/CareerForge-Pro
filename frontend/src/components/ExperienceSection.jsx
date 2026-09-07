@@ -49,7 +49,7 @@ const ExperienceSection = ({
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400">Company</label>
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Company</label>
                       <input
                         type="text"
                         placeholder="Google"
@@ -59,7 +59,7 @@ const ExperienceSection = ({
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400">Role Title</label>
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Role Title</label>
                       <input
                         type="text"
                         placeholder="Senior Engineer"
@@ -72,7 +72,7 @@ const ExperienceSection = ({
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400">Location</label>
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Location</label>
                       <input
                         type="text"
                         placeholder="Remote"
@@ -82,7 +82,7 @@ const ExperienceSection = ({
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400">Start Date</label>
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Start Date</label>
                       <input
                         type="text"
                         placeholder="Jan 2024"
@@ -92,7 +92,7 @@ const ExperienceSection = ({
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400">End Date</label>
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">End Date</label>
                       <input
                         type="text"
                         placeholder="Present"
@@ -107,16 +107,16 @@ const ExperienceSection = ({
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
-                      id={`current-\${idx}`}
+                      id={`current-${idx}`}
                       checked={exp.current}
                       onChange={(e) => handleUpdateExperience(idx, 'current', e.target.checked)}
                       className="w-3.5 h-3.5 text-indigo-600 bg-white dark:bg-slate-900 border-slate-200 rounded"
                     />
-                    <label htmlFor={`current-\${idx}`} className="text-[10px] font-bold text-slate-500">I currently work here</label>
+                    <label htmlFor={`current-${idx}`} className="text-[10px] font-bold text-slate-500 dark:text-slate-400">I currently work here</label>
                   </div>
 
                    <div className="space-y-1">
-                    <label className="text-[9px] font-bold text-slate-400">Impact & Responsibilities (Bulleted)</label>
+                    <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Impact & Responsibilities (Bulleted)</label>
                     <textarea
                       rows={3}
                       placeholder="- Implemented scalable Node APIs boosting throughput by 30%&#10;- Led team of 4 engineers..."

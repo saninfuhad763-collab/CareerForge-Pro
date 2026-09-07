@@ -46,7 +46,7 @@ const ProjectsSection = ({
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400">Project Name</label>
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Project Name</label>
                       <input
                         type="text"
                         placeholder="E-Commerce API"
@@ -56,7 +56,7 @@ const ProjectsSection = ({
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400">Role/Scope</label>
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Role/Scope</label>
                       <input
                         type="text"
                         placeholder="Solo Creator"
@@ -69,7 +69,7 @@ const ProjectsSection = ({
 
                   <div className="grid grid-cols-3 gap-2">
                     <div className="space-y-1 col-span-2">
-                      <label className="text-[9px] font-bold text-slate-400">Project URL</label>
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Project URL</label>
                       <input
                         type="text"
                         placeholder="github.com/my-project"
@@ -79,7 +79,7 @@ const ProjectsSection = ({
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400">Date</label>
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Date</label>
                       <input
                         type="text"
                         placeholder="2025"
@@ -91,7 +91,7 @@ const ProjectsSection = ({
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[9px] font-bold text-slate-400">Project Description</label>
+                    <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Project Description</label>
                     <textarea
                       rows={2.5}
                       placeholder="Built scalable auth pipelines utilizing Redis cache layer..."

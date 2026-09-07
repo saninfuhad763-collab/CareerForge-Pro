@@ -46,7 +46,7 @@ const LanguagesSection = ({
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400">Language</label>
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Language</label>
                       <input
                         type="text"
                         placeholder="Spanish"
@@ -56,7 +56,7 @@ const LanguagesSection = ({
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400">Proficiency</label>
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Proficiency</label>
                       <input
                         type="text"
                         placeholder="Native / Professional"

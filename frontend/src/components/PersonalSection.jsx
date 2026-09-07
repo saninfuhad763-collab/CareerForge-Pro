@@ -31,7 +31,7 @@ const PersonalSection = ({
             <div className="p-5 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Full Name</label>
+                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Full Name</label>
                   <input
                     type="text"
                     placeholder="John Doe"
@@ -41,7 +41,7 @@ const PersonalSection = ({
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Professional Title</label>
+                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Professional Title</label>
                   <input
                     type="text"
                     placeholder="e.g. Senior Software Engineer"
@@ -54,7 +54,7 @@ const PersonalSection = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email</label>
+                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Email</label>
                   <input
                     type="email"
                     placeholder="john@example.com"
@@ -64,7 +64,7 @@ const PersonalSection = ({
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Phone</label>
+                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Phone</label>
                   <input
                     type="text"
                     placeholder="+1 (555) 000-0000"
@@ -77,7 +77,7 @@ const PersonalSection = ({
 
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Location</label>
+                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Location</label>
                   <input
                     type="text"
                     placeholder="San Francisco, CA"
@@ -89,10 +89,10 @@ const PersonalSection = ({
               </div>
 
               <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800/80">
-                <h5 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Links & Portfolios</h5>
+                <h5 className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Links & Portfolios</h5>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-1">
-                    <label className="text-[9px] font-bold text-slate-400">Website</label>
+                    <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Website</label>
                     <input
                       type="text"
                       placeholder="portfolio.com"
@@ -102,7 +102,7 @@ const PersonalSection = ({
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[9px] font-bold text-slate-400">GitHub</label>
+                    <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">GitHub</label>
                     <input
                       type="text"
                       placeholder="github.com/user"
@@ -112,7 +112,7 @@ const PersonalSection = ({
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[9px] font-bold text-slate-400">LinkedIn</label>
+                    <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400">LinkedIn</label>
                     <input
                       type="text"
                       placeholder="linkedin.com/in/user"

@@ -30,7 +30,7 @@ const SummarySection = ({
             className="overflow-hidden border-t border-slate-100 dark:border-slate-800/80"
           >
             <div className="p-5 space-y-3">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Professional Bio</label>
+              <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Professional Bio</label>
               <textarea
                 rows={4}
                 placeholder="Write a compelling, core target profile summarizing your experience and top skills..."
