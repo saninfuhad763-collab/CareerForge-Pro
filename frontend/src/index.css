@@ -267,14 +267,16 @@ body {
 }
 
 /* WCAG 2.2 AA (A11Y-10): Accessible Reduced-Motion Support */
-/* Honors OS-level user preference for reduced motion by collapsing non-essential transitions & animations */
+/* Honors OS-level user preference for reduced motion without forcing synthetic transition delays on element mounting */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  html {
     scroll-behavior: auto !important;
+  }
+
+  /* Suppress non-essential decorative animations while preserving functional loading indicators */
+  .animate-float,
+  .animate-pulse,
+  .animate-ping {
+    animation: none !important;
   }
 }

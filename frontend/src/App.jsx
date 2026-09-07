@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { MotionConfig } from 'framer-motion';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -12,7 +13,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
-    <Router>
+    <MotionConfig reducedMotion="user">
+      <Router>
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Landing />} />
@@ -66,6 +68,7 @@ function App() {
         <Route path="*" element={<Landing />} />
       </Routes>
     </Router>
+  </MotionConfig>
   );
 }
 
