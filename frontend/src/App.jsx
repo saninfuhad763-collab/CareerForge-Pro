@@ -1,20 +1,35 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { MotionConfig } from 'framer-motion';
-import Landing from './pages/Landing';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import Dashboard from './pages/Dashboard';
-import Builder from './pages/Builder';
-import Billing from './pages/Billing';
-import BillingDetails from './pages/BillingDetails';
-import CoverLetter from './pages/CoverLetter';
-import Contact from './pages/Contact';
 import ProtectedRoute from './components/ProtectedRoute';
+
+// Lazy-loaded route components for code-splitting
+const Landing = lazy(() => import('./pages/Landing'));
+const Login = lazy(() => import('./pages/Login'));
+const Signup = lazy(() => import('./pages/Signup'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Builder = lazy(() => import('./pages/Builder'));
+const Billing = lazy(() => import('./pages/Billing'));
+const BillingDetails = lazy(() => import('./pages/BillingDetails'));
+const CoverLetter = lazy(() => import('./pages/CoverLetter'));
+const Contact = lazy(() => import('./pages/Contact'));
+
+// Lightweight accessible loading fallback for lazy-loaded routes
+const RouteFallback = () => (
+  <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+    <div
+      role="status"
+      aria-label="Loading page"
+      className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin"
+    />
+  </div>
+);
 
 function App() {
   return (
     <MotionConfig reducedMotion="user">
       <Router>
+        <Suspense fallback={<RouteFallback />}>
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Landing />} />
@@ -67,8 +82,9 @@ function App() {
         {/* Catch-all Redirect */}
         <Route path="*" element={<Landing />} />
       </Routes>
-    </Router>
-  </MotionConfig>
+    </Suspense>
+  </Router>
+</MotionConfig>
   );
 }
 
