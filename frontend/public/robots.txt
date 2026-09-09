@@ -1,0 +1,21 @@
+# CareerForge Pro - robots.txt
+# Policy: Allow crawling of genuinely public marketing/landing and contact pages.
+# Restrict authenticated SaaS application areas, private editor sessions, billing, and API endpoints.
+
+User-agent: *
+
+# Public marketing pages
+Allow: /$
+Allow: /contact$
+
+# Disallow authenticated application routes & private user workflows
+Disallow: /dashboard
+Disallow: /builder/
+Disallow: /billing
+Disallow: /billing/details
+Disallow: /cover-letter
+Disallow: /login
+Disallow: /signup
+
+# Disallow backend API and system endpoints
+Disallow: /api/

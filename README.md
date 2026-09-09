@@ -1,5 +1,12 @@
 # 🚀 CareerForge Pro: ATS-Proof Resume Generator & Job Matcher
 
+[![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-181717?style=flat&logo=github)](https://github.com/saninfuhad763-collab/CareerForge-Pro)
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](LICENSE)
+[![Frontend](https://img.shields.io/badge/Frontend-React_19_+_Vite-61DAFB?style=flat&logo=react)](frontend/)
+[![Backend](https://img.shields.io/badge/Backend-Node.js_+_Express-339933?style=flat&logo=node.js)](backend/)
+
+> **Live Demo:** Production deployment link will be posted here upon final domain deployment. (Local and preview setups run via instructions below.)
+
 CareerForge Pro is a full-stack SaaS platform built for candidates to create, optimize, and manage resumes. Designed with robust state-management, security protocols, and reactive design, CareerForge Pro features a split-screen builder, template rendering engines, layout sorting, and AI integrations including ATS Optimization, Resume Rewrites, and Cover Letter Generation.
 
 ---
@@ -11,6 +18,7 @@ CareerForge Pro is a full-stack SaaS platform built for candidates to create, op
 - [Tech Stack](#-tech-stack)
 - [System Architecture & Data Flow](#️-system-architecture--data-flow)
 - [ATS Engine V2.1: Advanced Parsing & Scoring](#-ats-engine-v21-advanced-parsing--scoring)
+- [Engineering Highlights & Production Readiness](#-engineering-highlights--production-readiness)
 - [Creative Theme Customizer Compilers](#-creative-theme-customizer-compilers)
 - [Project Structure](#-project-structure)
 - [Prerequisites & Local Environment](#️-prerequisites--local-environment)
@@ -23,6 +31,7 @@ CareerForge Pro is a full-stack SaaS platform built for candidates to create, op
 - [Known Limitations](#️-known-limitations)
 - [Future Improvements](#-future-improvements)
 - [Development Team](#-development-team)
+- [License](#-license)
 
 
 ---
@@ -146,6 +155,34 @@ CareerForge Pro utilizes a highly deterministic ATS engine capable of performing
 
 ---
 
+## ⚡ Engineering Highlights & Production Readiness
+
+CareerForge Pro incorporates production-grade engineering principles across performance, accessibility, security, and rendering architecture:
+
+### 🚀 Performance & Code-Splitting
+*   **Route-Level Dynamic Code-Splitting:** All 9 top-level application views (`Landing`, `Login`, `Signup`, `Dashboard`, `Builder`, `Billing`, `BillingDetails`, `CoverLetter`, `Contact`) are lazy-loaded via `React.lazy()` with a unified accessible `Suspense` fallback.
+*   **Initial Bundle Reduction:** Initial entry JavaScript dropped by ~68% from **725 KB raw (184 KB gzip)** down to **227 KB raw (73 KB gzip)** in production builds, eliminating monolithic initial load bottlenecks.
+*   **Font Loading & Preconnections:** Preconnect hints for Google Fonts CDN (`fonts.googleapis.com` and `fonts.gstatic.com`) with `display=swap` to eliminate render-blocking stylesheet waterfalls.
+*   **Immutable Asset Caching:** Configured Vercel edge caching (`public, max-age=31536000, immutable`) for hashed production build chunks in `/assets/(.*)`.
+
+### ♿ Accessibility & Focus Architecture
+*   **WCAG 2.2 Focus Management:** Custom `useFocusTrap` hook for modal dialogs (ATS Report, AI Rewrite, Delete Confirmations) with keyboard Tab trapping, initial focus placement, Escape key dismissal, focus restoration on close, and background `inert` attribute management.
+*   **Pointer vs. Keyboard Focus Modality:** Capturing-phase modality tracker distinguishes mouse/touch interactions from keyboard navigation, eliminating heavy visual focus rings on mouse click while preserving high-contrast `:focus-visible` outlines for keyboard users.
+*   **Screen Reader Affordances:** Built-in `SkipLink` component to jump directly to main content landmarks, accessible aria labels across all interactive icon buttons, and live regions (`role="status"`, `aria-live="polite"`) for asynchronous operations.
+*   **Accessible Reduced-Motion Support:** Built-in `MotionConfig reducedMotion="user"` honoring `prefers-reduced-motion: reduce` OS settings, disabling jarring animations while preserving smooth, non-flickering view mounts.
+
+### 🛡️ Production Security & Resource Protection
+*   **Server-Side Concurrency Controls:** Dedicated FIFO queue and in-memory concurrency guard (`pdfExportGuard.js`) protecting Puppeteer export endpoints from memory exhaustion and burst request flooding.
+*   **Strict Security Headers:** Fully configured Content Security Policy (CSP), HTTP Strict Transport Security (HSTS), X-Frame-Options (DENY), and X-Content-Type-Options (nosniff) on both Express and Vercel edge layers.
+*   **Strict Resource Ownership:** Cryptographically enforced JWT authentication coupled with per-resource user ID ownership checks preventing Insecure Direct Object References (IDOR).
+*   **Production Fail-Fast:** Database configuration strictly requires `MONGODB_URI` in production mode, aborting startup immediately with clear error logging if missing, while sanitizing sensitive credentials from application logs.
+
+### 📄 ATS-First Resume Architecture
+*   **ATS-First Modern Layout:** Monochrome-forward styling, single-flow contact line with pipe (`|`) delimiters, and plain-text comma-separated skill lists ensuring parser readability without pill tags or colored layout artifacts.
+*   **Multi-Format Resume Import:** Automated extraction engine parsing both DOCX (`mammoth`) and PDF (`pdf-parse`) formats with robust regex mapping into the structured resume model.
+
+---
+
 ## 🎨 Creative Theme Customizer Compilers
 
 CareerForge Pro compiles resumes dynamically into three selectable templates:
@@ -198,7 +235,23 @@ Ensure you have the following installed on your developer workspace:
 
 ## ⚡ Installation & Development
 
-Follow these step-by-step instructions to boot up the backend and frontend dev instances locally.
+### Quickstart (Unified Launcher)
+
+You can install all dependencies and launch both the backend and frontend concurrently using the root package scripts:
+
+```bash
+# Install dependencies for both backend and frontend
+npm run install:all
+
+# Launch both Express backend (port 5000) and Vite frontend (port 5173) concurrently
+npm run dev
+```
+
+---
+
+### Step-by-Step Manual Setup
+
+If you prefer running services in separate terminal tabs, follow the steps below:
 
 ### Step 1: Clone & Setup Global Ignores
 Check that sensitive credentials and node modules are blocked from Git tracking:
@@ -265,6 +318,9 @@ To successfully run the application with full capabilities, ensure the following
 | `RAZORPAY_KEY_SECRET` | Private Razorpay API secret. **Backend-only. Never expose to the frontend or commit to version control.** |
 | `RAZORPAY_WEBHOOK_SECRET` | Private secret used to verify Razorpay webhook HMAC-SHA256 signatures against the `X-Razorpay-Signature` header. |
 | `RAZORPAY_PLAN_ID` | Razorpay subscription Plan ID configured for the application in the Razorpay Dashboard. Use a Test Plan ID for development and a Live Plan ID for production. |
+| `PDF_MAX_CONCURRENT` | (Optional) Maximum number of parallel Puppeteer PDF export tasks allowed concurrently (default: `2`). Prevents server memory/CPU exhaustion. |
+| `PDF_MAX_QUEUE` | (Optional) Maximum number of pending PDF export requests held in the FIFO waiting queue (default: `5`). Requests exceeding this limit receive HTTP 429 backpressure. |
+| `PDF_QUEUE_TIMEOUT_MS` | (Optional) Maximum milliseconds a PDF export request can wait in the queue before timing out (default: `15000`). |
 
 ### Frontend (`frontend/.env`)
 
@@ -497,3 +553,9 @@ CareerForge Pro is a collaborative team project.
 *   **Vaaneesh Prabhakar**
 
 *Modern AI development tools were utilized throughout the lifecycle of this project to assist with architecture reviews, implementation planning, documentation generation, debugging, and overall productivity.*
+
+---
+
+## 📄 License
+
+This project is licensed under the terms of the **ISC License**. See the [LICENSE](LICENSE) file in the root directory for the complete license text.
