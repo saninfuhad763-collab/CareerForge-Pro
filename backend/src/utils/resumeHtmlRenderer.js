@@ -39,7 +39,8 @@ const renderBullets = (description) => {
 
 const renderHeader = (resume, templateId) => {
   const p = resume.personalInfo || {};
-  const role = resume.personalInfo?.title || resume.experience?.[0]?.position || 'Target Professional Role';
+  const role = p.title || p.role || p.jobTitle || resume.experience?.[0]?.position || 'Target Professional Role';
+
   
   const formatLink = (url, label) => {
     if (!url) return null;
@@ -54,18 +55,18 @@ const renderHeader = (resume, templateId) => {
   ].filter(Boolean);
 
   if (templateId === 'modern') {
+    const contactParts = [
+      p.email ? `<a href="mailto:${escapeHtml(p.email)}" style="text-decoration: none; color: inherit;">${escapeHtml(p.email)}</a>` : null,
+      p.phone ? escapeHtml(p.phone) : null,
+      p.location ? escapeHtml(p.location) : null,
+      ...contactLinksHtml,
+    ].filter(Boolean);
+
     return `
       <header class="header modern">
-        <div class="header-left">
-          <h1>${escapeHtml(p.fullName || 'YOUR FULL NAME')}</h1>
-          <p class="role">${escapeHtml(role)}</p>
-        </div>
-        <div class="header-right">
-          <p>${escapeHtml(p.email || 'email@address.com')}</p>
-          <p>${escapeHtml(p.phone || '')}</p>
-          <p>${escapeHtml(p.location || '')}</p>
-          ${contactLinksHtml.map((linkHtml) => `<p>${linkHtml}</p>`).join('')}
-        </div>
+        <h1>${escapeHtml(p.fullName || 'YOUR FULL NAME')}</h1>
+        <p class="role">${escapeHtml(role)}</p>
+        <p class="contact-line">${contactParts.join(' | ')}</p>
       </header>`;
   }
 
@@ -207,7 +208,7 @@ const renderSkills = (resume, templateId) => {
         return `
           <div class="skill-row">
             <span class="skill-name">${escapeHtml(skill.name || 'Skills')}:</span>
-            <span class="skill-tags">${keywords.map((kw) => `<span class="tag">${escapeHtml(kw)}</span>`).join('')}</span>
+            <span class="skill-inline">${keywords.map((kw) => escapeHtml(kw)).join(', ')}</span>
           </div>`;
       }
       return `
@@ -391,12 +392,12 @@ const getStyles = (templateId) => `
     position: relative;
   }
   .accent-bar {
-    height: 4px;
+    height: ${templateId === 'modern' ? '0' : '4px'};
     width: 100%;
-    margin-bottom: 24px;
+    margin-bottom: ${templateId === 'modern' ? '0' : '24px'};
     background: ${
       templateId === 'modern'
-        ? 'linear-gradient(90deg, #6366f1, #8b5cf6, #10b981)'
+        ? 'transparent'
         : templateId === 'minimalist'
           ? 'linear-gradient(90deg, #cbd5e1, #94a3b8)'
           : '#0f172a'
@@ -404,19 +405,28 @@ const getStyles = (templateId) => `
   }
   .header { margin-bottom: 20px; }
   .header.modern {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    border-bottom: 1px solid #e2e8f0;
-    padding-bottom: 18px;
+    margin-bottom: 18px;
+    border-bottom: 1.5px solid #0f172a;
+    padding-bottom: 12px;
   }
-  .header h1 { font-size: 28px; font-weight: 800; line-height: 1.1; }
-  .header .role {
-    margin-top: 6px;
+  .header.modern h1 {
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1.2;
+    color: #0f172a;
+  }
+  .header.modern .role {
+    margin-top: 4px;
     font-size: 12px;
     font-weight: 600;
-    letter-spacing: 0.08em;
-    color: #4f46e5;
+    letter-spacing: 0.04em;
+    color: #334155;
+  }
+  .header.modern .contact-line {
+    margin-top: 8px;
+    font-size: 10px;
+    color: #475569;
+    line-height: 1.5;
   }
   .header-right { text-align: right; font-size: 11px; color: #64748b; line-height: 1.5; }
   .header.minimalist h1 {
@@ -455,9 +465,14 @@ const getStyles = (templateId) => `
     margin-bottom: 8px;
   }
   .section-title.modern {
-    color: #4f46e5;
-    border-left: 4px solid #6366f1;
-    padding-left: 10px;
+    color: #0f172a;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-bottom: 1px solid #cbd5e1;
+    padding-bottom: 4px;
+    margin-bottom: 8px;
   }
   .section-title.minimalist {
     color: #0f172a;

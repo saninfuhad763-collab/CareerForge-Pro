@@ -571,7 +571,7 @@ const Dashboard = () => {
 
               {/* Modular Analytics Cards */}
               <motion.section
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+                className="grid grid-cols-1 sm:grid-cols-3 gap-6"
                 variants={staggerContainer(0.04)}
               >
                 {/* Card 1 */}
@@ -606,26 +606,11 @@ const Dashboard = () => {
                   </div>
                 </motion.div>
 
-                {/* Card 3 */}
+                {/* Card 3 (Cover Letters) */}
                 <motion.div
                   variants={staggerItemScale}
                   whileHover="hover"
-                  className="bg-white dark:bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-4 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer shadow-sm"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
-                    <TrendingUp className="w-6 h-6" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Matched Roles</p>
-                    <h3 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 font-display mt-0.5">Locked</h3>
-                  </div>
-                </motion.div>
-
-                {/* Card 4 */}
-                <motion.div
-                  variants={staggerItemScale}
-                  whileHover="hover"
-                  onClick={() => navigate('/cover-letter')}
+                  onClick={() => setActiveTab('cover-letters')}
                   className="bg-white dark:bg-slate-900/80 backdrop-blur-xl p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-4 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/10 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer shadow-sm"
                 >
                   <div className="w-12 h-12 rounded-xl bg-violet-50 dark:bg-violet-950/50 flex items-center justify-center text-violet-600 dark:text-violet-400 shrink-0">

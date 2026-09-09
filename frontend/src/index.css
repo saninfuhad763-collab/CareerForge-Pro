@@ -29,6 +29,14 @@ body {
   outline-color: #818cf8;
 }
 
+/* Suppress jarring focus ring on mouse/touch interaction while preserving keyboard :focus-visible */
+input[data-focus-mouse]:focus,
+textarea[data-focus-mouse]:focus,
+select[data-focus-mouse]:focus {
+  outline: none !important;
+}
+
+
 /* Premium design utility classes */
 .glass {
   background: rgba(255, 255, 255, 0.4);

@@ -2609,7 +2609,7 @@ const Builder = () => {
             
             {/* Header branding overlay */}
             <div className={`absolute top-0 left-0 right-0 h-1 transition-all duration-500 ${
-              templateId === 'modern' ? 'bg-linear-to-r from-indigo-500 via-violet-500 to-emerald-400' :
+              templateId === 'modern' ? 'hidden' :
               templateId === 'minimalist' ? 'bg-linear-to-r from-slate-300 to-slate-400' :
               'bg-slate-900'
             }`} />
@@ -2628,57 +2628,65 @@ const Builder = () => {
                 <div className="flex flex-col justify-start w-full">
               {/* Dynamic Header Section (Personal details) based on templateId */}
               {templateId === 'modern' ? (
-                <header className="pb-6 border-b border-slate-200/50 dark:border-slate-800 flex flex-col sm:flex-row justify-between sm:items-end font-sans">
-                  <div>
-                    <h1 className="font-display font-extrabold tracking-tight text-slate-900 dark:text-slate-100 text-2xl sm:text-3xl">
-                      {personalInfo.fullName || 'YOUR FULL NAME'}
-                    </h1>
-                    <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 mt-1 tracking-wide">
-                      {personalInfo.title || experience[0]?.position || 'Target Professional Role'}
-                    </p>
-                  </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400 space-y-1 mt-4 sm:mt-0 sm:text-right font-sans">
+                <header className="pb-4 border-b-2 border-slate-900 dark:border-slate-100 flex flex-col justify-start font-sans text-left">
+                  <h1 className="font-display font-extrabold tracking-tight text-slate-900 dark:text-slate-100 text-2xl sm:text-3xl">
+                    {personalInfo.fullName || 'YOUR FULL NAME'}
+                  </h1>
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mt-1 tracking-wide">
+                    {personalInfo.title || personalInfo.role || personalInfo.jobTitle || experience[0]?.position || 'Target Professional Role'}
+                  </p>
+
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-600 dark:text-slate-400 mt-2 font-sans">
                     {personalInfo.email ? (
-                      <a href={`mailto:${personalInfo.email}`} className="hover:underline block text-inherit break-all">
+                      <a href={`mailto:${personalInfo.email}`} className="hover:underline text-inherit break-all">
                         {personalInfo.email}
                       </a>
                     ) : (
-                      <p>{'email@address.com'}</p>
+                      <span>email@address.com</span>
                     )}
-                    <p>{personalInfo.phone || '+1 (555) 000-0000'}</p>
-                    <p>{personalInfo.location || 'Location Area, State'}</p>
-                    <div className="flex gap-3 justify-start sm:justify-end">
-                      {personalInfo.website && (
+                    {personalInfo.phone && <span>|</span>}
+                    {personalInfo.phone && <span>{personalInfo.phone}</span>}
+                    {personalInfo.location && <span>|</span>}
+                    {personalInfo.location && <span>{personalInfo.location}</span>}
+                    {personalInfo.website && (
+                      <>
+                        <span>|</span>
                         <a 
                           href={normalizeUrl(personalInfo.website)} 
                           target="_blank" 
                           rel="noopener noreferrer" 
-                          className="hover:underline text-[10px] text-inherit break-all"
+                          className="hover:underline text-inherit break-all"
                         >
                           Portfolio
                         </a>
-                      )}
-                      {personalInfo.github && (
+                      </>
+                    )}
+                    {personalInfo.github && (
+                      <>
+                        <span>|</span>
                         <a 
                           href={normalizeUrl(personalInfo.github)} 
                           target="_blank" 
                           rel="noopener noreferrer" 
-                          className="hover:underline text-[10px] text-inherit break-all"
+                          className="hover:underline text-inherit break-all"
                         >
                           GitHub
                         </a>
-                      )}
-                      {personalInfo.linkedin && (
+                      </>
+                    )}
+                    {personalInfo.linkedin && (
+                      <>
+                        <span>|</span>
                         <a 
                           href={normalizeUrl(personalInfo.linkedin)} 
                           target="_blank" 
                           rel="noopener noreferrer" 
-                          className="hover:underline text-[10px] text-inherit break-all"
+                          className="hover:underline text-inherit break-all"
                         >
                           LinkedIn
                         </a>
-                      )}
-                    </div>
+                      </>
+                    )}
                   </div>
                 </header>
               ) : templateId === 'minimalist' ? (
@@ -2810,7 +2818,7 @@ const Builder = () => {
                     return (
                       <section key="summary" className={dynamicStyles.itemSpace}>
                         {templateId === 'modern' ? (
-                          <h2 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-l-4 border-indigo-500 pl-3">
+                          <h2 className="text-xs font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider border-b border-slate-300 dark:border-slate-700 pb-1 mb-2 font-sans">
                             Professional Summary
                           </h2>
                         ) : templateId === 'minimalist' ? (
@@ -2838,7 +2846,7 @@ const Builder = () => {
                     return (
                       <section key="experience" className={dynamicStyles.itemSpace}>
                         {templateId === 'modern' ? (
-                          <h2 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-l-4 border-indigo-500 pl-3">
+                          <h2 className="text-xs font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider border-b border-slate-300 dark:border-slate-700 pb-1 mb-2 font-sans">
                             Professional Experience
                           </h2>
                         ) : templateId === 'minimalist' ? (
@@ -2935,7 +2943,7 @@ const Builder = () => {
                     return (
                       <section key="education" className={dynamicStyles.itemSpace}>
                         {templateId === 'modern' ? (
-                          <h2 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-l-4 border-indigo-500 pl-3">
+                          <h2 className="text-xs font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider border-b border-slate-300 dark:border-slate-700 pb-1 mb-2 font-sans">
                             Education
                           </h2>
                         ) : templateId === 'minimalist' ? (
@@ -3009,7 +3017,7 @@ const Builder = () => {
                     return (
                       <section key="skills" className={dynamicStyles.itemSpace}>
                         {templateId === 'modern' ? (
-                          <h2 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-l-4 border-indigo-500 pl-3">
+                          <h2 className="text-xs font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider border-b border-slate-300 dark:border-slate-700 pb-1 mb-2 font-sans">
                             Skills
                           </h2>
                         ) : templateId === 'minimalist' ? (
@@ -3025,17 +3033,11 @@ const Builder = () => {
                           {skills.map((skill, idx) => {
                             if (templateId === 'modern') {
                               return (
-                                <div key={idx} className="grid grid-cols-1 sm:grid-cols-12 gap-1.5 font-sans text-xs">
-                                  <span className="sm:col-span-3 font-bold text-slate-700 dark:text-slate-300 capitalize wrap-break-word">{skill.name || 'Group'}:</span>
-                                  <div className="sm:col-span-9">
-                                    <div className="flex flex-wrap gap-1.5 pt-0.5">
-                                      {skill.keywords && skill.keywords.map((kw, kwIdx) => (
-                                        <span key={kwIdx} className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-900/50 px-2 py-0.5 rounded-full text-[10px] font-medium break-all">
-                                          {kw}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
+                                <div key={idx} className="flex flex-col sm:flex-row sm:items-baseline gap-1 font-sans text-xs">
+                                  <span className="font-bold text-slate-900 dark:text-slate-100 shrink-0 capitalize wrap-break-word">{skill.name || 'Group'}:</span>
+                                  <span className="text-slate-700 dark:text-slate-300 wrap-break-word">
+                                    {skill.keywords ? skill.keywords.join(', ') : ''}
+                                  </span>
                                 </div>
                               );
                             } else if (templateId === 'minimalist') {
@@ -3077,7 +3079,7 @@ const Builder = () => {
                     return (
                       <section key="projects" className={dynamicStyles.itemSpace}>
                         {templateId === 'modern' ? (
-                          <h2 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-l-4 border-indigo-500 pl-3">
+                          <h2 className="text-xs font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider border-b border-slate-300 dark:border-slate-700 pb-1 mb-2 font-sans">
                             Projects
                           </h2>
                         ) : templateId === 'minimalist' ? (
@@ -3099,7 +3101,7 @@ const Builder = () => {
                                       <span className="font-bold text-slate-800 dark:text-slate-200">{proj.title || 'Project Title'}</span>
                                       {proj.role && <span className="text-[10px] text-slate-400">({proj.role})</span>}
                                       {proj.url && (
-                                        <span className="text-[10px] text-indigo-500 flex items-center gap-0.5">
+                                        <span className="text-[10px] text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 flex items-center gap-0.5">
                                           <ExternalLink className="w-2.5 h-2.5" />
                                         </span>
                                       )}
@@ -3151,7 +3153,7 @@ const Builder = () => {
                                       <span className="font-bold text-slate-950 dark:text-slate-50 wrap-break-word">{proj.title || 'Project Title'}</span>
                                       {proj.role && <span className="text-[11px] text-slate-650 dark:text-slate-400 italic wrap-break-word">({proj.role})</span>}
                                     </div>
-                                    <span className="text-[10px] text-slate-600 dark:text-slate-450 italic">{proj.startDate}</span>
+                                    <span className="text-[10px] text-slate-600 dark:text-slate-400 italic">{proj.startDate}</span>
                                   </div>
                                   {proj.description && (
                                     <ul className="list-disc pl-4 text-[11px] text-slate-700 dark:text-slate-300 space-y-0.5 pt-0.5 font-serif wrap-break-word">
@@ -3178,7 +3180,7 @@ const Builder = () => {
                     return (
                       <section key="certifications" className={dynamicStyles.itemSpace}>
                         {templateId === 'modern' ? (
-                          <h2 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-l-4 border-indigo-500 pl-3">
+                          <h2 className="text-xs font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider border-b border-slate-300 dark:border-slate-700 pb-1 mb-2 font-sans">
                             Certifications
                           </h2>
                         ) : templateId === 'minimalist' ? (
@@ -3200,7 +3202,7 @@ const Builder = () => {
                                     <span className="text-slate-400">—</span>
                                     <span className="text-slate-600 dark:text-slate-400">{cert.issuer}</span>
                                     {cert.url && (
-                                      <span className="text-[10px] text-indigo-500 flex items-center gap-0.5">
+                                      <span className="text-[10px] text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 flex items-center gap-0.5">
                                         <ExternalLink className="w-2.5 h-2.5" />
                                       </span>
                                     )}
@@ -3241,7 +3243,7 @@ const Builder = () => {
                     return (
                       <section key="languages" className={dynamicStyles.itemSpace}>
                         {templateId === 'modern' ? (
-                          <h2 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-l-4 border-indigo-500 pl-3">
+                          <h2 className="text-xs font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider border-b border-slate-300 dark:border-slate-700 pb-1 mb-2 font-sans">
                             Languages
                           </h2>
                         ) : templateId === 'minimalist' ? (
