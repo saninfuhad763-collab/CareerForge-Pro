@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import {
   createCheckoutSession,
   cancelSubscription as cancelStripeSubscriptionService,
@@ -104,12 +105,60 @@ export const stripeWebhook = async (req, res) => {
   }
 };
 
+const getSafeEnvMetadata = () => {
+  const rawKeyId = process.env.RAZORPAY_KEY_ID;
+  const rawKeySecret = process.env.RAZORPAY_KEY_SECRET;
+  const rawPlanId = process.env.RAZORPAY_PLAN_ID;
+
+  const checkQuotesOrWhitespace = (val) => {
+    if (!val) return { whitespace: 'NO', quotes: 'NO' };
+    const hasWhitespace = /^\s|\s$/.test(val);
+    const hasQuotes = /^["'].*["']$/.test(val.trim());
+    return {
+      whitespace: hasWhitespace ? 'YES' : 'NO',
+      quotes: hasQuotes ? 'YES' : 'NO',
+    };
+  };
+
+  const planDiag = checkQuotesOrWhitespace(rawPlanId);
+  const keyIdDiag = checkQuotesOrWhitespace(rawKeyId);
+  const secretDiag = checkQuotesOrWhitespace(rawKeySecret);
+
+  const cleanKeyId = (rawKeyId || '').trim().replace(/^["']|["']$/g, '');
+  const cleanPlanId = (rawPlanId || '').trim().replace(/^["']|["']$/g, '');
+
+  const planFingerprint = rawPlanId
+    ? crypto.createHash('sha256').update(cleanPlanId).digest('hex').slice(0, 8)
+    : 'NONE';
+
+  return {
+    RAZORPAY_KEY_ID: rawKeyId ? 'PRESENT' : 'ABSENT',
+    RAZORPAY_KEY_ID_mode: cleanKeyId.startsWith('rzp_test_')
+      ? 'TEST'
+      : cleanKeyId.startsWith('rzp_live_')
+      ? 'LIVE'
+      : 'UNKNOWN',
+    RAZORPAY_KEY_ID_quotes: keyIdDiag.quotes,
+    RAZORPAY_KEY_ID_whitespace: keyIdDiag.whitespace,
+    RAZORPAY_KEY_SECRET: rawKeySecret ? 'PRESENT' : 'ABSENT',
+    RAZORPAY_KEY_SECRET_quotes: secretDiag.quotes,
+    RAZORPAY_KEY_SECRET_whitespace: secretDiag.whitespace,
+    RAZORPAY_PLAN_ID: rawPlanId ? 'PRESENT' : 'ABSENT',
+    RAZORPAY_PLAN_ID_format: cleanPlanId.startsWith('plan_') ? 'VALID_PREFIX' : 'INVALID_PREFIX',
+    RAZORPAY_PLAN_ID_quotes: planDiag.quotes,
+    RAZORPAY_PLAN_ID_whitespace: planDiag.whitespace,
+    RAZORPAY_PLAN_ID_fingerprint: planFingerprint,
+  };
+};
+
 /**
  * Creates a Razorpay Subscription for the authenticated user
  * Route: POST /api/billing/razorpay/create-subscription
  */
 export const createRazorpaySubscription = async (req, res, next) => {
   try {
+    console.log('[Razorpay Diagnostic] Environment metadata:', JSON.stringify(getSafeEnvMetadata()));
+
     const subscriptionData = await createRazorpaySubscriptionService(req.user);
 
     res.status(200).json({
@@ -117,6 +166,16 @@ export const createRazorpaySubscription = async (req, res, next) => {
       data: subscriptionData,
     });
   } catch (error) {
+    const razorpayErr = error.error || {};
+    console.error('[Razorpay Diagnostic] Subscription creation failure:', {
+      statusCode: error.statusCode || error.status || 500,
+      code: razorpayErr.code || error.code || 'UNKNOWN',
+      description: razorpayErr.description || error.description || error.message || 'No description provided',
+      source: razorpayErr.source || undefined,
+      step: razorpayErr.step || undefined,
+      reason: razorpayErr.reason || undefined,
+      field: razorpayErr.field || undefined,
+    });
     next(error);
   }
 };
