@@ -84,11 +84,13 @@ const Dashboard = () => {
   const [modalCopied, setModalCopied] = useState(false);
 
   const createModalTitleId = useId();
+  const createModalTitleRef = useRef(null);
   const createModalRef = useFocusTrap({
     isOpen: isModalOpen,
     onClose: !actionLoading ? () => setIsModalOpen(false) : undefined,
     closeOnEscape: !actionLoading,
     setInertBackground: true,
+    initialFocusRef: createModalTitleRef,
   });
 
   const signoutModalTitleId = useId();
@@ -1239,7 +1241,12 @@ const Dashboard = () => {
               transition={{ duration: 0.3, ease: premiumEase }}
             >
               <div className="text-left space-y-1">
-                <h3 id={createModalTitleId} className="text-xl font-bold font-display text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <h3
+                  ref={createModalTitleRef}
+                  tabIndex={-1}
+                  id={createModalTitleId}
+                  className="text-xl font-bold font-display text-slate-800 dark:text-slate-100 flex items-center gap-2 outline-none"
+                >
                   <Sparkles className="w-5 h-5 text-indigo-500" /> Craft New ATS Resume
                 </h3>
                 <p className="text-sm text-slate-400">Specify details to build your optimized CV.</p>
