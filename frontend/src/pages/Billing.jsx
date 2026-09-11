@@ -358,7 +358,7 @@ const Billing = () => {
                       <h3 className="text-xl font-extrabold font-display text-slate-900 dark:text-slate-50">Free</h3>
                       <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Get started for free</p>
                       <div className="mt-4 flex items-baseline gap-1">
-                        <span className="text-4xl font-extrabold font-display text-slate-900 dark:text-slate-50">$0</span>
+                        <span className="text-4xl font-extrabold font-display text-slate-900 dark:text-slate-50">₹0</span>
                         <span className="text-sm text-slate-400 font-medium">/ month</span>
                       </div>
                     </div>
@@ -422,7 +422,7 @@ const Billing = () => {
                       <h3 className="text-xl font-extrabold font-display text-white">Pro</h3>
                       <p className="text-sm text-indigo-200 mt-1">Everything you need to succeed</p>
                       <div className="mt-4 flex items-baseline gap-1">
-                        <span className="text-4xl font-extrabold font-display text-white">$9</span>
+                        <span className="text-4xl font-extrabold font-display text-white">₹899</span>
                         <span className="text-sm text-indigo-200 font-medium">/ month</span>
                       </div>
                     </div>
@@ -490,7 +490,7 @@ const Billing = () => {
                       <div className="px-3 sm:px-4 py-3 sm:py-4 text-center">
                         <div className="inline-flex flex-col items-center gap-1">
                           <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Free</span>
-                          <span className="text-[10px] text-slate-400 font-semibold">$0/mo</span>
+                          <span className="text-[10px] text-slate-400 font-semibold">₹0/mo</span>
                         </div>
                       </div>
                       <div className="px-3 sm:px-4 py-3 sm:py-4 text-center">
@@ -498,7 +498,7 @@ const Billing = () => {
                           <span className="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
                             <Crown className="w-3 h-3 text-amber-500" /> Pro
                           </span>
-                          <span className="text-[10px] text-indigo-500 dark:text-indigo-400 font-semibold">$9/mo</span>
+                          <span className="text-[10px] text-indigo-500 dark:text-indigo-400 font-semibold">₹899/mo</span>
                         </div>
                       </div>
                     </div>
