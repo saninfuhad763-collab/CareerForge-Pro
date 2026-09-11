@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import PersonalSection from '../components/PersonalSection';
 import ExperienceSection from '../components/ExperienceSection';
 import SkillsSection from '../components/SkillsSection';
@@ -174,9 +174,19 @@ const Builder = () => {
   const [activeTheme, setActiveTheme] = useState('modern');
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [isExportSuccess, setIsExportSuccess] = useState(false);
+  const [exportStageText, setExportStageText] = useState('Generating PDF...');
+  const exportTimerRef = useRef(null);
   const [manualSavePerformed, setManualSavePerformed] = useState(false);
   const [showAutoSaveModal, setShowAutoSaveModal] = useState(false);
   const [dontShowAutoSaveWarning, setDontShowAutoSaveWarning] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (exportTimerRef.current) {
+        clearTimeout(exportTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const handleBeforePrint = () => setIsExportingPdf(true);
@@ -1435,6 +1445,54 @@ const Builder = () => {
     }
   };
 
+  // PDF export trigger with staged progress feedback and error reporting
+  const handleExportPdf = async () => {
+    if (isExportingPdf) return;
+    setIsExportingPdf(true);
+    setExportStageText('Generating PDF...');
+
+    if (exportTimerRef.current) {
+      clearTimeout(exportTimerRef.current);
+    }
+    exportTimerRef.current = setTimeout(() => {
+      setExportStageText('Preparing your PDF...');
+    }, 4000);
+
+    try {
+      const success = await exportResumePdf(id, currentResume?.title || 'resume');
+      if (exportTimerRef.current) {
+        clearTimeout(exportTimerRef.current);
+        exportTimerRef.current = null;
+      }
+      setIsExportingPdf(false);
+      setExportStageText('Generating PDF...');
+
+      if (success) {
+        setIsExportSuccess(true);
+        setTimeout(() => setIsExportSuccess(false), 2000);
+      } else {
+        const storeError = useResumeStore.getState().error;
+        setAlertModalTitle('PDF Export Failed');
+        setAlertModalContent(
+          typeof storeError === 'string' && storeError.trim()
+            ? storeError
+            : 'Unable to export your PDF right now. Please try again in a few moments.'
+        );
+        setAlertModalOpen(true);
+      }
+    } catch (_error) {
+      if (exportTimerRef.current) {
+        clearTimeout(exportTimerRef.current);
+        exportTimerRef.current = null;
+      }
+      setIsExportingPdf(false);
+      setExportStageText('Generating PDF...');
+      setAlertModalTitle('PDF Export Failed');
+      setAlertModalContent('Unable to export your PDF right now. Please try again in a few moments.');
+      setAlertModalOpen(true);
+    }
+  };
+
 
   const resetUploadModal = () => {
     setSelectedResumeFile(null);
@@ -1773,20 +1831,13 @@ const Builder = () => {
           )}
 
           <button
-            onClick={async () => {
-              setIsExportingPdf(true);
-              const success = await exportResumePdf(id, currentResume?.title || 'resume');
-              setIsExportingPdf(false);
-              if (success) {
-                setIsExportSuccess(true);
-                setTimeout(() => setIsExportSuccess(false), 2000);
-              }
-            }}
+            type="button"
+            onClick={handleExportPdf}
             disabled={isExportingPdf}
             className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-500/20 hover:shadow-indigo-500/35 hover:-translate-y-0.5 cursor-pointer active:scale-95 shrink-0"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>{isExportingPdf ? 'Generating PDF...' : isExportSuccess ? 'Exported' : 'Export PDF'}</span>
+            <span>{isExportingPdf ? exportStageText : isExportSuccess ? 'Exported' : 'Export PDF'}</span>
           </button>
         </div>
       </header>
@@ -1947,20 +1998,12 @@ const Builder = () => {
           {/* Export PDF Button */}
           <button
             type="button"
-            onClick={async () => {
-              setIsExportingPdf(true);
-              const success = await exportResumePdf(id, currentResume?.title || 'resume');
-              setIsExportingPdf(false);
-              if (success) {
-                setIsExportSuccess(true);
-                setTimeout(() => setIsExportSuccess(false), 2000);
-              }
-            }}
+            onClick={handleExportPdf}
             disabled={isExportingPdf}
             className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md shadow-indigo-500/20 active:scale-95 cursor-pointer"
           >
             <Download className="w-4 h-4" />
-            <span>{isExportingPdf ? 'Generating PDF...' : isExportSuccess ? 'Exported' : 'Export PDF'}</span>
+            <span>{isExportingPdf ? exportStageText : isExportSuccess ? 'Exported' : 'Export PDF'}</span>
           </button>
         </div>
       </Drawer>
