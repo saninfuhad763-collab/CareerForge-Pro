@@ -6,8 +6,6 @@
 [![Frontend](https://img.shields.io/badge/Frontend-React_19_+_Vite-61DAFB?style=flat&logo=react)](frontend/)
 [![Backend](https://img.shields.io/badge/Backend-Node.js_+_Express-339933?style=flat&logo=node.js)](backend/)
 
-> **Live Demo:** Production deployment link will be posted here upon final domain deployment. (Local and preview setups run via instructions below.)
-
 CareerForge Pro is a full-stack SaaS platform built for candidates to create, optimize, and manage resumes. Designed with robust state-management, security protocols, and reactive design, CareerForge Pro features a split-screen builder, template rendering engines, layout sorting, and AI integrations including ATS Optimization, Resume Rewrites, and Cover Letter Generation.
 
 ---
